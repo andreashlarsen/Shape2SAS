@@ -96,7 +96,7 @@ Below are tables of flag inputs and supported subunits in Shape2SAS. Shape2SAS h
 |        |           |   |
 
 ## Examples
-Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the $\texttt{--subunit\_type}$ flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the $\texttt{--subunit\_type}$ flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in table [3](#table3) at the "Dimensions" column. \
+Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in table [3](#table3) at the "Dimensions" column. \
 When writing more advanced models, it is recommended to write commands in a text file and convert it to a bat file.
 
 ### Example 1: Cylinder
