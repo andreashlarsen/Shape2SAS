@@ -95,12 +95,12 @@ Below are tables of flag inputs and supported subunits in Shape2SAS. Shape2SAS h
 | `disc`         |  $\texttt{R, r, l}$    | Outer $(\texttt{R})$ and inner $(\texttt{r})$ radius with length $(\texttt{l})$ for a disc ring |
 | `superellipsoid`         |  $\texttt{R, } \textbf{ε} \texttt{, t, s}$    | Equator radius $(\texttt{R})$, eccentricity $(\textbf{ε})$ and shape parameters $(\texttt{t, s})$ for a superellipsoid |
 |        |           |   |
-## Examples
 
-Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the $\texttt{--subunit\_type}$ flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the $\texttt{--subunit\_type}$ flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in table [3](#table3) at the "Dimensions" column. \
+## Examples
+Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the `--subunit_type` flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the `--subunit_type` flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in table [3](#table3) at the Dimensions column. \
 When writing more advanced models, it is recommended to write commands in a text file and convert it to a bat file.
 
-$\textbf{Example 1: Cylinder}$   
+### Example 1: Cylinder
 A model of a cylinder with radius $R = 50$ and length $l=300$ is simulated with $N_{points}=10000$ number of points and named "cylinder". In commands:
 
 ```
@@ -115,7 +115,7 @@ Figure [1](#example1) shows an illustration of the model and simulated SAXS with
 
 *Figure 1: Shape2SAS simulation showing the "side" and "bottom" of the cylinder model and simulated SAXS with noise.*
 
-$\textbf{Example 2: Dumbbell}$  
+### Example 2: Dumbbell
 A model of a dumbbell with spheres displaced from the origin with $[0, 0, \pm50]$, their radius set to $R = 25$, and a cylinder with $R = 10$ and length $l=100$ are simulated with $N_{points} = 6000$ number of points and named "dumbbell". In commands:
 ```
 python shape2sas.py --subunit_type "sphere, sphere, cylinder" --dimension "25" "25" "10, 100" --com "0, 0, -50" "0, 0, 50" "0, 0, 0" --Npoints 6000 --name "dumbbell"
@@ -129,7 +129,7 @@ Figure [2](#example2) shows an illustration of the model and simulated SAXS with
 
 *Figure 2: Simulated Shape2SAS output of the simulated model and simulated SAXS with noise.*
 
-$\textbf{Example 3: Ellipsoid with structure factor}$  
+### Example 3: Ellipsoid with structure factor
 A structure factor is added to a model of an ellipsoid with dimensions $a, \ b, \ c = 50, \ 60, \ 50$. First, a model with hard sphere (HS) structure factor is created with hard sphere radius of $r_{hs} = 60$. Then, a model with aggregation is created with default fraction of particles in aggregated form, with a number of particles per aggregate of $N_{aggr} = 90$ and with a effective radius of aggregates of $R_{eff} = 60$. The number of simuatled points is $N_{points} = 6000$ and the models are named "ellipsoid_HS" and "ellipsoid_aggr". In commands for added HS:
 
 ```
@@ -150,7 +150,7 @@ It should be noted that since the fraction of ellipsoids in aggregated form is d
 
 *Figure 3: Left: Simulated SAXS for an ellipsoid with noise and a hard sphere structure factor. Right: Simulated SAXS for an ellipsoid with noise and aggregation.*
 
-$\textbf{Example 4: Creating multiple models}$\
+### Example 4: Creating multiple models
 The models from example 3 and an ellipsoid model with no structure factor are plotted together. Each model is simulated with $N_{points} = 6000$ and named. In commands:
 
 ```
@@ -164,7 +164,7 @@ Figure [4](#example4) shows simulated SAXS with noise for all three ellipsoid mo
 
 *Figure 4: Theoretical SAXS for ellipsoid models with noise and aggregation, HS and no structure factor.*
 
-$\textbf{Example 5: Sphere with polydispersity}$\
+### Example 5: Sphere with polydispersity
 A model of a sphere with radius $R = 50$ has polydispersity of $p = 0.1$ added, is named "sphere_poly" and simulated with $N_{points} = 4000$ points. In commands:
 
 ```
