@@ -20,11 +20,47 @@ def sinc(x) -> np.ndarray:
     """
     return np.sinc(x / np.pi)   
 
+'''#template to write a subunit class
+class <NAME OF SUBUNIT HERE>:
+    def __init__(self, dimensions: List[float]):
+        #PARAMERERS HERE
+        self.<PARAMETER NAME> = dimensions[0]
+        self.<PARAMETER NAME> = dimensions[1]
+        self.<PARAMETER NAME> = dimensions[2]
+    
+    def getVolume(self) -> float:
+        """Returns the volume of the subunit"""
+
+        <WRITE VOLUME CALCULATION OF THE SUBUNIT HERE>
+
+        return <VOLUME>
+
+    def getPointDistribution(self, Npoints: int) -> Vector3D:
+        """Returns the point distribution of the subunit"""
+
+        Volume = self.getVolume()
+        Volume_max = <MAXIMUM VOLUME> ###Box around the subunit
+        Vratio = Volume_max/Volume
+
+        N = int(Vratio * Npoints)
+
+        <WRITE POINT DISTRIBUTION HERE>
+
+        return x_add, y_add, z_add
+
+    def checkOverlap(self, x_eff: np.ndarray,
+                            y_eff: np.ndarray,
+                            z_eff: np.ndarray) -> np.ndarray:
+          """Check for points within the subunit"""
+    
+          <WRITE OVERLAP CHECK HERE>
+    
+          return idx
+'''
 
 class Sphere:
     def __init__(self, dimensions: List[float]):
         self.R = dimensions[0]
-
 
 
     def getVolume(self) -> float:
@@ -46,7 +82,7 @@ class Sphere:
         z = np.random.uniform(-self.R, self.R, N)
         d = np.sqrt(x**2 + y**2 + z**2)
 
-        idx = np.where(d < self.R) #save points insice sphere
+        idx = np.where(d < self.R) #save points inside sphere
         x_add,y_add,z_add = x[idx], y[idx], z[idx]
 
         return x_add, y_add, z_add
@@ -288,8 +324,7 @@ class Cube:
         """Check for points within a cube"""
 
         idx = np.where((abs(x_eff) >= self.a/2) | (abs(y_eff) >= self.a/2) | 
-            (abs(z_eff) >= self.a/2) | ((abs(x_eff) <= self.b/2) 
-            & (abs(y_eff) <= self.b/2) & (abs(z_eff) <= self.b/2)))
+            (abs(z_eff) >= self.a/2))
         
         return idx
 
@@ -531,18 +566,39 @@ class Superellipsoid:
 
 
 class Qsampling:
-    def __init__(self, qmin: float, qmax: float, Nq: int):
-        self.qmin = qmin
-        self.qmax = qmax
-        self.Nq = Nq
 
+    def onQsampling(qmin: float, qmax: float, Nq: int) -> np.ndarray:
+        """Returns uniform q sampling"""
 
-    def onQsampling(self) -> np.ndarray:
-        """Returns the q sampling"""
-
-        q = np.linspace(self.qmin, self.qmax, self.Nq)
+        q = np.linspace(qmin, qmax, Nq)
 
         return q
+    
+
+    def onUserSampledQ(q: np.ndarray) -> np.ndarray:
+        """Returns user sampled q"""
+
+        if isinstance(q, list):
+            q = np.array(q)
+
+        return q
+    
+
+    def qMethodsNames(name: str):
+        methods = {
+            "Uniform": Qsampling.onQsampling,
+            "User_sampled": Qsampling.onUserSampledQ
+        }
+
+        return methods[name]
+    
+    def qMethodsInput(name: str):
+        inputs = {
+            "Uniform": {"qmin": 0.001, "qmax": 0.5, "Nq": 400},
+            "User_sampled": {"q": Qsampling.onQsampling(0.001, 0.5, 400)} #if the user does not input q
+        }
+
+        return inputs[name]
 
 
 class Rotation:
@@ -551,17 +607,28 @@ class Rotation:
                        z_add: np.ndarray, 
                        alpha: float, 
                        beta: float, 
-                       gam: float):
+                       gam: float,
+                       rotp_x: float,
+                       rotp_y: float,
+                       rotp_z: float):
         self.x_add = x_add
         self.y_add = y_add
         self.z_add = z_add
         self.alpha = alpha
         self.beta = beta
         self.gam = gam
+        self.rotp_x = rotp_x
+        self.rotp_y = rotp_y
+        self.rotp_z = rotp_z
 
     
     def onRotatingPoints(self) -> Vector3D:
         """Simple Euler rotation"""
+
+        self.x_add -= self.rotp_x
+        self.y_add -= self.rotp_y
+        self.z_add -= self.rotp_z
+
 
         x_rot = (self.x_add * np.cos(self.gam) * np.cos(self.beta) 
              + self.y_add * (np.cos(self.gam) * np.sin(self.beta) * np.sin(self.alpha) - np.sin(self.gam) * np.cos(self.alpha)) 
@@ -574,6 +641,10 @@ class Rotation:
         z_rot = (-self.x_add * np.sin(self.beta)
             + self.y_add * np.cos(self.beta) * np.sin(self.alpha)
             + self.z_add * np.cos(self.beta) * np.cos(self.alpha))
+        
+        x_rot += self.rotp_x
+        y_rot += self.rotp_y
+        z_rot += self.rotp_z
 
         return x_rot, y_rot, z_rot
     
@@ -606,13 +677,15 @@ class GeneratePoints:
     def __init__(self, com: List[float], 
                     subunitClass: object, 
                     dimensions: List[float], 
-                    rotation: List[float], 
+                    rotation: List[float],
+                    rotation_point: list[float],
                     Npoints: int):
 
         self.com = com
         self.subunitClass = subunitClass
         self.dimensions = dimensions
         self.rotation = rotation
+        self.rotation_point = rotation_point
         self.Npoints = Npoints
         
 
@@ -629,12 +702,13 @@ class GeneratePoints:
                                    z: np.ndarray) -> Vector3D:
         """Transforms the points"""
         alpha, beta, gam = self.rotation
+        rotp_x, rotp_y, rotp_z = self.rotation_point
         alpha = np.radians(alpha)
         beta = np.radians(beta)
         gam = np.radians(gam)
         com_x, com_y, com_z = self.com
 
-        x, y, z = Rotation(x, y, z, alpha, beta, gam).onRotatingPoints()
+        x, y, z = Rotation(x, y, z, alpha, beta, gam, rotp_x, rotp_y, rotp_z).onRotatingPoints()
         x, y, z = Translation(x, y, z, com_x, com_y, com_z).onTranslatingPoints()
         return x, y, z
     
@@ -644,7 +718,8 @@ class GenerateAllPoints:
                             com: List[List[float]], 
                         subunits: List[List[float]], 
                         dimensions: List[List[float]], 
-                        rotation : List[List[float]], 
+                        rotation : List[List[float]],
+                        rotation_point: list[float],
                         p: List[float], 
                         exclude_overlap: bool):
         self.Npoints = Npoints
@@ -653,6 +728,7 @@ class GenerateAllPoints:
         self.Number_of_subunits = len(subunits)
         self.dimensions = dimensions
         self.rotation = rotation
+        self.rotation_point = rotation_point
         self.p_s = p
         self.exclude_overlap = exclude_overlap
         self.setAvailableSubunits()
@@ -661,42 +737,46 @@ class GenerateAllPoints:
     def setAvailableSubunits(self):
         """Returns the available subunits"""
         self.subunitClasses = {
-                    "Sphere": Sphere, 
-                    "sphere": Sphere,
-                    "ball": Sphere,
+                "sphere": Sphere,
+                "ball": Sphere,
 
-                    "hollow_sphere": HollowSphere, 
-                    "Hollow sphere": HollowSphere, 
+                "hollow_sphere": HollowSphere, 
+                "Hollow sphere": HollowSphere, 
 
-                    "Cylinder": Cylinder,
-                    "cylinder": Cylinder,
+                "cylinder": Cylinder,
 
-                    "ellipsoid": Ellipsoid,
-                    "Ellipsoid": Ellipsoid,
+                "ellipsoid": Ellipsoid,
 
-                    "elliptical_cylinder": EllipticalCylinder,
-                    "Elliptical cylinder": EllipticalCylinder,
+                "elliptical_cylinder": EllipticalCylinder,
+                "Elliptical cylinder": EllipticalCylinder,
 
-                    "disc": Disc,
-                    "Disc": Disc,
+                "disc": Disc,
 
-                    "cube": Cube,
-                    "Cube": Cube,
+                "cube": Cube,
 
-                    "hollow_cube": HollowCube,
-                    "Hollow cube": HollowCube,
+                "hollow_cube": HollowCube,
+                "Hollow cube": HollowCube,
 
-                    "cuboid": Cuboid,
-                    "Cuboid": Cuboid,
+                "cuboid": Cuboid,
 
-                    "cyl_ring": CylinderRing,
-                    "Cylinder ring": CylinderRing,
+                "cyl_ring": CylinderRing,
 
-                    "disc_ring": DiscRing,
-                    "Disc ring": DiscRing,
+                "Cylinder ring": CylinderRing,
 
-                    "superellipsoid": Superellipsoid,
-                    "Superellipsoid": Superellipsoid}
+                "disc_ring": DiscRing,
+                "Disc ring": DiscRing,
+                
+                "superellipsoid": Superellipsoid}
+    
+
+    def getSubunitClass(self, key: str):
+        if key in self.subunitClasses:
+            return self.subunitClasses[key]
+        else:
+            try:
+                return globals()[key]
+            except KeyError:
+                raise ValueError(f"Class {key} not found in subunitClasses or global scope")
 
     @staticmethod
     def onAppendingPoints(x_new: np.ndarray, 
@@ -730,6 +810,7 @@ class GenerateAllPoints:
                        z: np.ndarray, 
                        p: np.ndarray, 
                        rotation: List[float], 
+                       rotation_point: list[float],
                        com: List[float], 
                        subunitClass: object, 
                        dimensions: List[float]):
@@ -742,11 +823,12 @@ class GenerateAllPoints:
 
             #rotate backwards with minus rotation angles
             alpha, beta, gam = rotation
+            rotp_x, rotp_y, rotp_z = rotation_point
             alpha = np.radians(alpha)
             beta = np.radians(beta)
             gam = np.radians(gam)
 
-            x_eff, y_eff, z_eff = Rotation(x_eff, y_eff, z_eff, -alpha, -beta, -gam).onRotatingPoints()
+            x_eff, y_eff, z_eff = Rotation(x_eff, y_eff, z_eff, -alpha, -beta, -gam, -rotp_x, -rotp_y, -rotp_z).onRotatingPoints()
 
         else:
             ## effective coordinates, shifted by (x_com,y_com,z_com)
@@ -770,7 +852,7 @@ class GenerateAllPoints:
 
         #Get volume of each subunit
         for i in range(self.Number_of_subunits):
-            subunitClass = self.subunitClasses[self.subunits[i]]
+            subunitClass = self.getSubunitClass(self.subunits[i])
             v = subunitClass(self.dimensions[i]).getVolume()
             volume.append(v)
             sum_vol += v
@@ -781,8 +863,8 @@ class GenerateAllPoints:
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
 
-            x_add, y_add, z_add = GeneratePoints(self.com[i], self.subunitClasses[self.subunits[i]], self.dimensions[i], 
-                                                    self.rotation[i], Npoints).onGeneratingPoints()
+            x_add, y_add, z_add = GeneratePoints(self.com[i], self.getSubunitClass(self.subunits[i]), self.dimensions[i], 
+                                                    self.rotation[i], self.rotation_point[i], Npoints).onGeneratingPoints()
             
             #Remaining points
             N_subunit = len(x_add)
@@ -793,8 +875,8 @@ class GenerateAllPoints:
             N_x_sum = 0
             if self.exclude_overlap:
                 for j in range(i): 
-                    x_add, y_add, z_add, p_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, p_add, self.rotation[j],  
-                                                    self.com[j], self.subunitClasses[self.subunits[j]], self.dimensions[j])
+                    x_add, y_add, z_add, p_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, p_add, self.rotation[j], self.rotation_point[j], 
+                                                    self.com[j], self.getSubunitClass(self.subunits[j]), self.dimensions[j])
                     N_x_sum += N_x
     
             N.append(N_subunit)
@@ -833,7 +915,7 @@ class GenerateAllPoints:
         sum_vol = 0
         #Get volume of each subunit
         for i in range(self.Number_of_subunits):
-            subunitClass = self.subunitClasses[self.subunits[i]]
+            subunitClass = self.getSubunitClass(self.subunits[i])
             v = subunitClass(self.dimensions[i]).getVolume()
             volume.append(v)
             sum_vol += v
@@ -845,8 +927,8 @@ class GenerateAllPoints:
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
 
-            x_add, y_add, z_add = GeneratePoints(self.com[i], self.subunitClasses[self.subunits[i]], self.dimensions[i], 
-                                                    self.rotation[i], Npoints).onGeneratingPoints()
+            x_add, y_add, z_add = GeneratePoints(self.com[i], self.getSubunitClass(self.subunits[i]), self.dimensions[i], 
+                                                    self.rotation[i], self.rotation_point, Npoints).onGeneratingPoints()
             
             #Remaining points
             N_subunit = len(x_add)
@@ -857,8 +939,8 @@ class GenerateAllPoints:
             N_x_sum = 0
             if self.exclude_overlap:
                 for j in range(i): 
-                    x_add, y_add, z_add, p_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, p_add, self.rotation[j],  
-                                                    self.com[j], self.subunitClasses[self.subunits[j]], self.dimensions[j])
+                    x_add, y_add, z_add, p_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, p_add, self.rotation[j], self.rotation_point[j], 
+                                                    self.com[j], self.getSubunitClass(self.subunits[j]), self.dimensions[j])
                     N_x_sum += N_x
             
             #Append data
@@ -1154,6 +1236,31 @@ class StructureDecouplingApprox:
         S_eff = 1 + Beta * (S - 1)
 
         return S_eff
+    
+
+
+'''#template for the structure factor classes
+class <NAME OF STRUCTURE FACTOR HERE>(StructureDecouplingApprox):
+    def __init__(self, q: np.ndarray,
+                    x_new: np.ndarray,
+                    y_new: np.ndarray,
+                    z_new: np.ndarray,
+                    p_new: np.ndarray,
+                    par: List[float]):
+            super(<NAME OF STRUCTURE FACTOR HERE>, self).__init__(q, x_new, y_new, z_new, p_new)
+            self.q = q
+            self.x_new = x_new
+            self.y_new = y_new
+            self.z_new = z_new
+            self.p_new = p_new
+            self.par = par <WRITE YOUR PARAMETERS HERE>
+
+    def structure_eff(self, Pq: np.ndarray) -> np.ndarray:
+        S = <STRUCTURE FACTOR HERE>
+        S_eff = self.decoupling_approx(Pq, S)
+
+        return S_eff
+'''
 
 
 class HardSphereStructure(StructureDecouplingApprox):
@@ -1315,31 +1422,33 @@ class StructureFactor:
         """Available structure factors"""
         self.structureFactor = {
             'HS': HardSphereStructure,
+            'Hard Sphere': HardSphereStructure,
             'aggregation': Aggregation,
             'None': NoStructure
         }
+    
+    def getStructureFactorClass(self):
+        """Return chosen structure factor"""
+        if self.Stype in self.structureFactor:
+            return self.structureFactor[self.Stype](self.q, self.x_new, self.y_new, self.z_new, self.p_new, self.par)
+        
+        else:
+            try:
+                return globals()[self.Stype](self.q, self.x_new, self.y_new, self.z_new, self.p_new, self.par)
+            except KeyError:
+                ValueError(f"Structure factor '{self.Stype}' was not found in structureFactor or global scope.")
 
-    #This is for reading parameters from the GUI
-    #or batch script
     @staticmethod
     def getparname(name: str) -> List[str]:
         """Return the name of the parameters"""
         pars = {
-            'HS': {'conc': 0.02,'rhs': 50},
+            'HS': {'conc': 0.02,'r_hs': 50},
+            'Hard Sphere': {'conc': 0.02,'r_hs': 50},
+            'Aggregation': {'R_eff': 50, 'N_aggr': 80, 'frac': 0.1},
             'aggregation': {'R_eff': 50, 'N_aggr': 80, 'frac': 0.1},
             'None': {}
         }
         return pars[name]
-    
-
-    def getStructureFactor(self):
-        """Return chosen structure factor"""
-        if self.Stype in self.structureFactor:
-            return self.structureFactor[self.Stype](self.q, self.x_new, 
-                                                    self.y_new, self.z_new, self.p_new, self.par)
-        
-        else:
-            ValueError(f"Structure factor '{self.Stype}' does not exists. Choose from {list(self.structureFactor.keys())}")
 
     @staticmethod
     def save_S(q: np.ndarray, S_eff: np.ndarray, Model: str):

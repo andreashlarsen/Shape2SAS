@@ -7,7 +7,10 @@ import numpy as np
 from typing import Optional, List
 from dataclasses import dataclass, field
 
-from helpfunctions import (GenerateAllPoints, WeightedPairDistribution, StructureFactor, ITheoretical, IExperimental, Qsampling,plot_2D, plot_results, generate_pdb)
+from helpfunctions import (GenerateAllPoints, WeightedPairDistribution, StructureFactor, ITheoretical, IExperimental, Qsampling,
+    plot_2D, plot_results, generate_pdb
+)
+
 
 Vectors = List[List[float]]
 
@@ -43,9 +46,7 @@ class SimulationParameters:
     """Class containing parameters for
     the simulation itself"""
 
-    qmin: Optional[float] = field(default_factory=lambda: 0.001)
-    qmax: Optional[float] = field(default_factory=lambda: 0.5)
-    Nq: Optional[int] = field(default_factory=lambda: 400)
+    q: Optional[np.ndarray] = field(default_factory=lambda: Qsampling.onQsampling(0.001, 0.5, 400))
     prpoints: Optional[int] = field(default_factory=lambda: 100)
     Npoints: Optional[int] = field(default_factory=lambda: 3000)
     #seed: Optional[int] #TODO:Add for future projects
@@ -112,7 +113,7 @@ def getPointDistribution(prof: ModelProfile, Npoints):
     """Generate points for a given model profile."""
 
     x_new, y_new, z_new, p_new, volume_total = GenerateAllPoints(Npoints, prof.com, prof.subunits, 
-                                                  prof.dimensions, prof.rotation, 
+                                                  prof.dimensions, prof.rotation, prof.rotation_points, 
                                                   prof.p_s, prof.exclude_overlap).onGeneratingAllPointsSeparately()
     
     return ModelPointDistribution(x=x_new, y=y_new, z=z_new, p=p_new, volume_total=volume_total)
@@ -130,12 +131,13 @@ def getTheoreticalScattering(scalc: TheoreticalScatteringCalculation) -> Theoret
     
     r, pr, pr_norm = WeightedPairDistribution(x, y, z, p).calc_pr(calc.prpoints, sys.polydispersity)
 
-    q = Qsampling(calc.qmin, calc.qmax, calc.Nq).onQsampling()
+    q = calc.q
     I_theory = ITheoretical(q)
     I0, Pq = I_theory.calc_Pq(r, pr, sys.conc, prof.volume_total)
 
     S_class = StructureFactor(q, x, y, z, p, sys.Stype, sys.par)
-    S_eff = S_class.getStructureFactor().structure_eff(Pq)
+
+    S_eff = S_class.getStructureFactorClass().structure_eff(Pq)
 
     I = I_theory.calc_Iq(Pq, S_eff, sys.sigma_r)
 
@@ -154,15 +156,32 @@ def getSimulatedScattering(scalc: SimulateScattering) -> SimulatedScattering:
 ################################ Shape2SAS batch version ################################
 if __name__ == "__main__":
     ################################ Read argparse input ################################
-    def float_list(arg):
+    def float_lists(arg):
         """
-        Function to convert a string to a list of floats.
+        Function to convert a string to list of lists of floats.
         Note that this function can interpret numbers with scientific notation 
         and negative numbers.
 
         input:
             arg: string, input string
 
+        output:
+            list of lists of floats
+        """
+
+        arg = arg.replace(' ', '')
+        arg = re.findall(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", arg)
+
+        return [float(i) for i in arg]
+    
+
+    def float_list(arg):
+        """
+        Function to convert a string to list of floats.
+
+        input:
+            arg: string, input string
+        
         output:
             list of floats
         """
@@ -171,6 +190,7 @@ if __name__ == "__main__":
         arg = re.findall(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", arg)
 
         return [float(i) for i in arg]
+
 
     def separate_string(arg):
 
@@ -243,6 +263,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Shape2SaS - calculates small-angle scattering from a given shape defined by the user.')
 
     #general input options
+    parser.add_argument('-q', '--q', type=float_list,
+                        help='Inputted q-values for the scattering curve.')
+    parser.add_argument('-q_method', '--q_method', type=str, default='Uniform', 
+                        help='Method for sampling q-values: Uniform, User_sampled')
     parser.add_argument('-qmin', '--qmin', type=float, default=0.001, 
                         help='Minimum q-value for the scattering curve.')
     parser.add_argument('-qmax', '--qmax', type=float, default=0.5, 
@@ -265,17 +289,19 @@ if __name__ == "__main__":
                         help='Type of subunits for each model.')
     
     #--a --b --c ---> dimension 'a b c'
-    parser.add_argument('-dim', '--dimension', type=float_list, nargs='+', action='append',
+    parser.add_argument('-dim', '--dimension', type=float_lists, nargs='+', action='append',
                         help='dimensions of subunits for each model.')
     
     parser.add_argument('-p', '--p', type=float, nargs='+', action='append',
                         help='scattering length density.')
     
     #--x --y --z ---> com =  'x y z'
-    parser.add_argument('-com', '--com', type=float_list, nargs='+', action='append', 
+    parser.add_argument('-com', '--com', type=float_lists, nargs='+', action='append', 
                         help='displacement for each subunits in each model.')
-    parser.add_argument('-rotation', '--rotation', type=float_list, nargs='+', action='append', 
+    parser.add_argument('-rotation', '--rotation', type=float_lists, nargs='+', action='append', 
                         help='rotation for each subunits in each model.')
+    parser.add_argument('-rotation_points', '--rotation_points', type=float_lists, nargs='+', action='append', 
+                        help='rotation points for each subunits in each model.')
     
     parser.add_argument('-poly', '--polydispersity', type=float, nargs='+', action='extend',
                         help='Polydispersity of subunits for each model.')
@@ -313,7 +339,24 @@ if __name__ == "__main__":
     exclude_overlap = args.exclude_overlap
     xscale_lin = args.xscale_lin
     high_res = args.high_res
-    Sim_par = SimulationParameters(qmin=qmin, qmax=qmax, Nq=Nq, prpoints=Nbins, Npoints=Npoints)
+
+    q_method = Qsampling.qMethodsNames(args.q_method)
+    q_input = Qsampling.qMethodsInput(args.q_method)
+
+    q_par = []
+
+    for name in q_input.keys():
+            attr = getattr(args, name, f"{name} could not be found. Uses default value {q_input[name]}")
+
+            if isinstance(attr, str) or isinstance(attr, type(None)):
+                q_par.append(q_input[name])
+                print(f"        {name} could not be found. Uses default value {q_input[name]}.")
+            else:
+                q_par.append(attr)
+
+    q = q_method(*q_par)
+
+    Sim_par = SimulationParameters(q=q, prpoints=Nbins, Npoints=Npoints)
 
 
     subunit_type = args.subunit_type
@@ -343,11 +386,13 @@ if __name__ == "__main__":
 
         #check for SLD, COM, and rotation
         p_s = check_3Dinput(args.p, [1.0], "SLD", N_subunits, i)
+
         com = check_3Dinput(args.com, [[0, 0, 0]], "COM", N_subunits, i)
         rotation = check_3Dinput(args.rotation, [[0, 0, 0]], "rotation", N_subunits, i)
+        rotation_points = check_3Dinput(args.rotation_points, [[0, 0, 0]], "rotation", N_subunits, i)
 
         Profile = ModelProfile(subunits=subunits, p_s=p_s, dimensions=dims, 
-                     com=com, rotation_points=com, rotation=rotation, 
+                     com=com, rotation_points=rotation_points, rotation=rotation, 
                      exclude_overlap=exclude_overlap)
 
         #Generate points
@@ -365,15 +410,14 @@ if __name__ == "__main__":
         Stype = check_input(args.S, 'None', "Structure type", i)
         par_dic = StructureFactor.getparname(Stype)
         par = []
+
         for name in par_dic.keys():
             attr = getattr(args, name, f"{name} could not be found. Uses default value {par_dic[name]}")
-
             if isinstance(attr, str) or isinstance(attr, type(None)):
                 par.append(par_dic[name])
                 print(f"        {name} could not be found. Uses default value {par_dic[name]}.")
             else:
                 par.append(attr[i])
-
 
         #check interface roughness
         sigma_r = check_input(args.sigma_r, 0.0, "sigma_r", i)
