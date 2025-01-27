@@ -63,6 +63,7 @@ class Sphere:
         self.R = dimensions[0]
 
 
+
     def getVolume(self) -> float:
         """Returns the volume of a sphere"""
 
@@ -760,7 +761,6 @@ class GenerateAllPoints:
                 "cuboid": Cuboid,
 
                 "cyl_ring": CylinderRing,
-
                 "Cylinder ring": CylinderRing,
 
                 "disc_ring": DiscRing,
@@ -828,7 +828,7 @@ class GenerateAllPoints:
             beta = np.radians(beta)
             gam = np.radians(gam)
 
-            x_eff, y_eff, z_eff = Rotation(x_eff, y_eff, z_eff, -alpha, -beta, -gam, -rotp_x, -rotp_y, -rotp_z).onRotatingPoints()
+            x_eff, y_eff, z_eff = Rotation(x_eff, y_eff, z_eff, -alpha, -beta, -gam, rotp_x, rotp_y, rotp_z).onRotatingPoints()
 
         else:
             ## effective coordinates, shifted by (x_com,y_com,z_com)
@@ -1045,7 +1045,7 @@ class WeightedPairDistribution:
 
         """
 
-        histo, bin_edges = np.histogram(dist, bins=Nbins, weights=contrast, range=(0,r_max)) 
+        histo, bin_edges = np.histogram(dist, bins=Nbins, weights=contrast, range=(0, r_max)) 
         dr = bin_edges[2] - bin_edges[1]
         r = bin_edges[0:-1] + dr / 2
 
@@ -1097,7 +1097,7 @@ class WeightedPairDistribution:
                     hr += hr_1
                     norm += 1
                 else:
-                    dhr, _ = self.generate_histogram(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
+                    _, dhr = self.generate_histogram(dist * factor_d, contrast, r_max, Nbins)
                     #dhr = histogram1d(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
                     res = (1.0 - factor_d) / polydispersity
                     w = np.exp(-res**2 / 2.0) # weight: normal distribution
@@ -1108,7 +1108,7 @@ class WeightedPairDistribution:
         else:
             Dmax = np.amax(dist)
             r_max = Dmax * ratio_rmax_dmax
-            r, hr = self.generate_histogram(dist, contrast, r_max,Nbins)
+            r, hr = self.generate_histogram(dist, contrast, r_max, Nbins)
 
         # print Dmax
         print(f"        Dmax: {Dmax:.3e} A")
@@ -1253,7 +1253,7 @@ class <NAME OF STRUCTURE FACTOR HERE>(StructureDecouplingApprox):
             self.y_new = y_new
             self.z_new = z_new
             self.p_new = p_new
-            self.par = par <WRITE YOUR PARAMETERS HERE>
+            self.par = par[0] <WRITE YOUR PARAMETERS HERE>
 
     def structure_eff(self, Pq: np.ndarray) -> np.ndarray:
         S = <STRUCTURE FACTOR HERE>
@@ -1424,6 +1424,7 @@ class StructureFactor:
             'HS': HardSphereStructure,
             'Hard Sphere': HardSphereStructure,
             'aggregation': Aggregation,
+            'Aggregation': Aggregation,
             'None': NoStructure
         }
     
@@ -1474,11 +1475,14 @@ class ITheoretical:
         calculate form factor, P(q), and forward scattering, I(0), using pair distribution, p(r) 
         """
         ## calculate P(q) and I(0) from p(r)
+        #sigma = 1.0 #Ang, size of dummy atom radius
+        #atomic_f = np.exp(-(self.q * sigma) ** 2 / 2) #dummy atom atomic form factor
+
         I0, Pq = 0, 0
         for (r_i, pr_i) in zip(r, pr):
             I0 += pr_i
             qr = self.q * r_i
-            Pq += pr_i * sinc(qr)
+            Pq += pr_i * sinc(qr)# * atomic_f
     
         # normalization, P(0) = 1
         if I0 == 0:
