@@ -1,6 +1,6 @@
 ## Shape2SAS
 
-Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined models. The models are build from geometrical shapes (subunits), e.g., a dumbbel constructed from two spheres and a cylinder. The model is filled with points and the scattering is calculated by a Debye sum.
+Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined models. The models are build from geometrical shapes (subunits), e.g., a dumbbell constructed from a cylinder and two translated spheres. The model is filled with points and the scattering is calculated by a Debye sum.
 
 <p align="center" id="dumbbell">
   <img src="dumbbell_shape2SASGuide.png" alt="dumbbell_example" style="width: 100%;" />
@@ -92,6 +92,7 @@ Below are tables of flag inputs and supported subunits in Shape2SAS. Shape2SAS h
 | `cuboid`         |  $\texttt{a}$    | Side lengths $(\texttt{a})$ for a cuboid |
 | `hollow_cube`         |  $\texttt{a, b}$    | Side lengths $(\texttt{a})$ and inner Side lengths $(\texttt{b})$ for a hollow cube |
 | `disc`         |  $\texttt{R, r, l}$    | Outer $(\texttt{R})$ and inner $(\texttt{r})$ radius with length $(\texttt{l})$ for a disc ring |
+| `toroid`         |  $\texttt{R, r}$    | Radius to tube center $(\texttt{R})$ and tube radius $(\texttt{r})$ for a toroid |
 | `superellipsoid`         |  $\texttt{R, } \textbf{ε} \texttt{, t, s}$    | Equator radius $(\texttt{R})$, eccentricity $(\textbf{ε})$ and shape parameters $(\texttt{t, s})$ for a superellipsoid |
 |        |           |   |
 
