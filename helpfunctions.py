@@ -488,12 +488,10 @@ class Torus:
 
         return 2 * np.pi**2 * self.r**2 * self.R
 
-
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a torus"""
 
         Volume = self.getVolume()
-
         L = 2 * (self.R + self.r)
         l = 2 * self.r
         Volume_max = L*L*l
@@ -514,11 +512,53 @@ class Torus:
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
         """Check for points within a torus"""
-        
+
         d = np.sqrt(x_eff**2 + y_eff**2)
         idx = np.where((self.R-d)**2 + z_eff**2 > self.r**2)
         return idx
         
+class Hyperboloid:
+    # https://mathworld.wolfram.com/One-SheetedHyperboloid.html
+    # https://www.vcalc.com/wiki/hyperboloid-volume
+    def __init__(self, dimensions: List[float]):
+        self.r = dimensions[0]
+        self.c = dimensions[1]
+        self.h = dimensions[2]
+
+
+    def getVolume(self) -> float:
+        """Returns the volume of a hyperboloid"""
+        
+        return np.pi * 2*self.h * self.r**2 * ( 1 + (2*self.h)**2 / ( 12 * self.c**2 ) )
+
+
+    def getPointDistribution(self, Npoints: int) -> Vector3D:
+        """Returns the point distribution of a hyperboloid"""
+
+        #Volume = self.getVolume()
+        L = 2 * self.h
+        R = self.r * np.sqrt( 1 + L**2 / (4 * self.c**2 ) )
+        Volume_max = 2*self.h * 2*R * 2*R
+        Volume = np.pi * L * ( 2 * self.r**2 + R**2 ) / 3
+        Vratio = Volume_max / Volume
+        N = int(Vratio * Npoints)
+        x = np.random.uniform(-R, R, N)
+        y = np.random.uniform(-R, R, N)
+        z = np.random.uniform(-self.h, self.h, N)
+        idx = np.where(x**2/self.r**2 + y**2/self.r**2 - z**2/self.c**2 < 1.0)
+        x_add, y_add, z_add = x[idx], y[idx], z[idx]
+
+        return x_add, y_add, z_add
+
+
+    def checkOverlap(self, x_eff: np.ndarray, 
+                           y_eff: np.ndarray, 
+                           z_eff: np.ndarray) -> np.ndarray:
+        """Check for points within a Hyperboloid"""
+
+        idx = np.where(x_eff**2/self.r**2 + y_eff**2/self.r**2 - z_eff**2/self.c**2 > 1.0)
+        return idx
+    
 class Superellipsoid:
     def __init__(self, dimensions: List[float]):
         self.R = dimensions[0]
@@ -745,6 +785,13 @@ class GenerateAllPoints:
                     "Doughnut": Torus,
                     "donut": Torus,
                     "Donut": Torus,
+
+                    "hyperboloid": Hyperboloid,
+                    "Hyperboloid": Hyperboloid,
+                    "hourglass": Hyperboloid,
+                    "Hourglass": Hyperboloid,
+                    "Cooling tower": Hyperboloid,
+                    "cooling_tower": Hyperboloid,
 
                     "superellipsoid": Superellipsoid,
                     "Superellipsoid": Superellipsoid}
