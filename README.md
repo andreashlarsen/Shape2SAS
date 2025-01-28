@@ -92,6 +92,7 @@ Below are tables of flag inputs and supported subunits in Shape2SAS. Shape2SAS h
 | `cuboid`         |  $\texttt{a}$    | Side lengths $(\texttt{a})$ for a cuboid |
 | `hollow_cube`         |  $\texttt{a, b}$    | Side lengths $(\texttt{a})$ and inner Side lengths $(\texttt{b})$ for a hollow cube |
 | `disc`         |  $\texttt{R, r, l}$    | Outer $(\texttt{R})$ and inner $(\texttt{r})$ radius with length $(\texttt{l})$ for a disc ring |
+| `toroid`         |  $\texttt{R, } \textbf{r}$    | Radius to tube center $(\texttt{R})$ and tube radius $(\textbf{r})$ for a toroid superellipsoid |
 | `superellipsoid`         |  $\texttt{R, } \textbf{ε} \texttt{, t, s}$    | Equator radius $(\texttt{R})$, eccentricity $(\textbf{ε})$ and shape parameters $(\texttt{t, s})$ for a superellipsoid |
 |        |           |   |
 

@@ -477,6 +477,54 @@ class DiscRing(CylinderRing):
     pass
 
 
+class Toroid:
+    def __init__(self, dimensions: List[float]):
+        self.R = dimensions[0]
+        self.r = dimensions[1]
+
+
+    def getVolume(self) -> float:
+        """Returns the volume of a toroid ring"""
+
+        if self.r > self.R:
+            self.R, self.r = self.r, self.R
+
+        return 2 * np.pi**2 * self.r**2 * self.R
+
+
+    def getPointDistribution(self, Npoints: int) -> Vector3D:
+        """Returns the point distribution of a toroid"""
+
+        Volume = self.getVolume()
+
+        L = 2 * (self.R + self.r)
+        l = 2 * self.r
+        Volume_max = L*L*l
+        Vratio = Volume_max / Volume
+        N = int(Vratio * Npoints)
+        x = np.random.uniform(-L/2, L/2, N)
+        y = np.random.uniform(-L/2, L/2, N)
+        z = np.random.uniform(-l/2, l/ 2, N)
+        # equation: (R-sqrt(x**2+y**2))**2 + z**2 = (R-d)**2 + z**2 = r
+        d = np.sqrt(x**2 + y**2)
+        idx = np.where((self.R-d)**2 + z**2 < self.r**2)
+        x_add, y_add, z_add = x[idx], y[idx], z[idx]
+
+        return x_add, y_add, z_add
+
+
+    def checkOverlap(self, x_eff: np.ndarray, 
+                           y_eff: np.ndarray, 
+                           z_eff: np.ndarray) -> np.ndarray:
+        """Check for points within a toroid"""
+        
+        d = np.sqrt(x_eff**2 + y_eff**2)
+        if self.r > self.R:
+            self.R, self.r = self.r, self.R
+
+        idx = np.where((self.R-d)**2 + z_eff**2 > self.r**2)
+        return idx
+        
 class Superellipsoid:
     def __init__(self, dimensions: List[float]):
         self.R = dimensions[0]
@@ -694,6 +742,13 @@ class GenerateAllPoints:
 
                     "disc_ring": DiscRing,
                     "Disc ring": DiscRing,
+
+                    "toroid": Toroid,
+                    "Toroid": Toroid,
+                    "doughnut": Toroid,
+                    "Doughnut": Toroid,
+                    "donut": Toroid,
+                    "Donut": Toroid,
 
                     "superellipsoid": Superellipsoid,
                     "Superellipsoid": Superellipsoid}
