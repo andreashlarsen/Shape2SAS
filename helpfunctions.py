@@ -486,9 +486,6 @@ class Toroid:
     def getVolume(self) -> float:
         """Returns the volume of a toroid ring"""
 
-        if self.r > self.R:
-            self.R, self.r = self.r, self.R
-
         return 2 * np.pi**2 * self.r**2 * self.R
 
 
@@ -519,9 +516,6 @@ class Toroid:
         """Check for points within a toroid"""
         
         d = np.sqrt(x_eff**2 + y_eff**2)
-        if self.r > self.R:
-            self.R, self.r = self.r, self.R
-
         idx = np.where((self.R-d)**2 + z_eff**2 > self.r**2)
         return idx
         
