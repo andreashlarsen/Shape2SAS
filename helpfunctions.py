@@ -477,20 +477,20 @@ class DiscRing(CylinderRing):
     pass
 
 
-class Toroid:
+class Torus:
     def __init__(self, dimensions: List[float]):
         self.R = dimensions[0]
         self.r = dimensions[1]
 
 
     def getVolume(self) -> float:
-        """Returns the volume of a toroid ring"""
+        """Returns the volume of a torus"""
 
         return 2 * np.pi**2 * self.r**2 * self.R
 
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
-        """Returns the point distribution of a toroid"""
+        """Returns the point distribution of a torus"""
 
         Volume = self.getVolume()
 
@@ -513,7 +513,7 @@ class Toroid:
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
-        """Check for points within a toroid"""
+        """Check for points within a torus"""
         
         d = np.sqrt(x_eff**2 + y_eff**2)
         idx = np.where((self.R-d)**2 + z_eff**2 > self.r**2)
@@ -737,12 +737,14 @@ class GenerateAllPoints:
                     "disc_ring": DiscRing,
                     "Disc ring": DiscRing,
 
-                    "toroid": Toroid,
-                    "Toroid": Toroid,
-                    "doughnut": Toroid,
-                    "Doughnut": Toroid,
-                    "donut": Toroid,
-                    "Donut": Toroid,
+                    "torus": Torus,
+                    "Torus": Torus,
+                    "toroid": Torus,
+                    "Toroid": Torus,
+                    "doughnut": Torus,
+                    "Doughnut": Torus,
+                    "donut": Torus,
+                    "Donut": Torus,
 
                     "superellipsoid": Superellipsoid,
                     "Superellipsoid": Superellipsoid}
