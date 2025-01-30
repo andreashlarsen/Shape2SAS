@@ -167,7 +167,7 @@ if __name__ == "__main__":
             list of floats
         """
 
-        arg = arg.replace(' ', '')
+        arg = re.sub(r'\s+', ' ', arg.strip())
         arg = re.findall(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", arg)
 
         return [float(i) for i in arg]
