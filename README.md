@@ -1,4 +1,5 @@
 ## Shape2SAS
+version 2.0
 
 Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined models. The models are build from geometrical shapes (subunits), e.g., a dumbbell constructed from a cylinder and two translated spheres. The model is filled with points and the scattering is calculated by a Debye sum.
 
@@ -206,3 +207,4 @@ Shape2SAS: a web application to simulate small-angle scattering data and pair di
 [https://doi.org/10.1107/S1600576723005848](https://doi.org/10.1107/S1600576723005848)
 
 Batch version of Shape2SAS was written by Thomas Bukholt Hansen.
+
