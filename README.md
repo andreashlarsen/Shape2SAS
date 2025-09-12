@@ -1,5 +1,5 @@
 ## Shape2SAS
-version 2.0
+version 2.1
 
 Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined models. The models are build from geometrical shapes (subunits), e.g., a dumbbell constructed from a cylinder and two translated spheres. The model is filled with points and the scattering is calculated by a Debye sum.
 
@@ -30,17 +30,181 @@ Version numpy==1.26, matplotlib==3.8, scipy==1.12, fast_histogram==0.12 have bee
 
 ## Run Shape2SAS
 
-Open a terminal (Linux) or a command prompt (Windows), and activate your local virtual python environment. Navigate to the directory containing Shape2SAS.py and helperfunktion.py:
+Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing Shape2SAS.py and helpfunctions.py (should be in the same folder):
 
 ```
 cd <PATH-TO-DIRECTORY>
 ```
-A model to be simulated in Shape2SAS may now be written from supported inputs (see Shape2SAS inputs). An example of a simple sphere with radius $R = 50$ can be seen below:
+Shape2SAS requires at least two inputs: "--subunit_type" (or "-subtype") and --dimension (or "-dim). The scattering from a sphere with radius $R = 50$ Å can be simulated with:
 ```
-python shape2sas.py --subunit_type "sphere" --dimension "50"
+python shape2sas.py --subunit_type sphere --dimension 50
+open plot.png points_Model1.png
 ```
+the second line opens the output plot, and the 2D representation of the sphere (Model_0 is the default model name)
+
+Currently, the following subunits are implemented: 
+
+<a name="subunit-table" id="table3"></a>
+
+| Subunit          | Dimension(s)   |  Alternative names*            | Description                |
+|------------------|----------------|--------------------------------|----------------------------|
+| `sphere` | radius  | ball | Sphere
+| `cylinder` | radius,length  | rod | Cylinder |
+| `hollow_sphere` | outer radius, inner radius  | shell | Hollow sphere |
+| `ellipsoid` | axis1, axis2, axis3  | -- | Tri-axial ellipsoid |
+| `elliptical_cylinder` | radius1, radius2, length  | elliptical_rod | Cylinder | 
+| `cube` | side length | dice | Cube |
+| `hollow_cube` | outer side length, inner side length  | -- | Hollow cube (cavity is also a cube) |
+| `cuboid` | side length 1, side length 2, side length 3, | -- | Cuboid, brick |
+| `ring` | outer radius, inner radius, length  | hollow_cylinder, hollow_disc, cylinder_ring disc_ring | Hollow cylinder | 
+| `torus` | overall radius, cross-sectional radius  | toroid, doughnut | Torus, i.e a doughnut shape | 
+| `hyperboloid` | smallest radius, curvature, half of the height  | hourglass, cooling_tower| Hyperboloid, i.e. an hourglass shape | 
+| `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid [superellipsoid sasview model][https://marketplace.sasview.org/models/164/] | 
+
+*capitalized versions and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.   
 More advanced models can be found in Examples.
 
+## Examples
+A list of all options can be found below all the examples.   
+
+### Example 1: Cylinder
+A model of a cylinder with radius $R = 50$ and length $l=300$ is simulated, and named "cylinder". The name is used in plots and output filenames:
+```
+python shape2sas.py --subunit_type cylinder --dimension 50,300 --model_name cylinder
+open plot.png points_cylinder.png
+```
+Dimensions should be given as above (list without space), or between quotation marks (then spaces are allowed):
+```
+python shape2sas.py --subunit_type cylinder --dimension "50, 300" --model_name cylinder
+open plot.png points_cylinder.png
+```
+Figure [1](#example1) shows an illustration of the model and simulated SAXS with noise from the simulation.
+
+<p align="center" id="example1">
+  <img src="examples/cylinder_plot.png" style="width: 100%;" />
+</p>
+*Figure 1: Shape2SAS simulation showing the "side" and "bottom" of the cylinder model and simulated SAXS with noise.*
+
+### Example 2: Multiple subunits in one model
+A model can be built of several subunits. For example, a dumbbell can be generated with three subunits: two spheres with radius $R = 25$ displaced from the origin by $[0, 0, \pm50]$, and one cylinder with $R = 10$ and length $l=100$, aligned along the z axis:
+```
+python shape2sas.py --subunit_type sphere,sphere,cylinder --dimension 25 25 10,100 --com 0,0,-50 0,0,50 0,0,0 --Npoints 6000 --model_name dumbbell
+open plot.png points_dumbbell.png
+```
+If you use quotation marks for input with several values, for example --subunit_type, then spaces are allowed, also in the name (space is replaced with underscore in file names):  
+```
+python shape2sas.py --subunit_type "sphere, sphere, cylinder" --dimension "25" "25" "10, 100" --com "0, 0, -50" "0, 0, 50" "0, 0, 0" --model_name "my dumbbell"
+open plot.png points_my_dumbbell.png
+```
+and you may also omit commas if you use quotation marks.
+```
+python shape2sas.py --subunit_type "sphere, sphere, cylinder" --dimension 25 25 "10 100" --com "0 0 -50" "0 0 50" "0 0 0" --model_name "my dumbbell"
+open plot.png points_my_dumbbell.png
+```
+
+<p align="center" id="example2">
+  <img src="examples/dumbbell_plot.png" style="width: 100%;" />
+</p>
+*Example 2: Dumbbell model and simulated SAXS data.*
+
+### Example 3: Structure factors
+Structure factors can be added. This will affect the calculated scattering but not the displayed $p(r)$. 
+Below a sample of ellipsoids (axes $a, \ b, \ c = 50, \ 60, \ 50$) with hard-sphere repulsion ($r_{hs} = 60$) is simulated:
+```
+python shape2sas.py --subunit_type ellipsoid --dimension "50, 60, 50" --S HS --r_hs 60 --model_name ellipsoid_HS
+open plot.png points_ellipsoid_HS.png
+```
+Aggregation can also be simulated, below a sample with 10% of the particles (ellipsoids) being aggregated. There are $N_{aggr} = 90$ particles (ellipsoids) per aggregate and the simulated aggregates have an effective radius of $R_{eff} = 60$ Å:
+```
+python shape2sas.py --subunit_type ellipsoid --dimension "50, 60, 50" --S aggregation --N_aggr 90 --R_eff 60 --frac 0.1 --model_name ellipsoid_aggr
+open plot.png points_ellipsoid_aggr.png
+```
+<p align="center" id="example3">
+  <img src="examples/ellipsoid_HS_aggr.png" style="width: 100%;" />
+</p>
+*Example 3: Ellipsoids with a hard-sphere structure factor (left) or with aggregation (right).*
+
+#### Available structure factors
+
+| Structure factor          | Options  |  Alternative names            | Description                |
+|------------------|----------------|--------------------------------|----------------------------|
+| `hardsphere` |  | hs, hard-sphere | Hard-sphere structure factor with hard-sphere radius (--r_hs) and volume fraction (--conc)
+| -- | --r_hs | -rhs | hard-sphere radius
+| -- | --conc | -conc | volume fraction
+| `aggregation` |  aggr, frac2d |  | Two-dimensional fractal aggregate
+| -- | --N_aggr   | -Naggr | number of particles per aggregate
+| -- | --R_eff  | -Reff-- | Effective radius of aggregate
+| -- | --frac  | -frac | fraction of particles in aggregate
+| `None` |  | no 0 1 unity | No structure factor (default)
+
+*capitalized versions and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.   
+
+### Example 4: Several models
+Several models can be created simultaneously. They are made individually, but plotted together in plot.png, for easy comparison. 
+
+Spheres and cylinders: 
+```
+python shape2sas.py --subunit_type sphere --dimension 50 --model_name sphere --subunit_type cylinder --dimension 20,300 --model_name cylinder 
+open plot.png points_sphere.png points_cylinder.png
+```
+Ellipsoids with or without a hard-sphere structure factor:
+```
+python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S None --model_name ellipsoid --subunit_type ellipsoid --dimension 50,60,50 --S HS --r_hs 60 --conc 0.05 --model_name ellipsoid_HS
+open plot.png points_ellipsoid.png points_ellipsoid_HS.png
+```
+Increasing sphere size: 
+```
+python shape2sas.py --subunit_type sphere --dimension 20 --model_name sph20 --subunit_type sphere --dimension 50 --model_name sph50 --subunit_type sphere --dimension 80 --model_name sph80 
+open plot.png points_sph20.png points_sph50.png points_sph80.png
+```
+<p align="center" id="example4">
+  <img src="examples/sizes.png" style="width: 100%;" />
+</p>
+*Example 4: Scattering spheres of increasing size.*
+
+### Example 5: Polydispersity
+Sphere with radius $R = 40$ and relative polydispersity of $p = 0.2$ (compared to monodisperse spheres):
+```
+python shape2sas.py --subunit_type sphere --dimension 40 --polydispersity 0.2 --model_name sphere_poly --subunit_type sphere --dimension 40 --model_name sphere_mono
+open plot.png points_sphere_poly.png points_sphere_mono.png
+```
+<p align="center" id="example5">
+  <img src="examples/polydispersity.png" style="width: 100%;" />
+</p>
+*Figure 5: Scattering from monodisperse versus polydisperse spheres. Polydispersity is also reflected i the $p(r)$*
+
+### Example 6: Rotation 
+A model with two cylinder of $R = 20$ and $l = 100$ are rotated around the x-axis with $\alpha = \pm 45\degree$ with the first cylinder displaced by $[0, -50, 0]$:
+```
+python shape2sas.py --subunit_type "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
+open plot.png points_cylinders_rotated
+```
+The rotation is done around the center of mass.
+<p align="center" id="example6">
+  <img src="examples/Rotated_cylinders.png" alt="example6_1" style="width: 100%;" />
+</p>
+*Example 6: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
+
+### Example 7: Number of points
+The data are simulated using a finite number of points ro represent the structures. Default is 5000 per model. This is a balance between accuracy and speed.  
+```
+python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids500 --Npoints 500
+open plot.png points_ellipsoids500.png
+```
+```
+python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids5000 --Npoints 5000
+open plot.png points_ellipsoids5000.png
+```
+```
+python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids50000 --Npoints 50000
+open plot.png points_ellipsoids50000.png
+```
+
+<p align="center" id="example7">
+  <img src="examples/ellipsoids500.png" alt="example6_1" style="width: 100%;" />
+  <img src="examples/ellipsoids50000.png" alt="example6_1" style="width: 100%;" />
+</p>
+*Example 7: Number of points*
 
 ## Shape2SAS inputs
 
@@ -49,7 +213,7 @@ Below are tables of flag inputs and supported subunits in Shape2SAS. Shape2SAS h
 #### Model dependent inputs:
 | Flag          | Type   | Default | Description                                         |
 |-----------------|--------|---------|-----------------------------------------------------|
-| `--name`       | str  | Model i     | Name of the model  |
+| `--model_name` | str  | Model i     | Name of the model  |
 | `--dimension`       | list  | Input yourself     | Dimension of subunit (see supported subunits) |
 | `--subunit_type`       | str  | Input yourself      | Type of subunits (see supported subunits) |
 | `--exclude_overlap`       | bool  | True     | Exclude overlap  |
@@ -62,138 +226,22 @@ Below are tables of flag inputs and supported subunits in Shape2SAS. Shape2SAS h
 | `--frac`       | float  | 0.1     | Fraction of particles in aggregated form per model  |
 | `--N_aggr`     | float  | 80      | Number of particles per aggregate per model         |
 | `--R_eff`      | float  | 50.0    | Effective radius of aggregates for each model       |
-| `--conc`       | float  | 0.02    | Volume fraction concentration                       |
+| `--conc`       | float  | 0.02    | Volume fraction (concentration) also used in hard-sphere structure factor                       |
 | `--sigma_r`    | float  | 0.0     | Interface roughness for each model                  |            
-|        |   |        |   |
 
 #### General inputs:
-| Flag          | Type   | Default | Description                                         |
-|-----------------|--------|---------|-----------------------------------------------------|
-| `--qmin`       | float  | 0.001     | Minimum q-value for the scattering curve  |
-| `--qmax`       | float  | 0.5     | Maximum q-value for the scattering curve  |
-| `--qpoints`       | int  | 400      | Number of q points  |
-| `--exposure`       | float  | 500.0      | Exposure time in arbitrary units  |
-| `--prpoints`       | int  | 100      |Number of points in the pair distance distribution function |
-| `--Npoints`       | int  | 3000      | Number of simulated points  |
-| `--xscale_lin`       | bool  | True       | Include linear q scale (False to include)  |
-| `--high_res`       | bool  | False       | Include high plot resolution  |
-| `--scale`       | float  | 1.0       | In the plot, scale simulated intensity of each model  |
-|        |   |        |   |
-
-<a name="subunit-table" id="table3"></a>
-#### Supported subunits in Shape2SAS:
-| Name              | Dimensions | Description                                         |
-|-------------------------|---------|-----------------------------------------------------|
-| `sphere`         | $\texttt{R}$     | Radius $(\texttt{R})$ of the sphere  |
-| `hollow_sphere`         |  $\texttt{R, r}$    | Radius $(\texttt{R})$ and inner radius $(\texttt{r})$ of the hollow sphere  |
-| `ellipsoid`         |  $\texttt{a, b, c}$    | Axes of tri-axial elllipsoid $(\texttt{a, b, c})$  |
-| `elliptical_cylinder`         |  $\texttt{a, b, l}$    | Axes of elliptical cross section $(\texttt{a, b})$ and length $(\texttt{l})$ for a cylinder |
-| `cylinder`         |  $\texttt{R, l}$    | Radius $(\texttt{a})$ and length $(\texttt{l})$ for a cylinder |
-| `cyl_ring`         |  $\texttt{R, r, l}$    | Radius $(\texttt{R})$, inner radius $(\texttt{r})$ and length $(\texttt{l})$ for a cylinder ring |
-| `cuboid`         |  $\texttt{a}$    | Side lengths $(\texttt{a})$ for a cuboid |
-| `hollow_cube`         |  $\texttt{a, b}$    | Side lengths $(\texttt{a})$ and inner Side lengths $(\texttt{b})$ for a hollow cube |
-| `disc`         |  $\texttt{R, r, l}$    | Outer $(\texttt{R})$ and inner $(\texttt{r})$ radius with length $(\texttt{l})$ for a disc ring |
-| `torus`         |  $\texttt{R, r}$    | Radius to tube center $(\texttt{R})$ and tube radius $(\texttt{r})$ for a torus |
-| `hyperboloid`         |  $\texttt{r,c,h}$    | Smallest radius $(\texttt{r})$, curviness $(\texttt{c})$ and half of the height $(\texttt{h})$ for a hyperboloid |
-| `superellipsoid`         |  $\texttt{R, } \textbf{ε} \texttt{, t, s}$    | Equator radius $(\texttt{R})$, eccentricity $(\textbf{ε})$ and shape parameters $(\texttt{t, s})$ for a superellipsoid |
-|        |           |   |
-
-## Examples
-Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in table [3](#table3) at the "Dimensions" column. \
-When writing more advanced models, it is recommended to write commands in a text file and convert it to a bat file.
-
-### Example 1: Cylinder
-A model of a cylinder with radius $R = 50$ and length $l=300$ is simulated with $N_{points}=10000$ number of points and named "cylinder". In commands:
-
-```
-python shape2sas.py --subunit_type "cylinder" --dimension "50, 300" --Npoints 10000 --name "cylinder"
-```
-
-Figure [1](#example1) shows an illustration of the model and simulated SAXS with noise from the simulation.
-
-<p align="center" id="example1">
-  <img src="cylinder_plot.png" alt="example1_1" style="width: 100%;" />
-</p>
-
-*Figure 1: Shape2SAS simulation showing the "side" and "bottom" of the cylinder model and simulated SAXS with noise.*
-
-### Example 2: Dumbbell
-A model of a dumbbell with spheres displaced from the origin with $[0, 0, \pm50]$, their radius set to $R = 25$, and a cylinder with $R = 10$ and length $l=100$ are simulated with $N_{points} = 6000$ number of points and named "dumbbell". In commands:
-```
-python shape2sas.py --subunit_type "sphere, sphere, cylinder" --dimension "25" "25" "10, 100" --com "0, 0, -50" "0, 0, 50" "0, 0, 0" --Npoints 6000 --name "dumbbell"
-```
-
-Figure [2](#example2) shows an illustration of the model and simulated SAXS with noise.
-
-<p align="center" id="example2">
-  <img src="dumbbell_plot.png" alt="example2_1" style="width: 100%;" />
-</p>
-
-*Figure 2: Simulated Shape2SAS output of the simulated model and simulated SAXS with noise.*
-
-### Example 3: Ellipsoid with structure factor
-A structure factor is added to a model of an ellipsoid with dimensions $a, \ b, \ c = 50, \ 60, \ 50$. First, a model with hard sphere (HS) structure factor is created with hard sphere radius of $r_{hs} = 60$. Then, a model with aggregation is created with default fraction of particles in aggregated form, with a number of particles per aggregate of $N_{aggr} = 90$ and with a effective radius of aggregates of $R_{eff} = 60$. The number of simuatled points is $N_{points} = 6000$ and the models are named "ellipsoid_HS" and "ellipsoid_aggr". In commands for added HS:
-
-```
-python shape2sas.py --subunit_type "ellipsoid" --dimension "50, 60, 50" --S "HS" --r_hs 60 --Npoints 6000 --name "ellipsoid_HS"
-```
-
-Using aggregation:
-
-```
-python shape2sas.py --subunit_type "ellipsoid" --dimension "50, 60, 50" --S "aggregation" --N_aggr 90 --R_eff 60 --Npoints 6000 --name "ellipsoid_aggr"
-```
-
-It should be noted that since the fraction of ellipsoids in aggregated form is default, the flag $\texttt{--frac}$ does not have to be used. Figure [3](#example3) shows the simulated SAXS output with noise for the hard sphere and aggregation case.
-
-<p align="center" id="example3">
-  <img src="ellipsoid_HS_aggr.png" alt="example3_1" style="width: 100%;" />
-</p>
-
-*Figure 3: Left: Simulated SAXS for an ellipsoid with noise and a hard sphere structure factor. Right: Simulated SAXS for an ellipsoid with noise and aggregation.*
-
-### Example 4: Creating multiple models
-The models from example 3 and an ellipsoid model with no structure factor are plotted together. Each model is simulated with $N_{points} = 6000$ and named. In commands:
-
-```
-python shape2sas.py --subunit_type "ellipsoid" --dimension "50, 60, 50" --name "ellipsoid" --subunit_type "ellipsoid" --dimension "50, 60, 50" --S "aggregation" --N_aggr 90 --R_eff 60 --name "ellipsoid_aggr" --subunit_type "ellipsoid" --dimension "50, 60, 50" --S "HS" --r_hs 60 --name "ellipsoid_HS" --Npoints 6000
-```
-Figure [4](#example4) shows simulated SAXS with noise for all three ellipsoid models plotted together. It should be noted that when creating more models, Shape2SAS will always plot these models together. Other more fitting plots may be made by user from data files that will be outputted for each model created.
-
-<p align="center" id="example4">
-  <img src="ellipsoid_none_HS_aggr.png" alt="example4_1" style="width: 50%;" />
-</p>
-
-*Figure 4: Theoretical SAXS for ellipsoid models with noise and aggregation, HS and no structure factor.*
-
-### Example 5: Sphere with polydispersity
-A model of a sphere with radius $R = 50$ has polydispersity of $p = 0.1$ added, is named "sphere_poly" and simulated with $N_{points} = 4000$ points. In commands:
-
-```
-python shape2sas.py --subunit_type "sphere" --dimension "50" --polydispersity 0.1 --Npoints 4000 --name "sphere_poly"
-```
-Figure [5](#example5) shows theoretical and simulated SAXS for the sphere model with added polydispersity.
-
-<p align="center" id="example5">
-  <img src="sphere_poly_plots.png" alt="example5_1" style="width: 100%;" />
-</p>
-
-*Figure 5: Theoretical and simulated SAXS on a sphere model with polydispersity of p = 0.1.*
-
-$\textbf{Example 6: Rotation of two cylinders}$\
-A model with two cylinder of $R = 20$ and $l = 100$ are rotated around the x-axis with $\alpha = \pm 45\degree$ with the first cylinder displaced by $[0, -50, 0]$, named "cylinders_rotated" and simulated with $N_{points} = 10000$. In commands:
-
-```
-python shape2sas.py --subunit_type "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --Npoints 10000 --name "cylinders_rotated"
-```
-
-Figure [6](#example6) shows simulated SAXS for the rotated cylinders model. The displacement of the first cylinder is done to create the V-shape like model, since the rotation for each cylinder is done through its center of mass.
-
-<p align="center" id="example6">
-  <img src="Rotated_cylinders.png" alt="example6_1" style="width: 100%;" />
-</p>
-
-*Figure 6: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
+| Flag          | Type   | Default | Short name |Description                                         |
+|-----------------|--------|---------|------------|-----------------------------------------|
+| `--qmin`       | float  | 0.001     | -qmin | Minimum q-value for the scattering curve  |
+| `--qmax`       | float  | 0.5     | -qmax | Maximum q-value for the scattering curve  |
+| `--qpoints`       | int  | 400      | -Nq | Number of q points  |
+| `--exposure`       | float  | 500.0      | -expo | Exposure time in arbitrary units  |
+| `--prpoints`       | int  | 100      | -Np | Number of points in the pair distance distribution function |
+| `--Nqpoints`       | int  | 400      | -Nq | Number of q-values in simulated data  |
+| `--Npoints`       | int  | 3000      | -N | Number of simulated points  |
+| `--xscale_lin`       | bool  | True       | -lin | Linear q scale (default)  |
+| `--high_res`       | bool  | False       | -hres | Include high plot resolution  |
+| `--scale`       | float  | 1.0       | -scale | In the plot, scale simulated intensity of each model  |
 
 ## GUI
 
@@ -207,4 +255,7 @@ Shape2SAS: a web application to simulate small-angle scattering data and pair di
 [https://doi.org/10.1107/S1600576723005848](https://doi.org/10.1107/S1600576723005848)
 
 Batch version of Shape2SAS was written by Thomas Bukholt Hansen.
+Updated and maintained by Andreas Haahr Larsen
 
+## Notes
+Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in table [3](#table3) at the "Dimensions" column.

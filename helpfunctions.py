@@ -3,6 +3,11 @@ import matplotlib.pyplot as plt
 from scipy.special import gamma
 from typing import Optional, Tuple, List, Any
 #from dataclasses import dataclass
+from fast_histogram import histogram1d #histogram1d from fast_histogram is faster than np.histogram (https://pypi.org/project/fast-histogram/) 
+
+
+
+from scipy.spatial.distance import pdist, squareform
 
 
 ################################ Data classes ################################
@@ -23,9 +28,10 @@ def sinc(x) -> np.ndarray:
 
 class Sphere:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 1:
+            print("\nERROR: subunit sphere needs 1 dimension, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()
         self.R = dimensions[0]
-
-
 
     def getVolume(self) -> float:
         """Returns the volume of a sphere"""
@@ -65,9 +71,11 @@ class Sphere:
     
 class HollowSphere:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 2:
+            print("\nERROR: subunit hollow_sphere needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()
         self.R = dimensions[0]
         self.r = dimensions[1]
-
 
     def getVolume(self) -> float:
         """Returns the volume of a hollow sphere"""
@@ -110,7 +118,6 @@ class HollowSphere:
         x_add, y_add, z_add = x[idx], y[idx], z[idx]
         return x_add, y_add, z_add
 
-
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
@@ -128,19 +135,19 @@ class HollowSphere:
             idx = np.where((d > self.R) | (d < self.r))
             return idx
 
-
 class Cylinder:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 2:
+            print("\nERROR: subunit cylinder needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()        
         self.R = dimensions[0]
         self.l = dimensions[1]
-    
 
     def getVolume(self) -> float:
         """Returns the volume of a cylinder"""
 
         return np.pi * self.R**2 * self.l
     
-
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a cylinder"""
 
@@ -158,7 +165,6 @@ class Cylinder:
 
         return x_add, y_add, z_add
 
-
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
@@ -171,6 +177,9 @@ class Cylinder:
 
 class Ellipsoid:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 3:
+            print("\nERROR: subunit ellipsoid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()    
         self.a = dimensions[0]
         self.b = dimensions[1]
         self.c = dimensions[2]
@@ -210,13 +219,14 @@ class Ellipsoid:
 
         return idx
 
-
 class EllipticalCylinder:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 3:
+            print("\nERROR: subunit elliptical_cylinder needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()  
         self.a = dimensions[0]
         self.b = dimensions[1]
         self.l = dimensions[2]
-
 
     def getVolume(self) -> float:
         """Returns the volume of an elliptical cylinder"""
@@ -253,21 +263,20 @@ class EllipticalCylinder:
 
         return idx
 
-
-class Disc(EllipticalCylinder):
-    pass
-
+#class Disc(EllipticalCylinder):
+#    pass
 
 class Cube:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 1:
+            print("\nERROR: subunit cube needs 1 dimension, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()  
         self.a = dimensions[0]
-
 
     def getVolume(self) -> float:
         """Returns the volume of a cube"""
 
         return self.a**3
-    
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a cube"""
@@ -280,7 +289,6 @@ class Cube:
         z_add = np.random.uniform(-self.a, self.a, N)
 
         return x_add, y_add, z_add
-
 
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
@@ -296,9 +304,11 @@ class Cube:
 
 class HollowCube:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 2:
+            print("\nERROR: subunit hollow_cube needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()  
         self.a = dimensions[0]
         self.b = dimensions[1]
-
 
     def getVolume(self) -> float:
         """Returns the volume of a hollow cube"""
@@ -312,7 +322,6 @@ class HollowCube:
         else: 
             return (self.a - self.b)**3
     
-
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a hollow cube"""
 
@@ -354,7 +363,6 @@ class HollowCube:
 
         return x_add, y_add, z_add
 
-
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
@@ -377,17 +385,18 @@ class HollowCube:
 
 class Cuboid:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 3:
+            print("\nERROR: subunit hollow_cube needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()
         self.a = dimensions[0]
         self.b = dimensions[1]
         self.c = dimensions[2]
-
 
     def getVolume(self) -> float:
         """Returns the volume of a cuboid"""
 
         return self.a * self.b * self.c
     
-
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a cuboid"""
 
@@ -398,7 +407,6 @@ class Cuboid:
 
         return x_add, y_add, z_add
     
-
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
@@ -409,9 +417,11 @@ class Cuboid:
 
         return idx
 
-
 class CylinderRing:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 3:
+            print("\nERROR: subunit CylinderRing needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()
         self.R = dimensions[0]
         self.r = dimensions[1]
         self.l = dimensions[2]
@@ -472,16 +482,16 @@ class CylinderRing:
             idx = np.where((d > self.R) | (d < self.r) | (abs(z_eff) > self.l / 2))
             return idx
 
-
-class DiscRing(CylinderRing):
-    pass
-
+#class DiscRing(CylinderRing):
+#    pass
 
 class Torus:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 2:
+            print("\nERROR: subunit Torus needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()
         self.R = dimensions[0]
         self.r = dimensions[1]
-
 
     def getVolume(self) -> float:
         """Returns the volume of a torus"""
@@ -507,7 +517,6 @@ class Torus:
 
         return x_add, y_add, z_add
 
-
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
@@ -521,16 +530,17 @@ class Hyperboloid:
     # https://mathworld.wolfram.com/One-SheetedHyperboloid.html
     # https://www.vcalc.com/wiki/hyperboloid-volume
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 3:
+            print("\nERROR: subunit Hyperboloid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()
         self.r = dimensions[0]
         self.c = dimensions[1]
         self.h = dimensions[2]
-
 
     def getVolume(self) -> float:
         """Returns the volume of a hyperboloid"""
         
         return np.pi * 2*self.h * self.r**2 * ( 1 + (2*self.h)**2 / ( 12 * self.c**2 ) )
-
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a hyperboloid"""
@@ -550,7 +560,6 @@ class Hyperboloid:
 
         return x_add, y_add, z_add
 
-
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
@@ -561,6 +570,9 @@ class Hyperboloid:
     
 class Superellipsoid:
     def __init__(self, dimensions: List[float]):
+        if len(dimensions) != 4:
+            print("\nERROR: subunit Superellipsoid needs 4 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            exit()
         self.R = dimensions[0]
         self.eps = dimensions[1]
         self.t = dimensions[2]
@@ -572,14 +584,12 @@ class Superellipsoid:
 
         return gamma(a) * gamma(b) / gamma(a + b)
 
-
     def getVolume(self) -> float:
         """Returns the volume of a superellipsoid"""
 
         return (8 / (3 * self.t * self.s) * self.R**3 * self.eps * 
                 self.beta(1 / self.s, 1 / self.s) * self.beta(2 / self.t, 1 / self.t))
     
-
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a superellipsoid"""
 
@@ -599,7 +609,6 @@ class Superellipsoid:
 
         return x_add, y_add, z_add
     
-
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
@@ -611,21 +620,16 @@ class Superellipsoid:
 
         return idx
 
-
 class Qsampling:
     def __init__(self, qmin: float, qmax: float, Nq: int):
         self.qmin = qmin
         self.qmax = qmax
         self.Nq = Nq
 
-
     def onQsampling(self) -> np.ndarray:
         """Returns the q sampling"""
-
         q = np.linspace(self.qmin, self.qmax, self.Nq)
-
         return q
-
 
 class Rotation:
     def __init__(self, x_add: np.ndarray, 
@@ -640,8 +644,7 @@ class Rotation:
         self.alpha = alpha
         self.beta = beta
         self.gam = gam
-
-    
+  
     def onRotatingPoints(self) -> Vector3D:
         """Simple Euler rotation"""
 
@@ -662,7 +665,6 @@ class Rotation:
     #More advanced rotation functions can be added here
     #but GeneratePoints should be changed....
 
-
 class Translation:
     def __init__(self, x_add: np.ndarray, 
                        y_add: np.ndarray, 
@@ -677,7 +679,6 @@ class Translation:
         self.com_y = com_y
         self.com_z = com_z
         
-    
     def onTranslatingPoints(self) -> Vector3D:
         """Translates points"""
 
@@ -695,8 +696,7 @@ class GeneratePoints:
         self.subunitClass = subunitClass
         self.dimensions = dimensions
         self.rotation = rotation
-        self.Npoints = Npoints
-        
+        self.Npoints = Npoints        
 
     def onGeneratingPoints(self) -> Vector3D:
         """Generates the points"""
@@ -704,7 +704,6 @@ class GeneratePoints:
         x, y, z = self.onTransformingPoints(x, y, z)
 
         return x, y, z
-
     
     def onTransformingPoints(self, x: np.ndarray, 
                                    y: np.ndarray, 
@@ -718,8 +717,7 @@ class GeneratePoints:
 
         x, y, z = Rotation(x, y, z, alpha, beta, gam).onRotatingPoints()
         x, y, z = Translation(x, y, z, com_x, com_y, com_z).onTranslatingPoints()
-        return x, y, z
-    
+        return x, y, z  
 
 class GenerateAllPoints:
     def __init__(self, Npoints: int, 
@@ -739,43 +737,74 @@ class GenerateAllPoints:
         self.exclude_overlap = exclude_overlap
         self.setAvailableSubunits()
 
-
     def setAvailableSubunits(self):
         """Returns the available subunits"""
         self.subunitClasses = {
                     "Sphere": Sphere, 
                     "sphere": Sphere,
                     "ball": Sphere,
+                    "Ball": Sphere,
 
                     "hollow_sphere": HollowSphere, 
-                    "Hollow sphere": HollowSphere, 
+                    "Hollow_sphere": HollowSphere, 
+                    "hollowsphere": HollowSphere,
+                    "HollowSphere": HollowSphere, 
+                    "shell": HollowSphere, 
+                    "Shell": HollowSphere,
 
                     "Cylinder": Cylinder,
                     "cylinder": Cylinder,
+                    "Rod": Cylinder,
+                    "rod": Cylinder,
 
                     "ellipsoid": Ellipsoid,
                     "Ellipsoid": Ellipsoid,
 
                     "elliptical_cylinder": EllipticalCylinder,
-                    "Elliptical cylinder": EllipticalCylinder,
-
-                    "disc": Disc,
-                    "Disc": Disc,
+                    "Elliptical_cylinder": EllipticalCylinder,
+                    "ellipticalcylinder": EllipticalCylinder,
+                    "EllipticalCylinder": EllipticalCylinder,
+                    "elliptical_rod": EllipticalCylinder,
+                    "Elliptical_rod": EllipticalCylinder,
+                    "ellipticalrod": EllipticalCylinder,
+                    "EllipticalRod": EllipticalCylinder,
+                    "disc": EllipticalCylinder,
+                    "Disc": EllipticalCylinder,
 
                     "cube": Cube,
                     "Cube": Cube,
+                    "dice": Cube,
+                    "Dice": Cube,                    
 
                     "hollow_cube": HollowCube,
-                    "Hollow cube": HollowCube,
+                    "Hollow_cube": HollowCube,
+                    "hollowcube": HollowCube,
+                    "HollowCube": HollowCube,
 
                     "cuboid": Cuboid,
                     "Cuboid": Cuboid,
+                    "brick": Cuboid,
+                    "Brick": Cuboid,
 
-                    "cyl_ring": CylinderRing,
-                    "Cylinder ring": CylinderRing,
-
-                    "disc_ring": DiscRing,
-                    "Disc ring": DiscRing,
+                    "ring": CylinderRing,
+                    "Ring": CylinderRing,
+                    "cylinder_ring": CylinderRing,
+                    "Cylinder_ring": CylinderRing,
+                    "cylinderring": CylinderRing,
+                    "CylinderRing": CylinderRing,
+                    "hollow_cylinder": CylinderRing,
+                    "Hollow_cylinder": CylinderRing,
+                    "hollowcylinder": CylinderRing,
+                    "HollowCylinder": CylinderRing,
+                    "disc_ring": CylinderRing,
+                    "Disc_ring": CylinderRing,
+                    "HollowCylinder": CylinderRing,
+                    "discring": CylinderRing,
+                    "DiscRing": CylinderRing,
+                    "hollow_disc": CylinderRing,
+                    "Hollow_disc": CylinderRing,
+                    "hollowdisc": CylinderRing,
+                    "HollowDisc": CylinderRing,
 
                     "torus": Torus,
                     "Torus": Torus,
@@ -792,6 +821,7 @@ class GenerateAllPoints:
                     "Hourglass": Hyperboloid,
                     "Cooling tower": Hyperboloid,
                     "cooling_tower": Hyperboloid,
+                    "coolingTower": Hyperboloid,
 
                     "superellipsoid": Superellipsoid,
                     "Superellipsoid": Superellipsoid}
@@ -986,8 +1016,6 @@ class GenerateAllPoints:
 
         return x_new, y_new, z_new, p_new, volume_total
 
-
-
 class WeightedPairDistribution:
     def __init__(self, x: np.ndarray, 
                        y: np.ndarray, 
@@ -1010,7 +1038,7 @@ class WeightedPairDistribution:
         return dist
 
 
-    def calc_all_dist(self) -> np.ndarray:
+    def calc_all_dist_(self) -> np.ndarray:
         """ 
         calculate all pairwise distances
         calls calc_dist() for each set of coordinates: x,y,z
@@ -1022,7 +1050,7 @@ class WeightedPairDistribution:
         for arr in [self.x, self.y, self.z]:
             square_sum += self.calc_dist(arr)**2 #arr will input x_new, then y_new and z_new so you get 
                                             #x_new^2 + y_new^2 + z_new^2
-        d = np.sqrt(square_sum)             #then the square root is taken to get avector for the distance
+        d = np.sqrt(square_sum)             #then the square root is taken to get a vector for the distance
         # convert from matrix to array
         # reshape is slightly faster than flatten() and ravel()
         dist = d.reshape(-1)
@@ -1032,7 +1060,59 @@ class WeightedPairDistribution:
         return dist
 
 
-    def calc_all_contrasts(self) -> np.ndarray:
+    def calc_all_dist_(self) -> np.ndarray:
+        """
+        Calculate all pairwise distances between 3D points using scipy.
+        Same input/output as the original: flattened array of float32 distances.
+        """
+
+        # Stack into (N, 3) array of coordinates
+        coords = np.stack((self.x, self.y, self.z), axis=1)
+
+        # Compute condensed distance matrix (unique pairs only)
+        condensed = pdist(coords)  # shape (N*(N-1)/2,)
+
+        # Expand to full square distance matrix (with zeros + symmetric duplicates)
+        full_matrix = squareform(condensed)  # shape (N, N)
+
+        # Flatten and cast to float32 (same as original)
+        return full_matrix.reshape(-1).astype(np.float32)
+
+
+    def calc_all_dist_(self) -> np.ndarray:
+        """
+        Calculate all unique pairwise distances between 3D points using scipy.
+        Returns a 1D float32 array of length N*(N-1)/2.
+        """
+        # Stack into (N, 3) array of coordinates
+        coords = np.stack((self.x, self.y, self.z), axis=1)
+
+        # Compute condensed distance matrix (unique pairs only)
+        return pdist(coords).astype(np.float32)
+    
+    def calc_all_dist(self) -> np.ndarray:
+        """
+        Calculate unique pairwise distances between 3D points.
+        Returns a 1D float32 array of length N*(N-1)/2.
+        """
+        x = self.x.astype(np.float32, copy=False)
+        y = self.y.astype(np.float32, copy=False)
+        z = self.z.astype(np.float32, copy=False)
+        N = len(x)
+
+        out = np.empty(N * (N - 1) // 2, dtype=np.float32)
+
+        k = 0
+        for i in range(N - 1):
+            dx = x[i] - x[i+1:]
+            dy = y[i] - y[i+1:]
+            dz = z[i] - z[i+1:]
+            out[k : k + (N - i - 1)] = np.sqrt(dx*dx + dy*dy + dz*dz)
+            k += N - i - 1
+
+        return out
+
+    def calc_all_contrasts_(self) -> np.ndarray:
         """
         calculate all pairwise contrast products
         of p: all contrasts 
@@ -1042,6 +1122,43 @@ class WeightedPairDistribution:
         contrast = dp.reshape(-1)
         contrast = contrast.astype('float32')
         return contrast
+
+    def calc_all_contrasts_(self) -> np.ndarray:
+        """
+        Calculate unique pairwise contrast products of p.
+        Returns a 1D float32 array of length N*(N-1)/2,
+        matching calc_all_dist().
+        """
+        # Outer product (N, N)
+        dp = np.outer(self.p, self.p)
+
+        # Extract unique pairs (upper triangle, without diagonal)
+        i, j = np.triu_indices(len(self.p), k=1)
+        contrast = dp[i, j]
+
+        # Cast to float32
+        return contrast.astype(np.float32)
+    
+    def calc_all_contrasts(self) -> np.ndarray:
+        """
+        Calculate unique pairwise contrast products of p.
+        Returns a 1D float32 array of length N*(N-1)/2,
+        matching calc_all_dist().
+        """
+        p = self.p.astype(np.float32, copy=False)
+        N = len(p)
+
+        # Preallocate result array (unique pairs only)
+        out = np.empty(N * (N - 1) // 2, dtype=np.float32)
+
+        # Fill it using triangular indexing without making an (N, N) array
+        k = 0
+        for i in range(N - 1):
+            # multiply p[i] with all following elements at once
+            out[k : k + (N - i - 1)] = p[i] * p[i+1:]
+            k += N - i - 1
+
+        return out
 
     @staticmethod
     def generate_histogram(dist: np.ndarray, contrast: np.ndarray, r_max: float, Nbins: int) -> Vector2D:
@@ -1062,11 +1179,10 @@ class WeightedPairDistribution:
         """
 
         histo, bin_edges = np.histogram(dist, bins=Nbins, weights=contrast, range=(0,r_max)) 
-        dr = bin_edges[2] - bin_edges[1]
-        r = bin_edges[0:-1] + dr / 2
+        r = (bin_edges[:-1] + bin_edges[1:]) * 0.5
 
         return r, histo
-
+    
     @staticmethod
     def calc_Rg(r: np.ndarray, pr: np.ndarray) -> float:
         """ 
@@ -1078,7 +1194,7 @@ class WeightedPairDistribution:
 
         return Rg
     
-    
+
     def calc_hr(self, 
                 dist: np.ndarray, 
                 Nbins: int, 
@@ -1097,6 +1213,11 @@ class WeightedPairDistribution:
         hr        : pair distance distribution function 
         """
 
+        if dist.dtype != np.float32:
+            dist = dist.astype(np.float32, copy=False)
+        if contrast.dtype != np.float32:
+            contrast = contrast.astype(np.float32, copy=False)
+
         ## make r range in h(r) histogram slightly larger than Dmax
         ratio_rmax_dmax = 1.05
 
@@ -1106,20 +1227,22 @@ class WeightedPairDistribution:
             r_max = Dmax * ratio_rmax_dmax
             r, hr_1 = self.generate_histogram(dist, contrast, r_max, Nbins)
             N_poly_integral = 10
-            factor_range = 1 + np.linspace(-3, 3, N_poly_integral) * polydispersity
-            hr, norm = 0, 0
+            factor_range = 1 + np.linspace(-3, 3, N_poly_integral, dtype=np.float32) * polydispersity
+            hr  = np.zeros_like(hr_1, dtype=np.float32)
+            norm = 0.0
             for factor_d in factor_range:
                 if factor_d == 1.0:
                     hr += hr_1
-                    norm += 1
+                    norm += 1.0
                 else:
-                    dhr, _ = self.generate_histogram(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
-                    #dhr = histogram1d(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
+                    #dhr, _ = self.generate_histogram(dist * factor_d, contrast, r_max, Nbins)
+                    #dhr, _ = self.generate_histogram(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
+                    dhr = histogram1d(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
                     res = (1.0 - factor_d) / polydispersity
                     w = np.exp(-res**2 / 2.0) # weight: normal distribution
-                    vol = factor_d**3 # weight: relative volume, because larger particles scatter more
-                    hr += dhr * w * vol**2
-                    norm += w * vol**2
+                    vol2 = (factor_d**3)**2 # weight: relative volume, because larger particles scatter more
+                    hr += dhr * w * vol2
+                    norm += w * vol2
             hr /= norm
         else:
             Dmax = np.amax(dist)
@@ -1130,7 +1253,6 @@ class WeightedPairDistribution:
         print(f"        Dmax: {Dmax:.3e} A")
 
         return r, hr
-    
 
     def calc_pr(self, Nbins: int, polydispersity: float) -> Vector3D:
         """
@@ -1145,12 +1267,16 @@ class WeightedPairDistribution:
         output:
         pr        : pair distance distribution function
         """
+        print('        calculating distances...')
         dist = self.calc_all_dist()
+        print('        calculating contrasts...')
         contrast = self.calc_all_contrasts()
 
         ## calculate pr
-        idx_nonzero = np.where(dist > 0.0) #  nonzero elements
-        r, pr = self.calc_hr(dist[idx_nonzero], Nbins, contrast[idx_nonzero], polydispersity)
+        #idx_nonzero = np.where(dist > 0.0) #  nonzero elements
+        #r, pr = self.calc_hr(dist[idx_nonzero], Nbins, contrast[idx_nonzero], polydispersity)
+        print('        calculating pr...')
+        r, pr = self.calc_hr(dist, Nbins, contrast, polydispersity)
 
         ## normalize so pr_max = 1
         pr_norm = pr / np.amax(pr)
@@ -1161,9 +1287,6 @@ class WeightedPairDistribution:
 
         #returned N values after generating
         pr /= len(self.x)**2 #NOTE: N_total**2
-
-        #NOTE: If Nreps is to be added from the original code
-        #Then r_sum, pr_sum and pr_norm_sum should be added here
 
         return r, pr, pr_norm 
     
@@ -1176,7 +1299,7 @@ class WeightedPairDistribution:
         save p(r) to textfile
         """
 
-        with open('pr%s.dat' % Model,'w') as f:
+        with open('pr_%s.dat' % Model,'w') as f:
             f.write('# %-17s %-17s\n' % ('r','p(r)'))
             for i in range(Nbins):
                 f.write('  %-17.5e %-17.5e\n' % (r[i], pr_norm[i]))
@@ -1321,12 +1444,10 @@ class HardSphereStructure(StructureDecouplingApprox):
 
         return G
     
-
     def structure_eff(self, Pq: np.ndarray) -> np.ndarray:
         S = self.calc_S_HS()
         S_eff = self.decoupling_approx(Pq, S)
         return S_eff 
-
 
 class Aggregation(StructureDecouplingApprox):
     def __init__(self, q: np.ndarray, 
@@ -1366,7 +1487,6 @@ class Aggregation(StructureDecouplingApprox):
 
         return S_aggr
     
-
     def structure_eff(self, Pq: np.ndarray) -> np.ndarray:
         """Return effective structure factor for aggregation"""
 
@@ -1374,7 +1494,6 @@ class Aggregation(StructureDecouplingApprox):
         S_eff = self.decoupling_approx(Pq, S)
         S_eff = (1 - self.fracs_aggr) + self.fracs_aggr * S_eff
         return S_eff
-
 
 class NoStructure(StructureDecouplingApprox):
     def __init__(self, q: np.ndarray, 
@@ -1387,11 +1506,38 @@ class NoStructure(StructureDecouplingApprox):
         self.q = q
 
     def structure_eff(self, Pq: Any) -> np.ndarray:
-        """Return effective structure factor for no structure"""
+        """Returns unity, no structure factor"""
         return np.ones(len(self.q))
 
-
 class StructureFactor:
+
+    """Available structure factors"""
+    structureFactor = {
+            'HS': HardSphereStructure,
+            'hs': HardSphereStructure,
+            'hardsphere': HardSphereStructure,
+            'Hardsphere': HardSphereStructure,
+            'hard-sphere': HardSphereStructure,
+            'Hard-sphere': HardSphereStructure,
+
+            'aggregation': Aggregation,
+            'Aggregation': Aggregation,
+            'aggr': Aggregation,
+            'Aggr': Aggregation,
+            'frac2d': Aggregation,
+            'frac2D': Aggregation,
+            'Frac2D': Aggregation,
+
+            'none': NoStructure,
+            'None': NoStructure,
+            'no': NoStructure,
+            'No': NoStructure,
+            'unity': NoStructure,
+            'Unity': NoStructure,
+            '0': NoStructure,
+            '1': NoStructure
+        }
+        
     def __init__(self, q: np.ndarray, 
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
@@ -1406,21 +1552,10 @@ class StructureFactor:
         self.p_new = p_new
         self.Stype = Stype
         self.par = par
-        self.setAvailableStructureFactors()
+        #self.setAvailableStructureFactors()
 
-
-    def setAvailableStructureFactors(self):
-        """Available structure factors"""
-        self.structureFactor = {
-            'HS': HardSphereStructure,
-            'aggregation': Aggregation,
-            'None': NoStructure
-        }
-
-    #This is for reading parameters from the GUI
-    #or batch script
     @staticmethod
-    def getparname(name: str) -> List[str]:
+    def getparname_(name: str) -> List[str]:
         """Return the name of the parameters"""
         pars = {
             'HS': {'conc': 0.02,'rhs': 50},
@@ -1429,7 +1564,16 @@ class StructureFactor:
         }
         return pars[name]
     
-
+    @staticmethod
+    def getparname(name: str) -> dict:
+        """Return the default parameters for a structure factor"""
+        pars = {
+            HardSphereStructure: {'conc': 0.02,'rhs': 50},
+            Aggregation: {'R_eff': 50, 'N_aggr': 80, 'frac': 0.1},
+            NoStructure: {}
+        }
+        return pars[name]
+    
     def getStructureFactor(self):
         """Return chosen structure factor"""
         if self.Stype in self.structureFactor:
@@ -1445,7 +1589,7 @@ class StructureFactor:
         save S to file
         """
 
-        with open('Sq%s.dat' % Model,'w') as f:
+        with open('Sq_%s.dat' % Model,'w') as f:
             f.write('# Structure factor, S(q), used in: I(q) = P(q)*S(q)\n')
             f.write('# Default: S(q) = 1.0\n')
             f.write('# %-17s %-17s\n' % ('q','S(q)'))
@@ -1456,7 +1600,6 @@ class StructureFactor:
 class ITheoretical:
     def __init__(self, q: np.ndarray):
         self.q = q
-
 
     def calc_Pq(self, r: np.ndarray, pr: np.ndarray, conc: float, volume_total: float) -> Vector2D:
         """
@@ -1483,7 +1626,6 @@ class ITheoretical:
 
         return I0, Pq
     
-
     def calc_Iq(self, Pq: np.ndarray, 
                 S_eff: np.ndarray, 
                 sigma_r: float) -> np.ndarray:
@@ -1508,13 +1650,11 @@ class ITheoretical:
     def save_I(self, I: np.ndarray, Model: str):
         """Save theoretical intensity to file"""
 
-        with open('Iq%s.dat' % Model,'w') as f:
+        with open('Iq_%s.dat' % Model,'w') as f:
             f.write('# Calculated data\n')
             f.write('# %-12s %-12s\n' % ('q','I'))
             for i in range(len(I)):
                 f.write('  %-12.5e %-12.5e\n' % (self.q[i], I[i]))
-
-
 
 class IExperimental:
     def __init__(self, 
@@ -1526,8 +1666,6 @@ class IExperimental:
         self.I0 = I0
         self.I = I
         self.exposure = exposure
-
-
 
     def simulate_data(self) -> Vector2D:
         """
@@ -1593,10 +1731,9 @@ class IExperimental:
         Isim = np.random.normal(mu, sigma)
 
         return Isim, sigma
-    
 
     def save_Iexperimental(self, Isim: np.ndarray, sigma: np.ndarray, Model: str):
-        with open('Isim%s.dat' % Model,'w') as f:
+        with open('Isim_%s.dat' % Model,'w') as f:
             f.write('# Simulated data\n')
             f.write('# sigma generated using Sedlak et al, k=100000, c=0.55, https://doi.org/10.1107/S1600576717003077, and rebinned with 10 per bin)\n')
             f.write('# %-12s %-12s %-12s\n' % ('q','I','sigma'))
@@ -1632,7 +1769,8 @@ def plot_2D(x_list: np.ndarray,
             z_list: np.ndarray, 
             p_list: np.ndarray, 
             Models: np.ndarray, 
-            high_res: bool) -> None:
+            high_res: bool,
+            colors: List[str]) -> None:
     """
     plot 2D-projections of generated points (shapes) using matplotlib:
     positive contrast in red (Model 1) or blue (Model 2) or yellow (Model 3) or green (Model 4)
@@ -1654,17 +1792,17 @@ def plot_2D(x_list: np.ndarray,
     max_l = get_max_dimension(x_list, y_list, z_list)*1.1
     lim = [-max_l, max_l]
 
-    for x,y,z,p,Model in zip(x_list,y_list,z_list,p_list,Models):
+    for x,y,z,p,Model,color in zip(x_list,y_list,z_list,p_list,Models,colors):
 
         ## find indices of positive, zero and negatative contrast
         idx_neg = np.where(p < 0.0)
         idx_pos = np.where(p > 0.0)
         idx_nul = np.where(p == 0.0)
 
-        f,ax = plt.subplots(1, 3, figsize=(12,4))
+        f,ax = plt.subplots(1,3,figsize=(12,4))
 
         ## plot, perspective 1
-        ax[0].plot(x[idx_pos], z[idx_pos], linestyle='none', marker='.', markersize=markersize)
+        ax[0].plot(x[idx_pos], z[idx_pos], linestyle='none', marker='.', markersize=markersize, color=color)
         ax[0].plot(x[idx_neg], z[idx_neg], linestyle='none', marker='.', markersize=markersize, color='black')
         ax[0].plot(x[idx_nul], z[idx_nul], linestyle='none', marker='.', markersize=markersize, color='grey')
         ax[0].set_xlim(lim)
@@ -1674,7 +1812,7 @@ def plot_2D(x_list: np.ndarray,
         ax[0].set_title('pointmodel, (x,z), "front"')
 
         ## plot, perspective 2
-        ax[1].plot(y[idx_pos], z[idx_pos], linestyle='none', marker='.', markersize=markersize) 
+        ax[1].plot(y[idx_pos], z[idx_pos], linestyle='none', marker='.', markersize=markersize, color=color) 
         ax[1].plot(y[idx_neg], z[idx_neg], linestyle='none', marker='.', markersize=markersize, color='black')
         ax[1].plot(y[idx_nul], z[idx_nul], linestyle='none', marker='.', markersize=markersize, color='grey')
         ax[1].set_xlim(lim)
@@ -1684,7 +1822,7 @@ def plot_2D(x_list: np.ndarray,
         ax[1].set_title('pointmodel, (y,z), "side"')
 
         ## plot, perspective 3
-        ax[2].plot(x[idx_pos], y[idx_pos], linestyle='none', marker='.', markersize=markersize) 
+        ax[2].plot(x[idx_pos], y[idx_pos], linestyle='none', marker='.', markersize=markersize, color=color) 
         ax[2].plot(x[idx_neg], y[idx_neg], linestyle='none', marker='.', markersize=markersize, color='black')
         ax[2].plot(x[idx_nul], y[idx_nul], linestyle='none', marker='.', markersize=markersize, color='grey')    
         ax[2].set_xlim(lim)
@@ -1695,11 +1833,10 @@ def plot_2D(x_list: np.ndarray,
     
         plt.tight_layout()
         if high_res:
-            plt.savefig('points%s.png' % Model,dpi=600)
+            plt.savefig('points_%s.png' % Model,dpi=600)
         else:
-            plt.savefig('points%s.png' % Model)
+            plt.savefig('points_%s.png' % Model)
         plt.close()
-
 
 def plot_results(q: np.ndarray, 
                  r_list: List[np.ndarray], 
@@ -1711,7 +1848,8 @@ def plot_results(q: np.ndarray,
                  names: List[str], 
                  scales: List[float], 
                  xscale_log: bool, 
-                 high_res: bool) -> None:
+                 high_res: bool,
+                 colors: List[str]) -> None:
     """
     plot results for all models, using matplotlib:
     - p(r) 
@@ -1722,20 +1860,20 @@ def plot_results(q: np.ndarray,
     fig, ax = plt.subplots(1,3,figsize=(12,4))
 
     zo = 1
-    for (r, pr, I, Isim, sigma, S, model_name, scale) in zip (r_list, pr_list, I_list, Isim_list, sigma_list, S_list, names, scales):
-        ax[0].plot(r,pr,zorder=zo,label='p(r), %s' % model_name)
+    for (r, pr, I, Isim, sigma, S, model_name, scale,color) in zip (r_list, pr_list, I_list, Isim_list, sigma_list, S_list, names, scales, colors):
+        ax[0].plot(r,pr,zorder=zo, color=color, label='p(r), %s' % model_name)
 
         if scale > 1: 
-            ax[2].errorbar(q,Isim*scale,yerr=sigma*scale,linestyle='none',marker='.',label=r'$I_\mathrm{sim}(q)$, %s, scaled by %d' % (model_name,scale),zorder=1/zo)
+            ax[2].errorbar(q,Isim*scale,yerr=sigma*scale,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s, scaled by %d' % (model_name,scale),zorder=1/zo)
         else:
-            ax[2].errorbar(q,Isim*scale,yerr=sigma*scale,linestyle='none',marker='.',label=r'$I_\mathrm{sim}(q)$, %s' % model_name,zorder=zo)
+            ax[2].errorbar(q,Isim*scale,yerr=sigma*scale,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s' % model_name,zorder=zo)
 
         if S[0] != 1.0 or S[-1] != 1.0:
-            ax[1].plot(q, S, linestyle='--', label=r'$S(q)$, %s' % model_name,zorder=0)
-            ax[1].plot(q, I, zorder=zo, label=r'$I(q)=P(q)S(q)$, %s' % model_name)
+            ax[1].plot(q, S, linestyle='--', color=color, zorder=0, label=r'$S(q)$, %s' % model_name)
+            ax[1].plot(q, I,color=color, zorder=zo, label=r'$I(q)=P(q)S(q)$, %s' % model_name)
             ax[1].set_ylabel(r'$I(q)=P(q)S(q)$')
         else:
-            ax[1].plot(q, I, zorder=zo, label=r'$P(q)=I(q)/I(0)$, %s' % model_name)
+            ax[1].plot(q, I, zorder=zo, color=color, label=r'$P(q)=I(q)/I(0)$, %s' % model_name)
             ax[1].set_ylabel(r'$P(q)=I(q)/I(0)$')
         zo += 1
 
@@ -1770,6 +1908,8 @@ def plot_results(q: np.ndarray,
         plt.savefig('plot.png')
     plt.close()
 
+import matplotlib.pyplot as plt
+import numpy as np
 
 def generate_pdb(x_list: List[np.ndarray], 
                  y_list: List[np.ndarray], 
@@ -1788,8 +1928,8 @@ def generate_pdb(x_list: List[np.ndarray],
     """
 
     for (x,y,z,p,Model) in zip(x_list, y_list, z_list, p_list, Model_list):
-        with open('model%s.pdb' % Model,'w') as f:
-            f.write('TITLE    POINT SCATTER : MODEL%s\n' % Model)
+        with open('%s.pdb' % Model,'w') as f:
+            f.write('TITLE    POINT SCATTER FOR MODEL: %s\n' % Model)
             f.write('REMARK   GENERATED WITH Shape2SAS\n')
             f.write('REMARK   EACH BEAD REPRESENTED BY DUMMY ATOM\n')
             f.write('REMARK   CARBON, C : POSITIVE EXCESS SCATTERING LENGTH\n')
