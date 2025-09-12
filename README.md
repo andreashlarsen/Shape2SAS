@@ -4,7 +4,7 @@ version 2.1
 Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined models. The models are build from geometrical shapes (subunits), e.g., a dumbbell constructed from a cylinder and two translated spheres. The model is filled with points and the scattering is calculated by a Debye sum.
 
 <p align="center" id="dumbbell">
-  <img src="dumbbell_shape2SASGuide.png" alt="dumbbell_example" style="width: 100%;" />
+  <img src="example/dumbbell_shape2SASGuide.png" style="width: 100%;" />
 </p>
 
 
@@ -59,7 +59,7 @@ Currently, the following subunits are implemented:
 | `ring` | outer radius, inner radius, length  | hollow_cylinder, hollow_disc, cylinder_ring disc_ring | Hollow cylinder | 
 | `torus` | overall radius, cross-sectional radius  | toroid, doughnut | Torus, i.e a doughnut shape | 
 | `hyperboloid` | smallest radius, curvature, half of the height  | hourglass, cooling_tower| Hyperboloid, i.e. an hourglass shape | 
-| `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid [superellipsoid sasview model][https://marketplace.sasview.org/models/164/] | 
+| `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid [superellipsoid sasview model](https://marketplace.sasview.org/models/164/) | 
 
 *capitalized versions and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.   
 More advanced models can be found in Examples.
@@ -78,12 +78,10 @@ Dimensions should be given as above (list without space), or between quotation m
 python shape2sas.py --subunit_type cylinder --dimension "50, 300" --model_name cylinder
 open plot.png points_cylinder.png
 ```
-Figure [1](#example1) shows an illustration of the model and simulated SAXS with noise from the simulation.
-
 <p align="center" id="example1">
   <img src="examples/cylinder_plot.png" style="width: 100%;" />
 </p>
-*Figure 1: Shape2SAS simulation showing the "side" and "bottom" of the cylinder model and simulated SAXS with noise.*
+ *Example 1: Shape2SAS simulation showing the "side" and "bottom" of the cylinder model and simulated SAXS with noise.*
 
 ### Example 2: Multiple subunits in one model
 A model can be built of several subunits. For example, a dumbbell can be generated with three subunits: two spheres with radius $R = 25$ displaced from the origin by $[0, 0, \pm50]$, and one cylinder with $R = 10$ and length $l=100$, aligned along the z axis:
@@ -122,7 +120,7 @@ open plot.png points_ellipsoid_aggr.png
 <p align="center" id="example3">
   <img src="examples/ellipsoid_HS_aggr.png" style="width: 100%;" />
 </p>
-*Example 3: Ellipsoids with a hard-sphere structure factor (left) or with aggregation (right).*
+ *Example 3: Ellipsoids with a hard-sphere structure factor (left) or with aggregation (right).*
 
 #### Available structure factors
 
@@ -160,10 +158,10 @@ open plot.png points_sph20.png points_sph50.png points_sph80.png
 <p align="center" id="example4">
   <img src="examples/sizes.png" style="width: 100%;" />
 </p>
-*Example 4: Scattering spheres of increasing size.*
+ *Example 4: Scattering from spheres of increasing size.*
 
 ### Example 5: Polydispersity
-Sphere with radius $R = 40$ and relative polydispersity of $p = 0.2$ (compared to monodisperse spheres):
+Sphere with radius $R = 40$ and relative polydispersity of $p = 0.2$ (and compared to monodisperse spheres):
 ```
 python shape2sas.py --subunit_type sphere --dimension 40 --polydispersity 0.2 --model_name sphere_poly --subunit_type sphere --dimension 40 --model_name sphere_mono
 open plot.png points_sphere_poly.png points_sphere_mono.png
@@ -183,7 +181,7 @@ The rotation is done around the center of mass.
 <p align="center" id="example6">
   <img src="examples/Rotated_cylinders.png" alt="example6_1" style="width: 100%;" />
 </p>
-*Example 6: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
+ *Example 6: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
 
 ### Example 7: Number of points
 The data are simulated using a finite number of points ro represent the structures. Default is 5000 per model. This is a balance between accuracy and speed.  
@@ -201,10 +199,11 @@ open plot.png points_ellipsoids50000.png
 ```
 
 <p align="center" id="example7">
-  <img src="examples/ellipsoids500.png" alt="example6_1" style="width: 100%;" />
-  <img src="examples/ellipsoids50000.png" alt="example6_1" style="width: 100%;" />
+  <img src="examples/ellipsoids500.png" style="width: 100%;" />
+  <img src="examples/ellipsoids5000.png" style="width: 100%;" />
+  <img src="examples/ellipsoids50000.png" style="width: 100%;" />
 </p>
-*Example 7: Number of points*
+ *Example 7: Ellipsoids simulated with 500, 5000 or 50,000 points*
 
 ## Shape2SAS inputs
 
@@ -258,4 +257,4 @@ Batch version of Shape2SAS was written by Thomas Bukholt Hansen.
 Updated and maintained by Andreas Haahr Larsen
 
 ## Notes
-Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in table [3](#table3) at the "Dimensions" column.
+Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
