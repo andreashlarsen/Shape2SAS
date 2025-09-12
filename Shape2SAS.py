@@ -3,11 +3,14 @@ import time
 import argparse
 import warnings
 import re
+from sys import argv
 import numpy as np
 from typing import Optional, List
 from dataclasses import dataclass, field
 
 from helpfunctions import (GenerateAllPoints, WeightedPairDistribution, StructureFactor, ITheoretical, IExperimental, Qsampling,plot_2D, plot_results, generate_pdb)
+
+version = 2.1
 
 Vectors = List[List[float]]
 
@@ -40,18 +43,14 @@ class ModelPointDistribution:
 
 @dataclass
 class SimulationParameters:
-    """Class containing parameters for
-    the simulation itself"""
+    """Class containing parameters for the simulation and default parameters"""
 
-    qmin: Optional[float] = field(default_factory=lambda: 0.001)
-    qmax: Optional[float] = field(default_factory=lambda: 0.5)
-    Nq: Optional[int] = field(default_factory=lambda: 400)
-    prpoints: Optional[int] = field(default_factory=lambda: 100)
-    Npoints: Optional[int] = field(default_factory=lambda: 3000)
-    #seed: Optional[int] #TODO:Add for future projects
-    #method: Optional[str] #generation of point method #TODO: Add for future projects
-    model_name: Optional[List[str]] = field(default_factory=lambda: ['Model_1'])
-
+    qmin: float = 0.001
+    qmax: float =  0.5
+    qpoints: int = 400
+    prpoints: int =  100
+    Npoints: int = 5000
+    model_name: List[str] = field(default_factory=lambda: ['Model_1'])
 
 @dataclass
 class ModelSystem:
@@ -127,10 +126,11 @@ def getTheoreticalScattering(scalc: TheoreticalScatteringCalculation) -> Theoret
     y = np.concatenate(prof.y)
     z = np.concatenate(prof.z)
     p = np.concatenate(prof.p)
-    
+
     r, pr, pr_norm = WeightedPairDistribution(x, y, z, p).calc_pr(calc.prpoints, sys.polydispersity)
 
-    q = Qsampling(calc.qmin, calc.qmax, calc.Nq).onQsampling()
+    print('        calculating scattering...')
+    q = Qsampling(calc.qmin, calc.qmax, calc.qpoints).onQsampling()
     I_theory = ITheoretical(q)
     I0, Pq = I_theory.calc_Pq(r, pr, sys.conc, prof.volume_total)
 
@@ -153,7 +153,29 @@ def getSimulatedScattering(scalc: SimulateScattering) -> SimulatedScattering:
 
 ################################ Shape2SAS batch version ################################
 if __name__ == "__main__":
-    ################################ Read argparse input ################################
+    
+    ################################ Define some functions ################################
+    
+    # file for stdout using printt function
+    f_out = open('shape2sas.log','w')
+    def printt(s):
+        print(s)
+        f_out.write('%s\n' %s)
+    
+    ## read input command
+    input_string = 'python'
+    for aa in argv:
+        if ' ' in aa:
+            input_string += " \"%s\"" % aa
+        else:
+            input_string += " %s" %aa
+    
+    ## welcome message
+    printt('#########################################')
+    printt('RUNNING shape2sas.py, version %s \nfor instructions: python shape2sas.py -h' % version)
+    printt('command used: %s' % input_string)
+    printt('#########################################')
+
     def float_list(arg):
         """
         Function to convert a string to a list of floats.
@@ -190,7 +212,6 @@ if __name__ == "__main__":
         else:
             raise argparse.ArgumentTypeError("Boolean value expected.")
 
-    ################################ Check input values for batch version ################################
     def check_3Dinput(input: list, default: list, name: str, N_subunits: int, i: int):
         """
         Function to check if 3D vector input matches 
@@ -210,10 +231,9 @@ if __name__ == "__main__":
                 inputted = default * N_subunits
         except:
             inputted = default * N_subunits
-            warnings.warn(f"Could not find {name}. Using default {default}.")
+            #warnings.warn(f"Could not find {name}. Using default {default}.")
 
         return inputted
-
 
     def check_input(input: float, default: float, name: str, i: int):
         """
@@ -230,34 +250,35 @@ if __name__ == "__main__":
         """
         try:
             inputted = input[i]
-
         except:
             inputted = default
-            warnings.warn(f"Could not find {name}. Using default {default}.")
+            #warnings.warn(f"Could not find {name}. Using default {default}.")
 
         return inputted
 
     start_total = time.time()
 
+    ################################ Define input values ################################
+
     #input values
     parser = argparse.ArgumentParser(description='Shape2SaS - calculates small-angle scattering from a given shape defined by the user.')
-
+    
     #general input options
-    parser.add_argument('-qmin', '--qmin', type=float, default=0.001, 
+    parser.add_argument('-qmin', '--qmin', type=float, default=SimulationParameters.qmin, 
                         help='Minimum q-value for the scattering curve.')
-    parser.add_argument('-qmax', '--qmax', type=float, default=0.5, 
+    parser.add_argument('-qmax', '--qmax', type=float, default=SimulationParameters.qmax, 
                         help='Maximum q-value for the scattering curve.')
-    parser.add_argument('-qp', '--qpoints', type=int, default=400, 
+    parser.add_argument('-Nq', '--qpoints', type=int, default=SimulationParameters.qpoints, 
                         help='Number of points in q.')
     parser.add_argument('-expo', '--exposure', type=float, default=500, 
                         help='Exposure time in arbitrary units.')
-    parser.add_argument('-prp', '--prpoints', type=int, default=100, 
+    parser.add_argument('-Np', '--prpoints', type=int, default=SimulationParameters.prpoints, 
                         help='Number of points in the pair distance distribution function.')
-    parser.add_argument('-Np', '--Npoints', type=int, default=3000, 
+    parser.add_argument('-N', '--Npoints', type=int, default=SimulationParameters.Npoints, 
                         help='Number of simulated points.')
     
     #specific input options for each model
-    parser.add_argument('-name', '--name', nargs='+', action='extend',
+    parser.add_argument('-modelname', '--model_name', nargs='+', action='extend',
                         help='Name of model.')
     parser.add_argument('-excluolap', '--exclude_overlap', type=str2bool, default=True, 
                         help='bool to exclude overlap.')
@@ -295,7 +316,7 @@ if __name__ == "__main__":
                         help='interface roughness for each model.')
     
     #plot options
-    parser.add_argument('-xsclin', '--xscale_lin', type=str2bool, default=True, 
+    parser.add_argument('-lin', '--xscale_lin', type=str2bool, default=True, 
                         help='bool to include linear q scale.')
     parser.add_argument('-hres', '--high_res', type=bool, default=False, 
                         help='bool to include high resolution.')
@@ -304,17 +325,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    qmin = args.qmin
-    qmax = args.qmax
- 
-    Nq = args.qpoints
-    Nbins = args.prpoints
-    Npoints = args.Npoints
-    exclude_overlap = args.exclude_overlap
-    xscale_lin = args.xscale_lin
-    high_res = args.high_res
-    Sim_par = SimulationParameters(qmin=qmin, qmax=qmax, Nq=Nq, prpoints=Nbins, Npoints=Npoints)
+    ################################ Read input values ################################
 
+    #qmin = args.qmin
+    #qmax = args.qmax
+ 
+    #qpoints = args.qpoints
+    #Nbins = args.prpoints
+    #Npoints = args.qpoints
+    #exclude_overlap = args.exclude_overlap
+    #xscale_lin = args.xscale_lin
+    #high_res = args.high_res
+    Sim_par = SimulationParameters(qmin=args.qmin, qmax=args.qmax, qpoints=args.qpoints, prpoints=args.qpoints, Npoints=args.Npoints)
 
     subunit_type = args.subunit_type
     if subunit_type is None:
@@ -323,20 +345,32 @@ if __name__ == "__main__":
     dimensions = args.dimension
     if dimensions is None:
         raise argparse.ArgumentError(dimensions, "No dimensions were given as an input.")
-    
     for subunit, dimension in zip(subunit_type, dimensions):
          if len(subunit) != len(dimension):
             raise argparse.ArgumentTypeError("Mismatch between subunit types and dimensions.")
-    
+         
+    if subunit_type == 'sphere':
+        print(len(dimensions[0][0]))
 
     r_list, pr_norm_list, I_list, Isim_list, sigma_list, S_eff_list = [], [], [], [], [], [] 
     x_list, y_list, z_list, p_list, Model_list, scale_list, name_list = [], [], [], [], [], [], []
+
     num_models = len(subunit_type)
-    print(f"Simulating {num_models} model(s)...")
+    if num_models == 1:
+        printt(f"Simulating {num_models} model...")
+    else: 
+        printt(f"Simulating {num_models} models...")
     for i in range(num_models):
-        print(" ")
-        print(f"    Generating points for Model {i}")
         
+        #check model name 
+        model_name = check_input(args.model_name, f"Model {i}", "model name", i)
+        
+        if model_name in name_list:
+            model_name += '_' + str(i+1)  
+
+        printt(" ")
+        printt(f"    Generating points for Model: " + model_name)
+
         subunits = subunit_type[i]
         dims = dimensions[i]
         N_subunits = len(subunits)
@@ -348,31 +382,54 @@ if __name__ == "__main__":
 
         Profile = ModelProfile(subunits=subunits, p_s=p_s, dimensions=dims, 
                      com=com, rotation_points=com, rotation=rotation, 
-                     exclude_overlap=exclude_overlap)
+                     exclude_overlap=args.exclude_overlap)
 
         #Generate points
-        Distr = getPointDistribution(Profile, Npoints)
+        Distr = getPointDistribution(Profile, args.Npoints)
 
         ################################# Calculate Theoretical I(q) #################################
-        print(" ")
-        print("        Calculating intensity, I(q)...")
+        printt(" ")
+        printt("    Calculating intensity, I(q)...")
 
         #check polydispersity and concentration
         pd = check_input(args.polydispersity, 0.0, "polydispersity", i)
         conc = check_input(args.conc, 0.02, "concentration", i)
 
-        #check structure factor
+        #check structure factor parameters and default values
         Stype = check_input(args.S, 'None', "Structure type", i)
-        par_dic = StructureFactor.getparname(Stype)
+        sf_class = StructureFactor.structureFactor[Stype]
+        par_dic = StructureFactor.getparname(sf_class)
+        
         par = []
+        
         for name in par_dic.keys():
-            attr = getattr(args, name, f"{name} could not be found. Uses default value {par_dic[name]}")
+            #attr = getattr(args, name, f"{name} could not be found. Uses default value {par_dic[name]}")
+            attr = getattr(args, name, None)
 
-            if isinstance(attr, str) or isinstance(attr, type(None)):
+            if attr is None:  
+                # Not given → use default
                 par.append(par_dic[name])
-                print(f"        {name} could not be found. Uses default value {par_dic[name]}.")
+
+            elif isinstance(attr, (list, np.ndarray)):
+                if len(attr) == 1:
+                    # Broadcast single-element list
+                    par.append(attr[0])
+                elif i < len(attr):
+                    # Use i-th entry
+                    par.append(attr[i])
+                else:
+                    # Too short → fallback to default
+                    par.append(par_dic[name])
+
             else:
-                par.append(attr[i])
+                # Provided as scalar → just use it
+                par.append(attr)
+
+            #if isinstance(attr, str) or isinstance(attr, type(None)):
+            #    par.append(par_dic[name])
+                #printt(f"        {name} could not be found. Uses default value {par_dic[name]}.")
+            #else:
+            #    par.append(attr[i])
 
 
         #check interface roughness
@@ -387,19 +444,22 @@ if __name__ == "__main__":
         Theo_I = getTheoreticalScattering(Theo_calc)
 
         #save models
-        Model = f'{i}'
-        WeightedPairDistribution.save_pr(Nbins, Theo_I.r, Theo_I.pr, Model)
+        #Model = f'{i}'
+        Model = "_".join(model_name.split())
+        WeightedPairDistribution.save_pr(args.qpoints, Theo_I.r, Theo_I.pr, Model)
         StructureFactor.save_S(Theo_I.q, Theo_I.S_eff, Model)
         ITheoretical(Theo_I.q).save_I(Theo_I.I, Model)
-
 
         ######################################### Simulate I(q) ##########################################
         exposure = args.exposure
         Sim_calc = SimulateScattering(q=Theo_I.q, I0=Theo_I.I0, I=Theo_I.I, exposure=exposure)
         Sim_I = getSimulatedScattering(Sim_calc)
 
-        #check model name and scaling for plot
-        name = check_input(args.name, f"Model {i}", "model name", i)
+        # Save simulated I(q) using IExperimental
+        Isim_class = IExperimental(q=Sim_I.q, I0=Theo_I.I0, I=Theo_I.I, exposure=exposure)
+        Isim_class.save_Iexperimental(Sim_I.I_sim, Sim_I.I_err, Model)
+
+        #check scaling for plot
         scale = check_input(args.scale, 1, "scale", i)
 
         #save data for plots
@@ -418,24 +478,29 @@ if __name__ == "__main__":
 
         Model_list.append(Model)
         scale_list.append(scale)
-        name_list.append(name)
+        name_list.append(model_name)
     
-    print(" ")
-    print("Generating plots...")
-    print(" ")
+    printt(" ")
+    printt("Generating plots...")
+    colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forrestgreen']
+
     #plot 2D projections
-
-    plot_2D(x_list, y_list, z_list, p_list, Model_list, high_res)
-
-    #3D vizualization: generate pdb file with points
-    generate_pdb(x_list, y_list, z_list, p_list, Model_list)
-
-    #plot p(r) and I(q)
-    plot_results(Theo_I.q, r_list, pr_norm_list, I_list, Isim_list, 
-                 sigma_list, S_eff_list, name_list, scale_list, xscale_lin, high_res)
+    print("    2D projections: points_<model_name>.png ...")
+    plot_2D(x_list, y_list, z_list, p_list, Model_list, args.high_res, colors)
     
+    #3D vizualization: generate pdb file with points
+    print("    3D models: <model_name>.pdb ...")
+    generate_pdb(x_list, y_list, z_list, p_list, Model_list)
+    
+    #plot p(r) and I(q)
+    print("    plot pr and Iq and Isim: plot.png ...")
+    plot_results(Theo_I.q, r_list, pr_norm_list, I_list, Isim_list, 
+                 sigma_list, S_eff_list, name_list, scale_list, args.xscale_lin, args.high_res, colors)
 
     time_total = time.time() - start_total
-    print(" ")
-    print("Simulation successfully completed.")
-    print("    Total run time:", round(time_total, 3), "seconds.")
+    printt(" ")
+    printt("Simulation successfully completed.")
+    printt("    Total run time: " + str(round(time_total, 1)) + " seconds.")
+    printt(" ")
+
+    f_out.close()
