@@ -178,19 +178,42 @@ open plot.png points_sphere_poly.png points_sphere_mono.png
 
  *Example 5: Scattering from monodisperse versus polydisperse spheres. Polydispersity is also reflected i the $p(r)$*
 
-### Example 6: Rotation 
+### Example 6: Multic-ontrast particle
+The contrast (excess scattering length density, sld) of each subunit can be adjusted to form multi-contrast particles. For example, a core-shell sphere with core $\Delta$SLD of -1 and shell $\Delta$SLD of 2 may be simulated: 
+```
+python shape2sas.py --subunit_type sphere,sphere --dimension 30 45 --sld -1 1 --model_name core_shell
+open plot.png points_core_shell.png
+```
+the small (radius 30-Å) and the large (radius 45 Å) sphere overlap. In that case, the overlapping points of the *latter* model are excluded. So order is important!
+The following will just give the scattering of the large sphere, as all points from the smaller sphere are excluded: 
+```
+python shape2sas.py --subunit_type sphere,sphere --dimension 45 30 --sld 1 -1 --model_name "not core shell just a sphere"
+open plot.png points_not_core_shell_just_a_sphere.png
+```
+The spherical core-shell model can also be modelled with a sphere for the core and a hollow sphere for the shell. Or, it can be modelled with the two solid spheres by disabling exclusion of overlapping points, but also changing the contrast of the small sphere to -2. The results are the same, but the third method is less effective (accuracy vs number of points).
+```
+python shape2sas.py --subunit_type sphere,sphere --dimension 30 45 --sld -1 1 --exclude_overlap True --model_name core_shell_1 --subunit_type sphere,hollow_sphere --dimension 30 45,30 --sld -1 1 --exclude_overlap True --model_name core_shell_2 --subunit_type sphere,sphere --dimension 30 45 --sld -2 1 --exclude_overlap False --model_name core_shell_3
+open plot.png points_core_shell_1.png points_core_shell_2.png points_core_shell_3.png
+```
+<p align="center" id="example6">
+  <img src="examples/core-shell.png" style="width: 100%;" />
+</p>
+
+ *Example 7: Spherical core-shell particles with core $\DeltaSLD$ of -1 and shell $\DeltaSLD$ of 1, simulated in three different ways*
+
+### Example 7: Rotation 
 A model of a "V" is formed with two 100-Å long cylinders with radius of 20 Å, which are rotated 45$\degree$ in each direction around the x-axis. The first cylinder i displaced by 50 Å along the y-axis (com, for centre-of-mass translation). The rotation is also around the center of mass
 ```
 python shape2sas.py --subunit_type "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
-open plot.png points_cylinders_rotated
+open plot.png points_cylinders_rotated.png
 ```
 <p align="center" id="example6">
-  <img src="examples/Rotated_cylinders.png" alt="example6_1" style="width: 100%;" />
+  <img src="examples/Rotated_cylinders.png" style="width: 100%;" />
 </p>
 
- *Example 6: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
+ *Example 7: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
 
-### Example 7: Number of points
+### Example 8: Number of points
 The data are simulated using a finite number of points ro represent the structures. Default is 5000 per model. This is a balance between accuracy and speed. As --Npoints is a global parameter, it cannot be selected separately for each model, therefore, three separate runs must be done:
 ```
 python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids500 --Npoints 500
@@ -211,18 +234,18 @@ computation time depends on hardware, but increases drastically with the number 
   <img src="examples/ellipsoids50000.png" style="width: 100%;" />
 </p>
 
- *Example 7: Ellipsoids simulated with 500, 5000 or 50,000 points per model*
+ *Example 8: Ellipsoids simulated with 500, 5000 or 50,000 points per model*
 
 ## Shape2SAS inputs
 Shape2SAS has two types of inputs: model-dependent inputs, that only affect the specific model in question, and general inputs that affects all models.  
 
-#### Mandatory (and model-dependent) inputs:
+#### Mandatory inputs (model-dependent):
 | Flag          | Type   | Default value| Description                                         |
 |-----------------|--------|---------|-----------------------------------------------------|
 | `--subunit_type`       | str  | Mandatory, no default      | Type of subunits (see separat table) |  
 | `--dimension`       | list  | Mandatory, no default    | Dimensions of subunit 
 
-#### Mandatory (and model-dependent) inputs:
+#### Model-dependent (and optional) inputs:
 | Flag          | Type   | Default value | Description                                         | 
 |-----------------|--------|---------|-----------------------------------------------------|
 | `--model_name` | str  | Model 0, Model 1, etc     | Name of the model  |  
@@ -230,21 +253,24 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 | `--polydispersity`       | float  | 0.0 (monodisperse)    | Polydispersity of model  | 
 | `--com`       | list  | 0,0,0 (origin)     | Displacement of subunit given as (x,y,z) |
 | `--rotation`       | list  | 0,0,0    | Rotation (in degrees) around x,y, or z-axis |
-| `--exclude_overlap`       | bool  | True (exclude overlap)    | Exclude overlap or not | 
-| `--S`       | str  | None     | Structure factor (see separat table that also lists structure factor-related options) |
-| `--conc`       | float  | 0.02    | Volume fraction (concentration) also affects hard-sphere structure factor |
 | `--sigma_r`    | float  | 0.0     | Interface roughness for each model                  |            
+| `--conc`       | float  | 0.02    | Volume fraction (concentration) also affects hard-sphere structure factor |
+| `--exclude_overlap`       | bool  | True (exclude overlap)    | Exclude overlap (True) or not (False) | 
+| `--S`       | str  | None     | Structure factor (see separate table for structure factor-related options) |
 
-#### General inputs:
+#### General (and optional) inputs:
 | Flag          | Type   | Default | Short name |Description                                         |
 |-----------------|--------|---------|------------|-----------------------------------------|
-| `--qmin`       | float  | 0.001     | -qmin | Minimum q-value (in Å$^{-1}$) for the scattering curve  |
-| `--qmax`       | float  | 0.5     | -qmax | Maximum q-value (in Å$^{-1}$) for the scattering curve  |
+| `--qmin`       | float  | 0.001     | -qmin | Minimum q-value (in Å<sup>-1<\sup>) for the scattering curve  |
+| `--qmax`       | float  | 0.5     | -qmax | Maximum q-value (in Å<sup>-1<\sup) for the scattering curve  |
 | `--qpoints`       | int  | 400      | -Nq | Number of q points  |
-| `--exposure`       | float  | 500      | -expo | Exposure time in arbitrary units - higher exposure time decreses simulated noise |
 | `--prpoints`       | int  | 100      | -Np | Number of points in the pair distance distribution function |
-| `--Nqpoints`       | int  | 400      | -Nq | Number of q-values in simulated data  |
 | `--Npoints`       | int  | 5000      | -N | Number of simulated points  |
+| `--exposure`       | float  | 500      | -expo | Exposure time in arbitrary units - higher exposure time decreses simulated noise |
+
+#### Plot-related (and optional) inputs:
+| Flag          | Type   | Default | Short name |Description                                         |
+|-----------------|--------|---------|------------|-----------------------------------------|
 | `--xscale_lin`       | bool  | True       | -lin | Linear q scale (default)  |
 | `--high_res`       | bool  | False       | -hres | Use high resoulution in plots (e.g., for publications) |
 | `--scale`       | float  | 1.0       | -scale | In the plot, scale simulated intensity of each model to avoid overlap  |

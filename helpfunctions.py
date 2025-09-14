@@ -725,7 +725,7 @@ class GenerateAllPoints:
                         subunits: List[List[float]], 
                         dimensions: List[List[float]], 
                         rotation : List[List[float]], 
-                        p: List[float], 
+                        sld: List[float], 
                         exclude_overlap: bool):
         self.Npoints = Npoints
         self.com = com
@@ -733,7 +733,7 @@ class GenerateAllPoints:
         self.Number_of_subunits = len(subunits)
         self.dimensions = dimensions
         self.rotation = rotation
-        self.p_s = p
+        self.sld = sld
         self.exclude_overlap = exclude_overlap
         self.setAvailableSubunits()
 
@@ -830,11 +830,11 @@ class GenerateAllPoints:
     def onAppendingPoints(x_new: np.ndarray, 
                           y_new: np.ndarray, 
                           z_new: np.ndarray,
-                          p_new: np.ndarray, 
+                          sld_new: np.ndarray, 
                           x_add: np.ndarray, 
                           y_add: np.ndarray, 
                           z_add: np.ndarray, 
-                          p_add: np.ndarray) -> Vector4D:
+                          sld_add: np.ndarray) -> Vector4D:
         """append new points to vectors of point coordinates"""
         
         # add points to (x_new,y_new,z_new)
@@ -843,14 +843,14 @@ class GenerateAllPoints:
             x_new = x_add
             y_new = y_add
             z_new = z_add
-            p_new = p_add
+            sld_new = sld_add
         else:
             x_new = np.append(x_new, x_add)
             y_new = np.append(y_new, y_add)
             z_new = np.append(z_new, z_add)
-            p_new = np.append(p_new, p_add)
+            sld_new = np.append(sld_new, sld_add)
 
-        return x_new, y_new, z_new, p_new
+        return x_new, y_new, z_new, sld_new
 
     @staticmethod
     def onCheckOverlap(x: np.ndarray, 
@@ -882,12 +882,12 @@ class GenerateAllPoints:
 
 
         idx = subunitClass(dimensions).checkOverlap(x_eff, y_eff, z_eff)
-        x_add, y_add, z_add, p_add = x[idx], y[idx], z[idx], p[idx]
+        x_add, y_add, z_add, sld_add = x[idx], y[idx], z[idx], p[idx]
 
         ## number of excluded points
         N_x = len(x) - len(idx[0])
 
-        return x_add, y_add, z_add, p_add, N_x
+        return x_add, y_add, z_add, sld_add, N_x
 
 
     def onGeneratingAllPointsSeparately(self) -> Vector3D:
@@ -904,7 +904,7 @@ class GenerateAllPoints:
             sum_vol += v
 
         N, rho, N_exclude = [], [], []
-        x_new, y_new, z_new, p_new, volume_total = [], [], [], [], 0
+        x_new, y_new, z_new, sld_new, volume_total = [], [], [], [], 0
 
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
@@ -915,13 +915,13 @@ class GenerateAllPoints:
             #Remaining points
             N_subunit = len(x_add)
             rho_subunit = N_subunit / volume[i]
-            p_add = np.ones(N_subunit) * self.p_s[i]
+            sld_add = np.ones(N_subunit) * self.sld[i]
 
             #Check for overlap with previous subunits
             N_x_sum = 0
             if self.exclude_overlap:
                 for j in range(i): 
-                    x_add, y_add, z_add, p_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, p_add, self.rotation[j],  
+                    x_add, y_add, z_add, sld_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, sld_add, self.rotation[j],  
                                                     self.com[j], self.subunitClasses[self.subunits[j]], self.dimensions[j])
                     N_x_sum += N_x
     
@@ -934,25 +934,27 @@ class GenerateAllPoints:
             x_new.append(x_add)
             y_new.append(y_add)
             z_new.append(z_add)
-            p_new.append(p_add)
+            sld_new.append(sld_add)
         
         #Show information about the model and its subunits
         N_remain = []
         for j in range(self.Number_of_subunits):
-            srho = rho[j] * self.p_s[j]
+            srho = rho[j] * self.sld[j]
             N_remain.append(N[j] - N_exclude[j])
             print(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
             print(f"             Point density     : {rho[j]:.3e} (points per volume)")
             print(f"             Scattering density: {srho:.3e} (density times scattering length)")
-            print(f"             Excluded points   : {N_exclude[j]} (overlap region)")
+            if self.exclude_overlap:
+                print(f"             Excluded points   : {N_exclude[j]} (overlap region)")
+            else:
+                print(f"             Excluded points   : none - exclude overlap disabled")
             print(f"             Remaining points  : {N_remain[j]} (non-overlapping region)")
-
         N_total = sum(N_remain)
         print(f"        Total points in model: {N_total}")
         print(f"        Total volume of model: {volume_total:.3e} A^3")
         print(" ")
 
-        return x_new, y_new, z_new, p_new, volume_total
+        return x_new, y_new, z_new, sld_new, volume_total
 
 
     def onGeneratingAllPoints(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]:
@@ -967,7 +969,7 @@ class GenerateAllPoints:
             sum_vol += v
         
         N, rho, N_exclude = [], [], []
-        x_new, y_new, z_new, p_new, volume_total = 0, 0, 0, 0, 0
+        x_new, y_new, z_new, sld_new, volume_total = 0, 0, 0, 0, 0
 
         #Generate subunits
         for i in range(self.Number_of_subunits):
@@ -979,18 +981,18 @@ class GenerateAllPoints:
             #Remaining points
             N_subunit = len(x_add)
             rho_subunit = N_subunit / volume[i]
-            p_add = np.ones(N_subunit) * self.p_s[i]
+            sld_add = np.ones(N_subunit) * self.sld[i]
 
             #Check for overlap with previous subunits
             N_x_sum = 0
             if self.exclude_overlap:
                 for j in range(i): 
-                    x_add, y_add, z_add, p_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, p_add, self.rotation[j],  
+                    x_add, y_add, z_add, sld_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, sld_add, self.rotation[j],  
                                                     self.com[j], self.subunitClasses[self.subunits[j]], self.dimensions[j])
                     N_x_sum += N_x
             
             #Append data
-            x_new, y_new, z_new, p_new = self.onAppendingPoints(x_new, y_new, z_new, p_new, x_add, y_add, z_add, p_add)
+            x_new, y_new, z_new, sld_new = self.onAppendingPoints(x_new, y_new, z_new, sld_new, x_add, y_add, z_add, sld_add)
 
             N.append(N_subunit)
             rho.append(rho_subunit)
@@ -1001,7 +1003,7 @@ class GenerateAllPoints:
         #Show information about the model and its subunits
         N_remain = []
         for j in range(self.Number_of_subunits):
-            srho = rho[j] * self.p_s[j]
+            srho = rho[j] * self.sld[j]
             N_remain.append(N[j] - N_exclude[j])
             print(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
             print(f"             Point density     : {rho[j]:.3e} (points per volume)")
@@ -1014,17 +1016,17 @@ class GenerateAllPoints:
         print(f"        Total volume of model: {volume_total:.3e} A^3")
         print(" ")
 
-        return x_new, y_new, z_new, p_new, volume_total
+        return x_new, y_new, z_new, sld_new, volume_total
 
 class WeightedPairDistribution:
     def __init__(self, x: np.ndarray, 
                        y: np.ndarray, 
                        z: np.ndarray, 
-                       p: np.ndarray):
+                       sld: np.ndarray):
         self.x = x
         self.y = y
         self.z = z
-        self.p = p #contrast
+        self.sld = sld #contrast
 
     @staticmethod
     def calc_dist(x: np.ndarray) -> np.ndarray:
@@ -1118,7 +1120,7 @@ class WeightedPairDistribution:
         of p: all contrasts 
         """
 
-        dp = np.outer(self.p, self.p)
+        dp = np.outer(self.sld, self.sld)
         contrast = dp.reshape(-1)
         contrast = contrast.astype('float32')
         return contrast
@@ -1130,11 +1132,11 @@ class WeightedPairDistribution:
         matching calc_all_dist().
         """
         # Outer product (N, N)
-        dp = np.outer(self.p, self.p)
+        dsld = np.outer(self.sld, self.sld)
 
         # Extract unique pairs (upper triangle, without diagonal)
-        i, j = np.triu_indices(len(self.p), k=1)
-        contrast = dp[i, j]
+        i, j = np.triu_indices(len(self.sld), k=1)
+        contrast = dsld[i, j]
 
         # Cast to float32
         return contrast.astype(np.float32)
@@ -1145,8 +1147,8 @@ class WeightedPairDistribution:
         Returns a 1D float32 array of length N*(N-1)/2,
         matching calc_all_dist().
         """
-        p = self.p.astype(np.float32, copy=False)
-        N = len(p)
+        sld = self.sld.astype(np.float32, copy=False)
+        N = len(sld)
 
         # Preallocate result array (unique pairs only)
         out = np.empty(N * (N - 1) // 2, dtype=np.float32)
@@ -1155,7 +1157,7 @@ class WeightedPairDistribution:
         k = 0
         for i in range(N - 1):
             # multiply p[i] with all following elements at once
-            out[k : k + (N - i - 1)] = p[i] * p[i+1:]
+            out[k : k + (N - i - 1)] = sld[i] * sld[i+1:]
             k += N - i - 1
 
         return out
@@ -1310,19 +1312,19 @@ class StructureDecouplingApprox:
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
                  z_new: np.ndarray, 
-                 p_new: np.ndarray):
+                 sld_new: np.ndarray):
         self.q = q
         self.x_new = x_new
         self.y_new = y_new
         self.z_new = z_new
-        self.p_new = p_new
+        self.sld_new = sld_new
 
 
     def calc_com_dist(self) -> np.ndarray:
         """ 
         calc contrast-weighted com distance
         """
-        w = np.abs(self.p_new)
+        w = np.abs(self.sld_new)
 
         if np.sum(w) == 0:
             w = np.ones(len(self.x_new))
@@ -1345,7 +1347,7 @@ class StructureDecouplingApprox:
         for i in range(M):
             qr = self.q[i] * d_new
 
-            A00[i] = sum(self.p_new * sinc(qr))
+            A00[i] = sum(self.sld_new * sinc(qr))
         A00 = A00 / A00[0] # normalise, A00[0] = 1
 
         return A00
@@ -1382,14 +1384,14 @@ class HardSphereStructure(StructureDecouplingApprox):
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
                  z_new: np.ndarray, 
-                 p_new: np.ndarray, 
+                 sld_new: np.ndarray, 
                  par: List[float]):
-        super(HardSphereStructure, self).__init__(q, x_new, y_new, z_new, p_new)
+        super(HardSphereStructure, self).__init__(q, x_new, y_new, z_new, sld_new)
         self.q = q
         self.x_new = x_new
         self.y_new = y_new
         self.z_new = z_new
-        self.p_new = p_new
+        self.sld_new = sld_new
         self.conc = par[0]
         self.R_HS = par[1]
 
@@ -1454,14 +1456,14 @@ class Aggregation(StructureDecouplingApprox):
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
                  z_new: np.ndarray, 
-                 p_new: np.ndarray, 
+                 sld_new: np.ndarray, 
                  par: List[float]):
-        super(Aggregation, self).__init__(q, x_new, y_new, z_new, p_new)
+        super(Aggregation, self).__init__(q, x_new, y_new, z_new, sld_new)
         self.q = q
         self.x_new = x_new
         self.y_new = y_new
         self.z_new = z_new
-        self.p_new = p_new
+        self.sld_new = sld_new
         self.Reff = par[0]
         self.Naggr = par[1]
         self.fracs_aggr = par[2]
@@ -1500,9 +1502,9 @@ class NoStructure(StructureDecouplingApprox):
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
                  z_new: np.ndarray, 
-                 p_new: np.ndarray, 
+                 sld_new: np.ndarray, 
                  par: Any):
-        super(NoStructure, self).__init__(q, x_new, y_new, z_new, p_new)
+        super(NoStructure, self).__init__(q, x_new, y_new, z_new, sld_new)
         self.q = q
 
     def structure_eff(self, Pq: Any) -> np.ndarray:
@@ -1542,14 +1544,14 @@ class StructureFactor:
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
                  z_new: np.ndarray, 
-                 p_new: np.ndarray,
+                 sld_new: np.ndarray,
                  Stype: str,
                  par: Optional[List[float]]):
         self.q = q
         self.x_new = x_new
         self.y_new = y_new
         self.z_new = z_new
-        self.p_new = p_new
+        self.sld_new = sld_new
         self.Stype = Stype
         self.par = par
         #self.setAvailableStructureFactors()
@@ -1578,7 +1580,7 @@ class StructureFactor:
         """Return chosen structure factor"""
         if self.Stype in self.structureFactor:
             return self.structureFactor[self.Stype](self.q, self.x_new, 
-                                                    self.y_new, self.z_new, self.p_new, self.par)
+                                                    self.y_new, self.z_new, self.sld_new, self.par)
         
         else:
             ValueError(f"Structure factor '{self.Stype}' does not exists. Choose from {list(self.structureFactor.keys())}")
@@ -1767,7 +1769,7 @@ def get_max_dimension(x_list: np.ndarray, y_list: np.ndarray, z_list: np.ndarray
 def plot_2D(x_list: np.ndarray, 
             y_list: np.ndarray, 
             z_list: np.ndarray, 
-            p_list: np.ndarray, 
+            sld_list: np.ndarray, 
             Models: np.ndarray, 
             high_res: bool,
             colors: List[str]) -> None:
@@ -1779,11 +1781,11 @@ def plot_2D(x_list: np.ndarray,
 
     input
     (x_list,y_list,z_list) : coordinates of simulated points
-    p_list                 : excess scattering length densities (contrast) of simulated points
+    sld_list               : excess scattering length densities (contrast) of simulated points
     Model                  : Model number
 
     output
-    plot                : points<Model>.png
+    plot                   : points<Model>.png
 
     """
 
@@ -1792,7 +1794,7 @@ def plot_2D(x_list: np.ndarray,
     max_l = get_max_dimension(x_list, y_list, z_list)*1.1
     lim = [-max_l, max_l]
 
-    for x,y,z,p,Model,color in zip(x_list,y_list,z_list,p_list,Models,colors):
+    for x,y,z,p,Model,color in zip(x_list,y_list,z_list,sld_list,Models,colors):
 
         ## find indices of positive, zero and negatative contrast
         idx_neg = np.where(p < 0.0)
@@ -1914,7 +1916,7 @@ import numpy as np
 def generate_pdb(x_list: List[np.ndarray], 
                  y_list: List[np.ndarray], 
                  z_list: List[np.ndarray], 
-                 p_list: List[np.ndarray], 
+                 sld_list: List[np.ndarray], 
                  Model_list: List[str]) -> None:
     """
     Generates a visualisation file in PDB format with the simulated points (coordinates) and contrasts
@@ -1927,7 +1929,7 @@ def generate_pdb(x_list: List[np.ndarray],
     IMPORTANT: IT WILL NOT GIVE THE CORRECT RESULTS IF SCATTERING IS CACLLUATED FROM THIS MODEL WITH E.G. CRYSOL, PEPSI-SAXS, FOXS, CAPP OR THE LIKE!
     """
 
-    for (x,y,z,p,Model) in zip(x_list, y_list, z_list, p_list, Model_list):
+    for (x,y,z,p,Model) in zip(x_list, y_list, z_list, sld_list, Model_list):
         with open('%s.pdb' % Model,'w') as f:
             f.write('TITLE    POINT SCATTER FOR MODEL: %s\n' % Model)
             f.write('REMARK   GENERATED WITH Shape2SAS\n')
