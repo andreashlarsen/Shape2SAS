@@ -7,6 +7,30 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
   <img src="examples/dumbbell_shape2SASGuide.png" style="width: 100%;" />
 </p>
 
+## Table of Contents
+- [Shape2SAS](#shape2sas)
+- [Installation](#installation)
+  - [Other dependencies](#other-dependencies)
+- [Run Shape2SAS](#run-shape2sas)
+  - [Available subunits](#subunit-table)
+- [Examples](#examples)
+  - [Example 1: Cylinder](#example-1-cylinder)
+  - [Example 2: Multiple subunits in one model](#example-2-multiple-subunits-in-one-model)
+  - [Example 3: Structure factors](#example-3-structure-factors)
+    - [Implemented structure factors](#the-following-structure-factors-are-implemented)
+  - [Example 4: Several models](#example-4-several-models)
+  - [Example 5: Polydispersity](#example-5-polydispersity)
+  - [Example 6: Multi-contrast particle](#example-6-multic-ontrast-particle)
+  - [Example 7: Rotation](#example-7-rotation)
+  - [Example 8: Number of points](#example-8-number-of-points)
+- [Shape2SAS inputs](#shape2sas-inputs)
+  - [Mandatory inputs](#mandatory-inputs-model-dependent)
+  - [Model-dependent inputs](#model-dependent-and-optional-inputs)
+  - [General inputs](#general-and-optional-inputs)
+  - [Plot-related inputs](#plot-related-and-optional-inputs)
+- [GUI](#gui)
+- [Credit](#credit)
+- [Notes](#notes)
 
 ## Installation
 
