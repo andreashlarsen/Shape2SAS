@@ -13,7 +13,7 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
 - [Run Shape2SAS](#run-shape2sas)
   - [Available subunits (table)](#subunits)
 - [Examples](#examples)
-  - [Example 1: More dimensions. Cylinder](#example-1-more-dimensions.-cylinder)
+  - [Example 1: More dimensions - cylinder](#example-1-more-dimensions---cylinder)
   - [Example 2: Multiple subunits in one model](#example-2-multiple-subunits-in-one-model)
   - [Example 3: Structure factors](#example-3-structure-factors)
     - [Available Structure factors (table)](#structure-factors)
@@ -92,7 +92,7 @@ The following subunits are currently available:
 ## Examples
 A list of all options can be found below all the examples.   
 
-### Example 1: More dimensions. Cylinder
+### Example 1: More dimensions - cylinder
 A model of a cylinder with radius 50 Å and length 300 Å is simulated, and named "cylinder". The name is used in plots and output filenames:
 ```
 python shape2sas.py --subunit_type cylinder --dimension 50,300 --model_name cylinder
@@ -344,6 +344,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
