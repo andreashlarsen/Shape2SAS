@@ -8,19 +8,18 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
 </p>
 
 ## Table of Contents
-- [Shape2SAS](#shape2sas)
 - [Installation](#installation)
   - [Other dependencies](#other-dependencies)
 - [Run Shape2SAS](#run-shape2sas)
-  - [Available subunits](#subunit-table)
+  - [Available subunits (table)](#subunits)
 - [Examples](#examples)
   - [Example 1: Cylinder](#example-1-cylinder)
   - [Example 2: Multiple subunits in one model](#example-2-multiple-subunits-in-one-model)
   - [Example 3: Structure factors](#example-3-structure-factors)
-    - [Implemented structure factors](#the-following-structure-factors-are-implemented)
+    - [Available Structure factors (table)](#structure-factors)
   - [Example 4: Several models](#example-4-several-models)
   - [Example 5: Polydispersity](#example-5-polydispersity)
-  - [Example 6: Multi-contrast particle](#example-6-multic-ontrast-particle)
+  - [Example 6: Multi-contrast particle](#example-6-multi-contrast-particle)
   - [Example 7: Rotation](#example-7-rotation)
   - [Example 8: Number of points](#example-8-number-of-points)
 - [Shape2SAS inputs](#shape2sas-inputs)
@@ -49,6 +48,8 @@ All python packagees can be downloaded via pip install
 * fast_histogram
 Versions numpy==1.26, matplotlib==3.8, scipy==1.12, and fast_histogram==0.12 have been tested, but other versions may work as well.
 
+[Back to Table of contents](#table-of-contents)
+
 ## Run Shape2SAS
 
 Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing Shape2SAS.py and helpfunctions.py (should be in the same folder):
@@ -63,11 +64,12 @@ open plot.png points_Model1.png
 ```
 the second line opens the output plot, and the 2D representation of the sphere (Model_0 is the default model name if none is provided).
 
-##### The following subunits are currently available: 
+[Back to Table of contents](#table-of-contents)
 
-<a name="subunit-table" id="table3"></a>
+### Subunits
+The following subunits are currently available: 
 
-| Subunit          | Dimension(s)   |  Alternative names<sup>*<\sup>           | Description                |
+| Subunit          | Dimension(s)   |  Alternative names<sup>*</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
 | `sphere` | radius  | ball | Sphere
 | `hollow_sphere` | outer radius, inner radius  | shell | Hollow sphere |
@@ -80,10 +82,12 @@ the second line opens the output plot, and the 2D representation of the sphere (
 | `cuboid` | side length 1, side length 2, side length 3, | cuboid, brick | cuboid, i.e. not same side lengths |
 | `torus` | overall radius, cross-sectional radius  | toroid, doughnut | Torus, i.e a doughnut shape | 
 | `hyperboloid` | smallest radius, curvature, half of the height  | hourglass, cooling_tower| Hyperboloid, i.e. an filled hourglass shape | 
-| `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>**<\sup> | 
+| `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>**</sup> | 
 
-<sup>*<\sup> capitalized names and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.   
-<sup>**<\sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)
+<sup>*</sup> capitalized names and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.   
+<sup>**</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)
+
+[Back to Table of contents](#table-of-contents)
 
 ## Examples
 A list of all options can be found below all the examples.   
@@ -110,6 +114,8 @@ open plot.png points_cylinder.png
 
  *Example 1: Shape2SAS simulation showing the "side" and "bottom" of the cylinder model and simulated SAXS with noise.*
 
+[Back to Table of contents](#table-of-contents)
+
 ### Example 2: Multiple subunits in one model
 A model can be built of several subunits. For example, a dumbbell can be built by three subunits: two spheres with radius 25 Å displaced from the origin by 50 Å along the z-axiz, and one cylinder with radius of 10 Å and length of 100 Å, aligned along the z axis (default direction):
 ```
@@ -132,6 +138,8 @@ open plot.png points_my_dumbbell.png
 
  *Example 2: Dumbbell model and simulated SAXS data.*
 
+[Back to Table of contents](#table-of-contents)
+
 ### Example 3: Structure factors
 Structure factors can be added. This will affect the calculated scattering but not the displayed $p(r)$. 
 Below a sample of ellipsoids with semi-axes 50, 60, and 50 Å with hard-sphere repulsion (hard-sphere radius, r_hs, of 60 Å:
@@ -150,9 +158,12 @@ open plot.png points_ellipsoid_aggr.png
 
  *Example 3: Ellipsoids with a hard-sphere structure factor (left) or with aggregation (right).*
 
-##### The following structure factors are implemented
+[Back to Table of contents](#table-of-contents)
 
-| Structure factor          | Options  |  Alternative names<sup>*<\sup>           | Description                |
+##### Structure factors
+The following structure factors are implemented
+
+| Structure factor          | Options  |  Alternative names<sup>*</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
 | `hardsphere` |  | hs, hard-sphere | Hard-sphere structure factor with hard-sphere radius (--r_hs) and volume fraction (--conc)
 | -- | --r_hs | -rhs | hard-sphere radius
@@ -163,9 +174,11 @@ open plot.png points_ellipsoid_aggr.png
 | -- | --frac  | -frac | fraction of particles in aggregate
 | `None` |  | no 0 1 unity | No structure factor (default)
 
- <sup>*<\sup>capitalized versions and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.  
- <sup>**<\sup>also affects conc in general, when hard-sphere structure is disabled
+ <sup>*</sup>capitalized versions and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.  
+ <sup>**</sup>also affects conc in general, when hard-sphere structure is disabled
  
+[Back to Table of contents](#table-of-contents)
+
 ### Example 4: Several models
 Several models can be created simultaneously. They are made individually, but plotted together in plot.png, for easy comparison. 
 
@@ -190,6 +203,8 @@ open plot.png points_sph20.png points_sph50.png points_sph80.png
 
  *Example 4: Scattering from spheres of increasing size.*
 
+[Back to Table of contents](#table-of-contents)
+
 ### Example 5: Polydispersity
 Sphere with radius of 40 Å and relative polydispersity of 20% are here compared to monodisperse spheres with the same radius:
 ```
@@ -202,7 +217,9 @@ open plot.png points_sphere_poly.png points_sphere_mono.png
 
  *Example 5: Scattering from monodisperse versus polydisperse spheres. Polydispersity is also reflected i the $p(r)$*
 
-### Example 6: Multic-ontrast particle
+[Back to Table of contents](#table-of-contents)
+
+### Example 6: Multi-contrast particle
 The contrast (excess scattering length density, sld) of each subunit can be adjusted to form multi-contrast particles. For example, a core-shell sphere with core $\Delta$SLD of -1 and shell $\Delta$SLD of 2 may be simulated: 
 ```
 python shape2sas.py --subunit_type sphere,sphere --dimension 30 45 --sld -1 1 --model_name core_shell
@@ -225,6 +242,8 @@ open plot.png points_core_shell_1.png points_core_shell_2.png points_core_shell_
 
  *Example 7: Spherical core-shell particles with core $\DeltaSLD$ of -1 and shell $\DeltaSLD$ of 1, simulated in three different ways*
 
+[Back to Table of contents](#table-of-contents)
+
 ### Example 7: Rotation 
 A model of a "V" is formed with two 100-Å long cylinders with radius of 20 Å, which are rotated 45$\degree$ in each direction around the x-axis. The first cylinder i displaced by 50 Å along the y-axis (com, for centre-of-mass translation). The rotation is also around the center of mass
 ```
@@ -236,6 +255,8 @@ open plot.png points_cylinders_rotated.png
 </p>
 
  *Example 7: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
+
+[Back to Table of contents](#table-of-contents)
 
 ### Example 8: Number of points
 The data are simulated using a finite number of points ro represent the structures. Default is 5000 per model. This is a balance between accuracy and speed. As --Npoints is a global parameter, it cannot be selected separately for each model, therefore, three separate runs must be done:
@@ -260,16 +281,18 @@ computation time depends on hardware, but increases drastically with the number 
 
  *Example 8: Ellipsoids simulated with 500, 5000 or 50,000 points per model*
 
+[Back to Table of contents](#table-of-contents)
+
 ## Shape2SAS inputs
 Shape2SAS has two types of inputs: model-dependent inputs, that only affect the specific model in question, and general inputs that affects all models.  
 
-#### Mandatory inputs (model-dependent):
+### Mandatory inputs (model-dependent):
 | Flag          | Type   | Default value| Description                                         |
 |-----------------|--------|---------|-----------------------------------------------------|
 | `--subunit_type`       | str  | Mandatory, no default      | Type of subunits (see separat table) |  
 | `--dimension`       | list  | Mandatory, no default    | Dimensions of subunit 
 
-#### Model-dependent (and optional) inputs:
+### Model-dependent (and optional) inputs:
 | Flag          | Type   | Default value | Description                                         | 
 |-----------------|--------|---------|-----------------------------------------------------|
 | `--model_name` | str  | Model 0, Model 1, etc     | Name of the model  |  
@@ -282,7 +305,7 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 | `--exclude_overlap`       | bool  | True (exclude overlap)    | Exclude overlap (True) or not (False) | 
 | `--S`       | str  | None     | Structure factor (see separate table for structure factor-related options) |
 
-#### General (and optional) inputs:
+### General (and optional) inputs:
 | Flag          | Type   | Default | Short name |Description                                         |
 |-----------------|--------|---------|------------|-----------------------------------------|
 | `--qmin`       | float  | 0.001     | -qmin | Minimum q-value (in Å<sup>-1<\sup>) for the scattering curve  |
@@ -292,15 +315,19 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 | `--Npoints`       | int  | 5000      | -N | Number of simulated points  |
 | `--exposure`       | float  | 500      | -expo | Exposure time in arbitrary units - higher exposure time decreses simulated noise |
 
-#### Plot-related (and optional) inputs:
+### Plot-related (and optional) inputs:
 | Flag          | Type   | Default | Short name |Description                                         |
 |-----------------|--------|---------|------------|-----------------------------------------|
 | `--xscale_lin`       | bool  | True       | -lin | Linear q scale (default)  |
 | `--high_res`       | bool  | False       | -hres | Use high resoulution in plots (e.g., for publications) |
 | `--scale`       | float  | 1.0       | -scale | In the plot, scale simulated intensity of each model to avoid overlap  |
 
+[Back to Table of contents](#table-of-contents)
+
 ## GUI
 A GUI of Shape2SAS can be found at [https://somo.chem.utk.edu/shape2sas/](https://somo.chem.utk.edu/shape2sas/) (newest features may not be available at all times). 
+
+[Back to Table of contents](#table-of-contents)
 
 ## Credit
 Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). \
@@ -311,7 +338,10 @@ Shape2SAS: a web application to simulate small-angle scattering data and pair di
 Batch version of Shape2SAS was written by Thomas Bukholt Hansen.
 Updated and maintained by Andreas Haahr Larsen. 
 
+[Back to Table of contents](#table-of-contents)
+
 ## Notes
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
+[Back to Table of contents](#table-of-contents)
 
