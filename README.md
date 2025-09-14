@@ -14,14 +14,14 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
   - [Available subunits (table)](#subunits)
 - [Examples](#examples)
   - [Example 1: More dimensions - cylinder](#example-1-more-dimensions---cylinder)
-  - [Example 2: Multiple subunits in one model](#example-2-multiple-subunits-in-one-model)
-  - [Example 3: Structure factors](#example-3-structure-factors)
+  - [Example 2: Multiple subunits - dumbbell](#example-2-multiple-subunits---dumbbell)
+  - [Example 3: Structure factors - repulsion and aggregation](#example-3-structure-factors---repulsion-and-aggregation)
     - [Available Structure factors (table)](#structure-factors)
   - [Example 4: Several models](#example-4-several-models)
   - [Example 5: Polydispersity](#example-5-polydispersity)
-  - [Example 6: Multi-contrast particle](#example-6-multi-contrast-particle)
-  - [Example 7: Rotation](#example-7-rotation)
-  - [Example 8: Number of points](#example-8-number-of-points)
+  - [Example 6: Multi-contrast particle - cores-shell](#example-6-multi-contrast-particle---core-shell)
+  - [Example 7: Rotation - V-shape](#example-7-rotation---V-shape)
+  - [Example 8: Number of points---accuracy-vs-runtime](#example-8-number-of-points---accuracy-vs-runtime)
 - [Shape2SAS inputs](#shape2sas-inputs)
   - [Mandatory inputs](#mandatory-inputs-model-dependent)
   - [Model-dependent inputs](#model-dependent-and-optional-inputs)
@@ -116,7 +116,7 @@ open plot.png points_cylinder.png
 
 [Back to Table of contents](#table-of-contents)
 
-### Example 2: Multiple subunits in one model
+### Example 2: Multiple subunits - dumbbell
 A model can be built of several subunits. For example, a dumbbell can be built by three subunits: two spheres with radius 25 Å displaced from the origin by 50 Å along the z-axiz, and one cylinder with radius of 10 Å and length of 100 Å, aligned along the z axis (default direction):
 ```
 python shape2sas.py --subunit_type sphere,sphere,cylinder --dimension 25 25 10,100 --com 0,0,-50 0,0,50 0,0,0 --Npoints 6000 --model_name dumbbell
@@ -140,7 +140,7 @@ open plot.png points_my_dumbbell.png
 
 [Back to Table of contents](#table-of-contents)
 
-### Example 3: Structure factors
+### Example 3: Structure factors - repulsion and aggregation
 Structure factors can be added. This will affect the calculated scattering but not the displayed $p(r)$. 
 Below a sample of ellipsoids with semi-axes 50, 60, and 50 Å with hard-sphere repulsion (hard-sphere radius, r_hs, of 60 Å:
 ```
@@ -219,7 +219,7 @@ open plot.png points_sphere_poly.png points_sphere_mono.png
 
 [Back to Table of contents](#table-of-contents)
 
-### Example 6: Multi-contrast particle
+### Example 6: Multi-contrast particle - core-shell
 The contrast (excess scattering length density, sld) of each subunit can be adjusted to form multi-contrast particles. For example, a core-shell sphere with core ΔSLD of -1 and shell ΔSLD of 2 may be simulated: 
 ```
 python shape2sas.py --subunit_type sphere,sphere --dimension 30 45 --sld -1 1 --model_name core_shell
@@ -244,7 +244,7 @@ open plot.png points_core_shell_1.png points_core_shell_2.png points_core_shell_
 
 [Back to Table of contents](#table-of-contents)
 
-### Example 7: Rotation 
+### Example 7: Rotation - V-shape
 A model of a "V" is formed with two 100-Å long cylinders with radius of 20 Å, which are rotated 45$\degree$ in each direction around the x-axis. The first cylinder i displaced by 50 Å along the y-axis (com, for centre-of-mass translation). The rotation is also around the center of mass
 ```
 python shape2sas.py --subunit_type "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
@@ -258,7 +258,7 @@ open plot.png points_cylinders_rotated.png
 
 [Back to Table of contents](#table-of-contents)
 
-### Example 8: Number of points
+### Example 8: Number of points - accuracy vs runtime
 The data are simulated using a finite number of points ro represent the structures. Default is 5000 per model. This is a balance between accuracy and speed. As --Npoints is a global parameter, it cannot be selected separately for each model, therefore, three separate runs must be done:
 ```
 python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids500 --Npoints 500
@@ -344,6 +344,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
