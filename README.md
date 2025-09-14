@@ -220,7 +220,7 @@ open plot.png points_sphere_poly.png points_sphere_mono.png
 [Back to Table of contents](#table-of-contents)
 
 ### Example 6: Multi-contrast particle
-The contrast (excess scattering length density, sld) of each subunit can be adjusted to form multi-contrast particles. For example, a core-shell sphere with core $\Delta$SLD of -1 and shell $\Delta$SLD of 2 may be simulated: 
+The contrast (excess scattering length density, sld) of each subunit can be adjusted to form multi-contrast particles. For example, a core-shell sphere with core ΔSLD of -1 and shell ΔSLD of 2 may be simulated: 
 ```
 python shape2sas.py --subunit_type sphere,sphere --dimension 30 45 --sld -1 1 --model_name core_shell
 open plot.png points_core_shell.png
@@ -240,7 +240,7 @@ open plot.png points_core_shell_1.png points_core_shell_2.png points_core_shell_
   <img src="examples/core-shell.png" style="width: 100%;" />
 </p>
 
- *Example 7: Spherical core-shell particles with core $\DeltaSLD$ of -1 and shell $\DeltaSLD$ of 1, simulated in three different ways*
+ *Example 7: Spherical core-shell particles with core ΔSLD of -1 and shell ΔSLD of 1, simulated in three different ways*
 
 [Back to Table of contents](#table-of-contents)
 
@@ -344,4 +344,5 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
