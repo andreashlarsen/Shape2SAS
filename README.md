@@ -84,7 +84,7 @@ The following subunits are currently available:
 | `hyperboloid` | smallest radius, curvature, half of the height  | hourglass, cooling_tower| Hyperboloid, i.e. an filled hourglass shape | 
 | `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>**</sup> | 
 
-<sup>*</sup> capitalized names and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.   
+<sup>*</sup> not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere are all acceptable inputs.   
 <sup>**</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)
 
 [Back to Table of contents](#table-of-contents)
@@ -344,6 +344,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
