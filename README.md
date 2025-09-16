@@ -21,7 +21,8 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
   - [Example 5: Polydispersity](#example-5-polydispersity)
   - [Example 6: Multi-contrast particle - cores-shell](#example-6-multi-contrast-particle---core-shell)
   - [Example 7: Rotation - V-shape](#example-7-rotation---V-shape)
-  - [Example 8: Number of points---accuracy-vs-runtime](#example-8-number-of-points---accuracy-vs-runtime)
+  - [Example 8: Number of points - accuracy-vs-runtime](#example-8-number-of-points---accuracy-vs-runtime)
+  - [Example 9: Spin-echo SANS - repulsion in real space](#example-9-spin-echo-sans---repulsion-in-real-space)
 - [Shape2SAS inputs](#shape2sas-inputs)
   - [Mandatory inputs](#mandatory-inputs-model-dependent)
   - [Model-dependent inputs](#model-dependent-and-optional-inputs)
@@ -283,6 +284,27 @@ computation time depends on hardware, but increases drastically with the number 
 
 [Back to Table of contents](#table-of-contents)
 
+### Example 9: Spin-echo SANS - repulsion in real space
+Spin-echo SANS (SESANS) is a related technique, and SAS data can be converted to SESANS data by a Henckel transformation. SESANS data is in real space, so easier to interpret - similar to the pair distribution (p(r)) in SAS.
+
+The q-range is extended and sampled with many points to make the tranformation more accurate, therefore, the normal qmin, qmax and qpoints parameters are not used.   
+
+Spheres with or without hard-sphere intearaction in SESANS: 
+```
+python shape2sas.py --sesans --subunit_type sphere --dimension 50 --S None --model_name sphere --subunit_type sphere --dimension 50 --S HS --r_hs 60 --conc 0.1 --model_name sphere_HS
+open plot.png points_sphere.png points_sphere_HS.png sesans.png
+```
+One sphere (radius 250 Å) vs two spheres separated by 1000 Å:
+```
+python shape2sas.py --sesans --subunit_type sphere --dimension 250 --com 0,0,0 --model_name sphere --subunit_type sphere,sphere --dimension 250 250 --com 0,-500,0 0,500,0 --model_name two_spheres
+open plot.png points_sphere.png points_two_spheres.png sesans.png
+```
+<p align="center" id="example7">
+  <img src="examples/sesans_HS.png" style="width: 100%;" />
+</p>
+
+ *Example 9: SESANS spheres with or without hard-sphere interaction*
+
 ## Shape2SAS inputs
 Shape2SAS has two types of inputs: model-dependent inputs, that only affect the specific model in question, and general inputs that affects all models.  
 
@@ -344,6 +366,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
