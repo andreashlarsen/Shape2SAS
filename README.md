@@ -19,6 +19,7 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
   - [Example 3: Structure factors - repulsion and aggregation](#example-3-structure-factors---repulsion-and-aggregation)
     - [Available Structure factors (table)](#structure-factors)
   - [Example 4: Several models](#example-4-several-models)
+    - [The compare script (table)](#the-compare-script)
   - [Example 5: Polydispersity](#example-5-polydispersity)
   - [Example 6: Multi-contrast particle - cores-shell](#example-6-multi-contrast-particle---core-shell)
   - [Example 7: Rotation - V-shape](#example-7-rotation---V-shape)
@@ -175,7 +176,7 @@ open plot.png points_ellipsoid_aggr.png
 
 [Back to Table of contents](#table-of-contents)
 
-##### Structure factors
+### Structure factors
 The following structure factors are implemented
 
 | Structure factor   | Parameters  |  Alternative names<sup>*</sup>           | Description                |
@@ -196,10 +197,22 @@ Spheres and cylinders:
 python shape2sas.py --subunit_type sphere --dimension 50 --model_name sphere --subunit_type cylinder --dimension 20,300 --model_name cylinder 
 open plot.png points_sphere.png points_cylinder.png
 ```
+Alternatively (and pehaps simpler), they can be made separately, and plotted together with the compare.py script
+```
+python shape2sas.py --subunit_type sphere --dimension 50 --model_name sphere
+python shape2sas.py --subunit_type cylinder --dimension 20,300 --model_name cylinder
+python compare.py --model_names sphere,cylinder --name sph_cyl
+```
 Ellipsoids with or without a hard-sphere structure factor:
 ```
 python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S None --S_par " " --model_name ellipsoid --subunit_type ellipsoid --dimension 50,60,50 --S HS --S_par 0.05,60 --model_name ellipsoid_HS
 open plot.png points_ellipsoid.png points_ellipsoid_HS.png
+```
+or, using the compare script:
+```
+python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --model_name ellipsoid
+python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S HS --S_par 0.05,60 --model_name ellipsoid_HS
+python compare.py --model_name ellipsoid,ellipsoid_HS
 ```
 Increasing sphere size: 
 ```
@@ -211,6 +224,24 @@ open plot.png points_sph20.png points_sph50.png points_sph80.png
 </p>
 
  *Example 4: Scattering from spheres of increasing size.*
+
+[Back to Table of contents](#table-of-contents)
+
+### The compare script
+The `compare.py` script compares results from calculated shape2sas models, using the output files. Inputs given in the table, or by typing `python compare.py -h`
+
+| Option   | Shor name  |   Description                | Default |
+|------------------|----------------|------------|----------------|
+| `--model_name` | `-m` | name of models to compare | No default, mandatory input |
+| `--name` | `-n`| prefix of output png files | model names separated by underscore |
+| `--xscale_lin` | `-lin`  | linear q-scale | False (log scale) |
+| `--high_res` | `-r` | high resolutino output figures |
+| `--scale`| ´-s´ | scale simualated data for better visualization |
+| `--grid`| ´-g´| add grid to point distribution |
+
+output files:
+`<name>_data.png`: p(r), theoretical I and simulated I (with noise) for selected models
+`<name>_points.png`: 2D representations of structures
 
 [Back to Table of contents](#table-of-contents)
 
@@ -377,6 +408,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
