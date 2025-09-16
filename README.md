@@ -299,7 +299,7 @@ The q-range is extended and sampled with many points to make the tranformation m
 
 Spheres with or without hard-sphere intearaction in SESANS: 
 ```
-python shape2sas.py --sesans --subunit_type sphere --dimension 50 --S None --model_name sphere --subunit_type sphere --dimension 50 --S HS --r_hs 60 --conc 0.1 --model_name sphere_HS
+python shape2sas.py --sesans --subunit_type sphere --dimension 50 --S None --S_par " " --model_name sphere --subunit_type sphere --dimension 50 --S HS --S_par 0.01,60 --model_name sphere_HS
 open plot.png points_sphere.png points_sphere_HS.png sesans.png
 ```
 One sphere (radius 250 Å) vs two spheres separated by 1000 Å:
@@ -377,6 +377,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
