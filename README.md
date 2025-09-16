@@ -157,14 +157,14 @@ open plot.png points_my_dumbbell.png
 
 ### Example 3: Structure factors - repulsion and aggregation
 Structure factors can be added. This will affect the calculated scattering but not the displayed $p(r)$. 
-Below a sample of ellipsoids with semi-axes 50, 60, and 50 Å with hard-sphere repulsion (hard-sphere radius, r_hs, of 60 Å:
+Below a sample of ellipsoids with semi-axes 50, 60, and 50 Å with hard-sphere repulsion with volume fraction of 0.1 and hard-sphere radius of 60 Å:
 ```
-python shape2sas.py --subunit_type ellipsoid --dimension "50, 60, 50" --S HS --r_hs 60 --model_name ellipsoid_HS
+python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S HS --S_par 0.1,60 --model_name ellipsoid_HS
 open plot.png points_ellipsoid_HS.png
 ```
-Aggregation can also be simulated through a structure factor. Below a sample with 10% of the particles being aggregated (frac). There are 90 particles per aggregate (N_aggr) and the simulated aggregates have an effective radius (R_eff) of 60 Å:
+Aggregation can also be simulated through a structure factor. Below a sample containing aggregates wirh effective radius of 60, 90 particles per aggregate. A fraction of 10% of the particles are aggregated, the rest are monomeric:
 ```
-python shape2sas.py --subunit_type ellipsoid --dimension "50, 60, 50" --S aggregation --N_aggr 90 --R_eff 60 --frac 0.1 --model_name ellipsoid_aggr
+python shape2sas.py --subunit_type ellipsoid --dimension "50, 60, 50" --S aggregation --S_par 60,90,0.1 --model_name ellipsoid_aggr
 open plot.png points_ellipsoid_aggr.png
 ```
 <p align="center" id="example3">
@@ -178,16 +178,11 @@ open plot.png points_ellipsoid_aggr.png
 ##### Structure factors
 The following structure factors are implemented
 
-| Structure factor          | Options  |  Alternative names<sup>*</sup>           | Description                |
+| Structure factor   | Parameters  |  Alternative names<sup>*</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
-| `hardsphere` |  | hs, hard-sphere | Hard-sphere structure factor with hard-sphere radius (--r_hs) and volume fraction (--conc)
-| -- | --r_hs | -rhs | hard-sphere radius
-| -- | --conc | -conc | volume fraction <sup>**<\sup>
-| `aggregation` | | aggr, frac2d | Two-dimensional fractal aggregate
-| -- | --N_aggr   | -Naggr | number of particles per aggregate
-| -- | --R_eff  | -Reff-- | Effective radius of aggregate
-| -- | --frac  | -frac | fraction of particles in aggregate
-| `None` |  | no 0 1 unity | No structure factor (default)
+| `hardsphere` | volume fraction, hard-spher radius | hs | Hard-sphere structure factor 
+| `aggregation` | aggregate effective radius, particles per aggregate, fraction of particles in aggregates | aggr, frac2d | Two-dimensional fractal aggregate
+| `None` |  | no, unity | No structure factor (default)
 
  <sup>*</sup>capitalized versions and CamelCase are also recognized: Hollow_sphere, HollowSphere, or hollowsphere.  
  <sup>**</sup>also affects conc in general, when hard-sphere structure is disabled
@@ -204,7 +199,7 @@ open plot.png points_sphere.png points_cylinder.png
 ```
 Ellipsoids with or without a hard-sphere structure factor:
 ```
-python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S None --model_name ellipsoid --subunit_type ellipsoid --dimension 50,60,50 --S HS --r_hs 60 --conc 0.05 --model_name ellipsoid_HS
+python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S None --S_par " " --model_name ellipsoid --subunit_type ellipsoid --dimension 50,60,50 --S HS --S_par 0.05,60 --model_name ellipsoid_HS
 open plot.png points_ellipsoid.png points_ellipsoid_HS.png
 ```
 Increasing sphere size: 
@@ -325,40 +320,41 @@ open plot.png points_sphere.png points_two_spheres.png sesans.png
 Shape2SAS has two types of inputs: model-dependent inputs, that only affect the specific model in question, and general inputs that affects all models.  
 
 ### Mandatory inputs (model-dependent):
-| Flag          | Type   | Default value| Description                                         |
-|-----------------|--------|---------|-----------------------------------------------------|
-| `--subunit_type`       | str  | Mandatory, no default      | Type of subunits (see separat table) |  
-| `--dimension`       | list  | Mandatory, no default    | Dimensions of subunit 
+| Flag             | Default value | Short name | Description                                         |
+|-----------------|---------|-------------------|----------------------------------|
+| `--subunit_type`         | Mandatory, no default      | -subunit | Type of subunits (see [subunit table](#subunits)) |  
+| `--dimension`         | Mandatory, no default    | -dim | Dimensions of subunit (see [subunit table](#subunits)) |
 
 ### Model-dependent (and optional) inputs:
-| Flag          | Type   | Default value | Description                                         | 
-|-----------------|--------|---------|-----------------------------------------------------|
-| `--model_name` | str  | Model 0, Model 1, etc     | Name of the model  |  
-| `--sld`       | float  | 1.0     | excess cattering length density (or contrast)  | 
-| `--polydispersity`       | float  | 0.0 (monodisperse)    | Polydispersity of model  | 
-| `--com`       | list  | 0,0,0 (origin)     | Displacement of subunit given as (x,y,z) |
-| `--rotation`       | list  | 0,0,0    | Rotation (in degrees) around x,y, or z-axis |
-| `--sigma_r`    | float  | 0.0     | Interface roughness for each model                  |            
-| `--conc`       | float  | 0.02    | Volume fraction (concentration) also affects hard-sphere structure factor |
-| `--exclude_overlap`       | bool  | True (exclude overlap)    | Exclude overlap (True) or not (False) | 
-| `--S`       | str  | None     | Structure factor (see separate table for structure factor-related options) |
+| Flag             | Default value | Short name | Description                                         | 
+|------------------|---------|-------------|----------------------------------------|
+| `--model_name`   | Model 0, Model 1, etc    | -name | Name of the model  |  
+| `--sld`         | 1.0     | -sld | excess cattering length density (or contrast)  | 
+| `--polydispersity`         | 0.0 (monodisperse)   | -pd | Polydispersity of model  | 
+| `--com`         | 0,0,0 (origin)    | -com | Displacement of subunit given as (x,y,z) |
+| `--rotation`         | 0,0,0  | -rot  | Rotation (in degrees) around x,y, or z-axis |
+| `--sigma_r`      | 0.0    | -sigmar | Interface roughness for each model                  |            
+| `--conc`         | 0.02  | -c  | Volume fraction (concentration) also affects hard-sphere structure factor |
+| `--exclude_overlap`    | -exclude   | bool  | True (exclude overlap)    | Exclude overlap (True) or not (False) | 
+| `--S`         | None   | -S  | Structure factor (see [structure factor table](#structure-factors)) |
+| `--S_par`         | None  | -Spar   | Structure factor parameters (see [structure factor table](#structure-factors)) |
 
 ### General (and optional) inputs:
-| Flag          | Type   | Default | Short name |Description                                         |
-|-----------------|--------|---------|------------|-----------------------------------------|
-| `--qmin`       | float  | 0.001     | -qmin | Minimum q-value (in Å<sup>-1<\sup>) for the scattering curve  |
-| `--qmax`       | float  | 0.5     | -qmax | Maximum q-value (in Å<sup>-1<\sup) for the scattering curve  |
-| `--qpoints`       | int  | 400      | -Nq | Number of q points  |
-| `--prpoints`       | int  | 100      | -Np | Number of points in the pair distance distribution function |
-| `--Npoints`       | int  | 5000      | -N | Number of simulated points  |
-| `--exposure`       | float  | 500      | -expo | Exposure time in arbitrary units - higher exposure time decreses simulated noise |
+| Flag             | Default | Short name |Description                                         |
+|-----------------|---------|------------|-----------------------------------------|
+| `--qmin`         | 0.001     | -qmin | Minimum q-value (in Å<sup>-1<\sup>) for the scattering curve  |
+| `--qmax`         | 0.5     | -qmax | Maximum q-value (in Å<sup>-1<\sup) for the scattering curve  |
+| `--qpoints`         | 400      | -Nq | Number of q points  |
+| `--prpoints`         | 100      | -Np | Number of points in the pair distance distribution function |
+| `--Npoints`         | 5000      | -N | Number of simulated points  |
+| `--exposure`         | 500      | -expo | Exposure time in arbitrary units - higher exposure time decreses simulated noise |
 
 ### Plot-related (and optional) inputs:
-| Flag          | Type   | Default | Short name |Description                                         |
-|-----------------|--------|---------|------------|-----------------------------------------|
-| `--xscale_lin`       | bool  | True       | -lin | Linear q scale (default)  |
-| `--high_res`       | bool  | False       | -hres | Use high resoulution in plots (e.g., for publications) |
-| `--scale`       | float  | 1.0       | -scale | In the plot, scale simulated intensity of each model to avoid overlap  |
+| Flag             | Default | Short name |Description                                         |
+|-----------------|---------|------------|-----------------------------------------|
+| `--xscale_lin`         | True       | -lin | Linear q scale (default)  |
+| `--high_res`         | False       | -hres | Use high resoulution in plots (e.g., for publications) |
+| `--scale`         | 1.0       | -scale | In the plot, scale simulated intensity of each model to avoid overlap  |
 
 [Back to Table of contents](#table-of-contents)
 
@@ -382,6 +378,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
