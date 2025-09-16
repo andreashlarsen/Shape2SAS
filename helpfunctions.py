@@ -1,13 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.special import gamma
+from scipy.special import gamma,j0
 from typing import Optional, Tuple, List, Any
 #from dataclasses import dataclass
 from fast_histogram import histogram1d #histogram1d from fast_histogram is faster than np.histogram (https://pypi.org/project/fast-histogram/) 
-
-
-
 from scipy.spatial.distance import pdist, squareform
+import inspect
+import sys
+import re
+import warnings
+from dataclasses import dataclass, field
 
 
 ################################ Data classes ################################
@@ -16,8 +18,6 @@ Vector2D = Tuple[np.ndarray, np.ndarray]
 Vector3D = Tuple[np.ndarray, np.ndarray, np.ndarray]
 Vector4D = Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
 
-
-################################ Shape2SAS helper functions ###################################
 def sinc(x) -> np.ndarray:
     """
     function for calculating sinc = sin(x)/x
@@ -25,8 +25,11 @@ def sinc(x) -> np.ndarray:
     """
     return np.sinc(x / np.pi)   
 
+### Subunits
 
 class Sphere:
+    aliases = ["sphere","ball"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 1:
             print("\nERROR: subunit sphere needs 1 dimension, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -35,10 +38,8 @@ class Sphere:
 
     def getVolume(self) -> float:
         """Returns the volume of a sphere"""
-
         return (4 / 3) * np.pi * self.R**3
     
-
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a sphere"""
 
@@ -57,7 +58,6 @@ class Sphere:
 
         return x_add, y_add, z_add
 
-
     def checkOverlap(self, 
                      x_eff: np.ndarray, 
                      y_eff: np.ndarray, 
@@ -68,8 +68,9 @@ class Sphere:
         idx = np.where(d > self.R)
         return idx
 
-    
 class HollowSphere:
+    aliases = ["hollowsphere","shell"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
             print("\nERROR: subunit hollow_sphere needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -79,21 +80,16 @@ class HollowSphere:
 
     def getVolume(self) -> float:
         """Returns the volume of a hollow sphere"""
-
         if self.r > self.R:
             self.R, self.r = self.r, self.R
-
         if self.r == self.R:
             return 4 * np.pi * self.R**2 #surface area of a sphere
-
         else: 
             return (4 / 3) * np.pi * (self.R**3 - self.r**3)
-
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a hollow sphere"""
         Volume = self.getVolume()
-
         if self.r == self.R:
             #The hollow sphere is a shell
             phi = np.random.uniform(0,2 * np.pi, Npoints)
@@ -104,7 +100,6 @@ class HollowSphere:
             y_add = self.R * np.sin(theta) * np.sin(phi)
             z_add = self.R * np.cos(theta)
             return x_add, y_add, z_add
-
         Volume_max = (2*self.R)**3 ###Box around the sphere
         Vratio = Volume_max/Volume
 
@@ -126,16 +121,16 @@ class HollowSphere:
         d = np.sqrt(x_eff**2+y_eff**2+z_eff**2)
         if self.r > self.R:
              self.r, self.R = self.R, self.r
-
         if self.r == self.R:
             idx = np.where(d != self.R)
             return idx
-        
         else:
             idx = np.where((d > self.R) | (d < self.r))
             return idx
 
 class Cylinder:
+    aliases = ["cylinder","rod"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
             print("\nERROR: subunit cylinder needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -174,8 +169,9 @@ class Cylinder:
         idx = np.where((d > self.R) | (abs(z_eff) > self.l / 2))
         return idx
 
-
 class Ellipsoid:
+    aliases = ["ellipsoid"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
             print("\nERROR: subunit ellipsoid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -184,12 +180,9 @@ class Ellipsoid:
         self.b = dimensions[1]
         self.c = dimensions[2]
 
-
     def getVolume(self) -> float:
         """Returns the volume of an ellipsoid"""
-
         return (4 / 3) * np.pi * self.a * self.b * self.c
-
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of an ellipsoid"""
@@ -208,7 +201,6 @@ class Ellipsoid:
 
         return x_add, y_add, z_add
 
-
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
@@ -220,6 +212,8 @@ class Ellipsoid:
         return idx
 
 class EllipticalCylinder:
+    aliases = ["ellipticalcylinder","ellipticalrod"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
             print("\nERROR: subunit elliptical_cylinder needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -230,9 +224,7 @@ class EllipticalCylinder:
 
     def getVolume(self) -> float:
         """Returns the volume of an elliptical cylinder"""
-
         return np.pi * self.a * self.b * self.l
-
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of an elliptical cylinder"""
@@ -250,23 +242,19 @@ class EllipticalCylinder:
         idx = np.where(d2 < 1)
         x_add, y_add, z_add = x[idx], y[idx], z[idx]
 
-        return x_add, y_add, z_add
-    
+        return x_add, y_add, z_add 
 
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
         """Check for points within a Elliptical cylinder"""
-
         d2 = x_eff**2 / self.a**2 + y_eff**2 / self.b**2
         idx = np.where((d2 > 1) | (abs(z_eff) > self.l / 2))
-
         return idx
 
-#class Disc(EllipticalCylinder):
-#    pass
-
 class Cube:
+    aliases = ["cube","dice"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 1:
             print("\nERROR: subunit cube needs 1 dimension, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -275,7 +263,6 @@ class Cube:
 
     def getVolume(self) -> float:
         """Returns the volume of a cube"""
-
         return self.a**3
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
@@ -301,8 +288,9 @@ class Cube:
         
         return idx
 
-
 class HollowCube:
+    aliases = ["hollowcube","hollowdice"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
             print("\nERROR: subunit hollow_cube needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -312,13 +300,10 @@ class HollowCube:
 
     def getVolume(self) -> float:
         """Returns the volume of a hollow cube"""
-
         if self.a < self.b:
             self.a, self.b = self.b, self.a
-
         if self.a == self.b:
             return 6 * self.a**2 #surface area of a cube
-
         else: 
             return (self.a - self.b)**3
     
@@ -382,8 +367,9 @@ class HollowCube:
 
         return idx
 
-
 class Cuboid:
+    aliases = ["cuboid","brick"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
             print("\nERROR: subunit hollow_cube needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -394,30 +380,27 @@ class Cuboid:
 
     def getVolume(self) -> float:
         """Returns the volume of a cuboid"""
-
         return self.a * self.b * self.c
     
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a cuboid"""
-
         Volume = self.getVolume()
         x_add = np.random.uniform(-self.a, self.a, Npoints)
         y_add = np.random.uniform(-self.b, self.b, Npoints)
         z_add = np.random.uniform(-self.c, self.c, Npoints)
-
         return x_add, y_add, z_add
     
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
         """Check for points within a Cuboid"""
-
         idx = np.where((abs(x_eff) >= self.a/2) 
         | (abs(y_eff) >= self.b/2) | (abs(z_eff) >= self.c/2))
-
         return idx
 
 class CylinderRing:
+    aliases = ["cylinderring","ring","discring","hollowcylinder","hollowdisc","hollowrod"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
             print("\nERROR: subunit CylinderRing needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -426,25 +409,19 @@ class CylinderRing:
         self.r = dimensions[1]
         self.l = dimensions[2]
     
-
     def getVolume(self) -> float:
         """Returns the volume of a cylinder ring"""
-
         if self.r > self.R:
             self.R, self.r = self.r, self.R
-
         if self.r == self.R:
             return 2 * np.pi * self.R * self.l #surface area of a cylinder
-
         else: 
             return np.pi * (self.R**2 - self.r**2) * self.l
 
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a cylinder ring"""
-
         Volume = self.getVolume()
-
         if self.r == self.R:
             #The cylinder ring is a shell
             phi = np.random.uniform(0, 2 * np.pi, Npoints)
@@ -452,7 +429,6 @@ class CylinderRing:
             y_add = self.R * np.sin(phi)
             z_add = np.random.uniform(-self.l / 2, self.l / 2, Npoints)
             return x_add, y_add, z_add
-
         Volume_max = 2 * self.R * 2 * self.R * self.l
         Vratio = Volume_max / Volume
         N = int(Vratio * Npoints)
@@ -462,19 +438,15 @@ class CylinderRing:
         d = np.sqrt(x**2 + y**2)
         idx = np.where((d < self.R) & (d > self.r))
         x_add, y_add, z_add = x[idx], y[idx], z[idx]
-
         return x_add, y_add, z_add
-
 
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
         """Check for points within a cylinder ring"""
-
         d = np.sqrt(x_eff**2 + y_eff**2)
         if self.r > self.R:
             self.R, self.r = self.r, self.R
-
         if self.r == self.R:
             idx = np.where((d != self.R) | (abs(z_eff) > self.l / 2))
             return idx
@@ -482,10 +454,9 @@ class CylinderRing:
             idx = np.where((d > self.R) | (d < self.r) | (abs(z_eff) > self.l / 2))
             return idx
 
-#class DiscRing(CylinderRing):
-#    pass
-
 class Torus:
+    aliases = ["torus","toroid","doughnut"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
             print("\nERROR: subunit Torus needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
@@ -500,7 +471,6 @@ class Torus:
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a torus"""
-
         Volume = self.getVolume()
         L = 2 * (self.R + self.r)
         l = 2 * self.r
@@ -521,30 +491,28 @@ class Torus:
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
         """Check for points within a torus"""
-
         d = np.sqrt(x_eff**2 + y_eff**2)
         idx = np.where((self.R-d)**2 + z_eff**2 > self.r**2)
         return idx
         
 class Hyperboloid:
+    aliases = ["hyperboloid", "hourglass", "coolingtower"]
+    
     # https://mathworld.wolfram.com/One-SheetedHyperboloid.html
     # https://www.vcalc.com/wiki/hyperboloid-volume
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
             print("\nERROR: subunit Hyperboloid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
-        self.r = dimensions[0]
-        self.c = dimensions[1]
-        self.h = dimensions[2]
+        self.r,self.c,self,h = dimensions
 
     def getVolume(self) -> float:
         """Returns the volume of a hyperboloid"""
-        
         return np.pi * 2*self.h * self.r**2 * ( 1 + (2*self.h)**2 / ( 12 * self.c**2 ) )
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a hyperboloid"""
-
         #Volume = self.getVolume()
         L = 2 * self.h
         R = self.r * np.sqrt( 1 + L**2 / (4 * self.c**2 ) )
@@ -557,167 +525,70 @@ class Hyperboloid:
         z = np.random.uniform(-self.h, self.h, N)
         idx = np.where(x**2/self.r**2 + y**2/self.r**2 - z**2/self.c**2 < 1.0)
         x_add, y_add, z_add = x[idx], y[idx], z[idx]
-
         return x_add, y_add, z_add
 
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
         """Check for points within a Hyperboloid"""
-
         idx = np.where(x_eff**2/self.r**2 + y_eff**2/self.r**2 - z_eff**2/self.c**2 > 1.0)
         return idx
     
 class Superellipsoid:
+    aliases = ["superellipsoid"]
+
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 4:
             print("\nERROR: subunit Superellipsoid needs 4 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
-        self.R = dimensions[0]
-        self.eps = dimensions[1]
-        self.t = dimensions[2]
-        self.s = dimensions[3]
+        self.R,self.eps,self.t,self.s = dimensions
 
     @staticmethod
     def beta(a, b) -> float:
         """beta function"""
-
         return gamma(a) * gamma(b) / gamma(a + b)
 
     def getVolume(self) -> float:
         """Returns the volume of a superellipsoid"""
-
         return (8 / (3 * self.t * self.s) * self.R**3 * self.eps * 
                 self.beta(1 / self.s, 1 / self.s) * self.beta(2 / self.t, 1 / self.t))
     
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a superellipsoid"""
-
         Volume = self.getVolume()
         Volume_max = 2 * self.R * self.eps * 2 * self.R * 2 * self.R
         Vratio = Volume_max / Volume
-
         N = int(Vratio * Npoints)
         x = np.random.uniform(-self.R, self.R, N)
         y = np.random.uniform(-self.R, self.R, N)
         z = np.random.uniform(-self.R * self.eps, self.R * self.eps, N)
-
         d = ((np.abs(x)**self.s + np.abs(y)**self.s)**(self.t/ self.s) 
             + np.abs(z / self.eps)**self.t)
         idx = np.where(d < np.abs(self.R)**self.t)
         x_add, y_add, z_add = x[idx], y[idx], z[idx]
-
         return x_add, y_add, z_add
     
     def checkOverlap(self, x_eff: np.ndarray, 
                            y_eff: np.ndarray, 
                            z_eff: np.ndarray) -> np.ndarray:
         """Check for points within a superellipsoid"""
-
         d = ((np.abs(x_eff)**self.s + np.abs(y_eff)**self.s)**(self.t / self.s) 
         + np.abs(z_eff / self.eps)**self.t)
         idx = np.where(d >= np.abs(self.R)**self.t)
-
         return idx
 
-class Qsampling:
-    def __init__(self, qmin: float, qmax: float, Nq: int):
-        self.qmin = qmin
-        self.qmax = qmax
-        self.Nq = Nq
-
-    def onQsampling(self) -> np.ndarray:
-        """Returns the q sampling"""
-        q = np.linspace(self.qmin, self.qmax, self.Nq)
-        return q
-
-class Rotation:
-    def __init__(self, x_add: np.ndarray, 
-                       y_add: np.ndarray, 
-                       z_add: np.ndarray, 
-                       alpha: float, 
-                       beta: float, 
-                       gam: float):
-        self.x_add = x_add
-        self.y_add = y_add
-        self.z_add = z_add
-        self.alpha = alpha
-        self.beta = beta
-        self.gam = gam
-  
-    def onRotatingPoints(self) -> Vector3D:
-        """Simple Euler rotation"""
-
-        x_rot = (self.x_add * np.cos(self.gam) * np.cos(self.beta) 
-             + self.y_add * (np.cos(self.gam) * np.sin(self.beta) * np.sin(self.alpha) - np.sin(self.gam) * np.cos(self.alpha)) 
-             + self.z_add * (np.cos(self.gam) * np.sin(self.beta) * np.cos(self.alpha) + np.sin(self.gam) * np.sin(self.alpha)))
-    
-        y_rot = (self.x_add * np.sin(self.gam) * np.cos(self.beta) 
-             + self.y_add * (np.sin(self.gam) * np.sin(self.beta) * np.sin(self.alpha) + np.cos(self.gam) * np.cos(self.alpha)) 
-             + self.z_add * (np.sin(self.gam) * np.sin(self.beta) * np.cos(self.alpha) - np.cos(self.gam) * np.sin(self.alpha)))
-
-        z_rot = (-self.x_add * np.sin(self.beta)
-            + self.y_add * np.cos(self.beta) * np.sin(self.alpha)
-            + self.z_add * np.cos(self.beta) * np.cos(self.alpha))
-
-        return x_rot, y_rot, z_rot
-    
-    #More advanced rotation functions can be added here
-    #but GeneratePoints should be changed....
-
-class Translation:
-    def __init__(self, x_add: np.ndarray, 
-                       y_add: np.ndarray, 
-                       z_add: np.ndarray, 
-                       com_x: float, 
-                       com_y: float, 
-                       com_z: float):
-        self.x_add = x_add
-        self.y_add = y_add
-        self.z_add = z_add
-        self.com_x = com_x
-        self.com_y = com_y
-        self.com_z = com_z
-        
-    def onTranslatingPoints(self) -> Vector3D:
-        """Translates points"""
-
-        return self.x_add + self.com_x, self.y_add + self.com_y, self.z_add + self.com_z
-
-
-class GeneratePoints:
-    def __init__(self, com: List[float], 
-                    subunitClass: object, 
-                    dimensions: List[float], 
-                    rotation: List[float], 
-                    Npoints: int):
-
-        self.com = com
-        self.subunitClass = subunitClass
-        self.dimensions = dimensions
-        self.rotation = rotation
-        self.Npoints = Npoints        
-
-    def onGeneratingPoints(self) -> Vector3D:
-        """Generates the points"""
-        x, y, z= self.subunitClass(self.dimensions).getPointDistribution(self.Npoints)
-        x, y, z = self.onTransformingPoints(x, y, z)
-
-        return x, y, z
-    
-    def onTransformingPoints(self, x: np.ndarray, 
-                                   y: np.ndarray, 
-                                   z: np.ndarray) -> Vector3D:
-        """Transforms the points"""
-        alpha, beta, gam = self.rotation
-        alpha = np.radians(alpha)
-        beta = np.radians(beta)
-        gam = np.radians(gam)
-        com_x, com_y, com_z = self.com
-
-        x, y, z = Rotation(x, y, z, alpha, beta, gam).onRotatingPoints()
-        x, y, z = Translation(x, y, z, com_x, com_y, com_z).onTranslatingPoints()
-        return x, y, z  
+def Rotate(x,y,z,alpha,beta,gamma):
+    """
+    Simple Euler rotation
+    input angles in degrees
+    """
+    a,b,g = np.radians(alpha),np.radians(beta),np.radians(gamma)
+    ca,cb,cg = np.cos(a),np.cos(b),np.cos(g)
+    sa,sb,sg = np.sin(a),np.sin(b),np.sin(g)
+    x_rot = ( x * cg * cb + y * (cg * sb * sa - sg * ca) + z * (cg * sb * ca + sg * sa))
+    y_rot = ( x * sg * cb + y * (sg * sb * sa + cg * ca) + z * (sg * sb * ca - cg * sa))
+    z_rot = (-x * sb      + y * cb * sa                  + z * cb * ca)
+    return x_rot, y_rot, z_rot
 
 class GenerateAllPoints:
     def __init__(self, Npoints: int, 
@@ -738,96 +609,17 @@ class GenerateAllPoints:
         self.setAvailableSubunits()
 
     def setAvailableSubunits(self):
-        """Returns the available subunits"""
-        self.subunitClasses = {
-                    "Sphere": Sphere, 
-                    "sphere": Sphere,
-                    "ball": Sphere,
-                    "Ball": Sphere,
-
-                    "hollow_sphere": HollowSphere, 
-                    "Hollow_sphere": HollowSphere, 
-                    "hollowsphere": HollowSphere,
-                    "HollowSphere": HollowSphere, 
-                    "shell": HollowSphere, 
-                    "Shell": HollowSphere,
-
-                    "Cylinder": Cylinder,
-                    "cylinder": Cylinder,
-                    "Rod": Cylinder,
-                    "rod": Cylinder,
-
-                    "ellipsoid": Ellipsoid,
-                    "Ellipsoid": Ellipsoid,
-
-                    "elliptical_cylinder": EllipticalCylinder,
-                    "Elliptical_cylinder": EllipticalCylinder,
-                    "ellipticalcylinder": EllipticalCylinder,
-                    "EllipticalCylinder": EllipticalCylinder,
-                    "elliptical_rod": EllipticalCylinder,
-                    "Elliptical_rod": EllipticalCylinder,
-                    "ellipticalrod": EllipticalCylinder,
-                    "EllipticalRod": EllipticalCylinder,
-                    "disc": EllipticalCylinder,
-                    "Disc": EllipticalCylinder,
-
-                    "cube": Cube,
-                    "Cube": Cube,
-                    "dice": Cube,
-                    "Dice": Cube,                    
-
-                    "hollow_cube": HollowCube,
-                    "Hollow_cube": HollowCube,
-                    "hollowcube": HollowCube,
-                    "HollowCube": HollowCube,
-
-                    "cuboid": Cuboid,
-                    "Cuboid": Cuboid,
-                    "brick": Cuboid,
-                    "Brick": Cuboid,
-
-                    "ring": CylinderRing,
-                    "Ring": CylinderRing,
-                    "cylinder_ring": CylinderRing,
-                    "Cylinder_ring": CylinderRing,
-                    "cylinderring": CylinderRing,
-                    "CylinderRing": CylinderRing,
-                    "hollow_cylinder": CylinderRing,
-                    "Hollow_cylinder": CylinderRing,
-                    "hollowcylinder": CylinderRing,
-                    "HollowCylinder": CylinderRing,
-                    "disc_ring": CylinderRing,
-                    "Disc_ring": CylinderRing,
-                    "HollowCylinder": CylinderRing,
-                    "discring": CylinderRing,
-                    "DiscRing": CylinderRing,
-                    "hollow_disc": CylinderRing,
-                    "Hollow_disc": CylinderRing,
-                    "hollowdisc": CylinderRing,
-                    "HollowDisc": CylinderRing,
-
-                    "torus": Torus,
-                    "Torus": Torus,
-                    "toroid": Torus,
-                    "Toroid": Torus,
-                    "doughnut": Torus,
-                    "Doughnut": Torus,
-                    "donut": Torus,
-                    "Donut": Torus,
-
-                    "hyperboloid": Hyperboloid,
-                    "Hyperboloid": Hyperboloid,
-                    "hourglass": Hyperboloid,
-                    "Hourglass": Hyperboloid,
-                    "Cooling tower": Hyperboloid,
-                    "cooling_tower": Hyperboloid,
-                    "coolingTower": Hyperboloid,
-
-                    "superellipsoid": Superellipsoid,
-                    "Superellipsoid": Superellipsoid}
+        """Dynamically build dictionary of aliases -> subunit classes"""
+        current_module = sys.modules[__name__]
+        classes = inspect.getmembers(current_module, inspect.isclass)
+        self.subunitClasses = {}
+        for _, cls in classes:
+            if hasattr(cls, "aliases"):
+                for alias in cls.aliases:
+                    self.subunitClasses[alias.lower().replace("_", "").replace(" ", "")] = cls
 
     @staticmethod
-    def onAppendingPoints(x_new: np.ndarray, 
+    def AppendingPoints(x_new: np.ndarray, 
                           y_new: np.ndarray, 
                           z_new: np.ndarray,
                           sld_new: np.ndarray, 
@@ -863,32 +655,20 @@ class GenerateAllPoints:
                        dimensions: List[float]):
         """check for overlap with previous subunits. 
         if overlap, the point is removed"""
-
+        # shift back to origin
+        x_eff,y_eff,z_eff = x-com[0],y-com[1],z-com[2]
         if sum(rotation) != 0:
-            ## effective coordinates, shifted by (x_com,y_com,z_com)
-            x_eff, y_eff, z_eff = Translation(x, y, z, -com[0], -com[1], -com[2]).onTranslatingPoints()
+            #rotate back to original orientation
+            alpha, beta, gamma = rotation
+            x_eff, y_eff, z_eff  = Rotate(x_eff,y_eff,z_eff,-alpha,-beta,-gamma)
 
-            #rotate backwards with minus rotation angles
-            alpha, beta, gam = rotation
-            alpha = np.radians(alpha)
-            beta = np.radians(beta)
-            gam = np.radians(gam)
-
-            x_eff, y_eff, z_eff = Rotation(x_eff, y_eff, z_eff, -alpha, -beta, -gam).onRotatingPoints()
-
-        else:
-            ## effective coordinates, shifted by (x_com,y_com,z_com)
-            x_eff, y_eff, z_eff = Translation(x, y, z, -com[0], -com[1], -com[2]).onTranslatingPoints()
-
-
+        # then check overlaps
         idx = subunitClass(dimensions).checkOverlap(x_eff, y_eff, z_eff)
         x_add, y_add, z_add, sld_add = x[idx], y[idx], z[idx], p[idx]
 
         ## number of excluded points
         N_x = len(x) - len(idx[0])
-
         return x_add, y_add, z_add, sld_add, N_x
-
 
     def onGeneratingAllPointsSeparately(self) -> Vector3D:
         """Generating points for all subunits from each built model, but
@@ -898,7 +678,9 @@ class GenerateAllPoints:
 
         #Get volume of each subunit
         for i in range(self.Number_of_subunits):
-            subunitClass = self.subunitClasses[self.subunits[i]]
+
+            #subunitClass = self.subunitClasses[self.subunits[i]]
+            subunitClass = self.subunitClasses[self.subunits[i].lower().replace("_", "").replace(" ", "")]
             v = subunitClass(self.dimensions[i]).getVolume()
             volume.append(v)
             sum_vol += v
@@ -908,9 +690,14 @@ class GenerateAllPoints:
 
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
+            
+            x_add, y_add, z_add = self.subunitClasses[self.subunits[i].lower().replace("_", "").replace(" ", "")](self.dimensions[i]).getPointDistribution(self.Npoints)
+            alpha, beta, gamma = self.rotation[i]
+            com_x, com_y, com_z = self.com[i]
 
-            x_add, y_add, z_add = GeneratePoints(self.com[i], self.subunitClasses[self.subunits[i]], self.dimensions[i], 
-                                                    self.rotation[i], Npoints).onGeneratingPoints()
+            # rotate and translate
+            x_add, y_add, z_add = Rotate(x_add, y_add, z_add,alpha,beta,gamma)
+            x_add, y_add, z_add = x_add+com_x,y_add+com_y,z_add+com_z
             
             #Remaining points
             N_subunit = len(x_add)
@@ -922,7 +709,7 @@ class GenerateAllPoints:
             if self.exclude_overlap:
                 for j in range(i): 
                     x_add, y_add, z_add, sld_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, sld_add, self.rotation[j],  
-                                                    self.com[j], self.subunitClasses[self.subunits[j]], self.dimensions[j])
+                                                    self.com[j], self.subunitClasses[self.subunits[j].lower().replace("_", "").replace(" ", "")], self.dimensions[j])
                     N_x_sum += N_x
     
             N.append(N_subunit)
@@ -956,14 +743,13 @@ class GenerateAllPoints:
 
         return x_new, y_new, z_new, sld_new, volume_total
 
-
     def onGeneratingAllPoints(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]:
         """Generating points for all subunits from each built model"""
         volume = []
         sum_vol = 0
         #Get volume of each subunit
         for i in range(self.Number_of_subunits):
-            subunitClass = self.subunitClasses[self.subunits[i]]
+            subunitClass = self.subunitClasses[self.subunits[i].lower().replace("_", "").replace(" ", "")]
             v = subunitClass(self.dimensions[i]).getVolume()
             volume.append(v)
             sum_vol += v
@@ -974,10 +760,15 @@ class GenerateAllPoints:
         #Generate subunits
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
-
-            x_add, y_add, z_add = GeneratePoints(self.com[i], self.subunitClasses[self.subunits[i]], self.dimensions[i], 
-                                                    self.rotation[i], Npoints).onGeneratingPoints()
             
+            x_add, y_add, z_add = self.subunitClasses[self.subunits[i].lower().replace("_", "").replace(" ", "")](self.dimensions[i]).getPointDistribution(self.Npoints)
+            alpha, beta, gamma = self.rotation[i]
+            com_x, com_y, com_z = self.com[i]
+
+            # rotate and translate
+            x_add, y_add, z_add = Rotate(x_add, y_add, z_add,alpha,beta,gamma)
+            x_add, y_add, z_add = x_add+com_x,y_add+com_y,z_add+com_z
+
             #Remaining points
             N_subunit = len(x_add)
             rho_subunit = N_subunit / volume[i]
@@ -988,11 +779,11 @@ class GenerateAllPoints:
             if self.exclude_overlap:
                 for j in range(i): 
                     x_add, y_add, z_add, sld_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, sld_add, self.rotation[j],  
-                                                    self.com[j], self.subunitClasses[self.subunits[j]], self.dimensions[j])
+                                                    self.com[j], self.subunitClasses[self.subunits[j].lower().replace("_", "").replace(" ", "")], self.dimensions[j])
                     N_x_sum += N_x
             
-            #Append data
-            x_new, y_new, z_new, sld_new = self.onAppendingPoints(x_new, y_new, z_new, sld_new, x_add, y_add, z_add, sld_add)
+            #Append points
+            x_new, y_new, z_new, sld_new = self.AppendingPoints(x_new, y_new, z_new, sld_new, x_add, y_add, z_add, sld_add)
 
             N.append(N_subunit)
             rho.append(rho_subunit)
@@ -1319,7 +1110,6 @@ class StructureDecouplingApprox:
         self.z_new = z_new
         self.sld_new = sld_new
 
-
     def calc_com_dist(self) -> np.ndarray:
         """ 
         calc contrast-weighted com distance
@@ -1334,7 +1124,6 @@ class StructureDecouplingApprox:
         com_dist = np.sqrt(dx**2 + dy**2 + dz**2)
 
         return com_dist
-
 
     def calc_A00(self) -> np.ndarray:
         """
@@ -1352,7 +1141,6 @@ class StructureDecouplingApprox:
 
         return A00
 
-    
     def decoupling_approx(self, Pq: np.ndarray, S: np.ndarray) -> np.ndarray:
         """
         modify structure factor with the decoupling approximation
@@ -1370,12 +1158,10 @@ class StructureDecouplingApprox:
         output
         S_eff      : effective structure factor, after applying decoupl. approx
         """
-
         A00 = self.calc_A00()
         const = 1e-3 # add constant in nominator and denominator, for stability (numerical errors for small values dampened)
         Beta = (A00**2 + const) / (Pq + const)
         S_eff = 1 + Beta * (S - 1)
-
         return S_eff
 
 
@@ -1394,7 +1180,6 @@ class HardSphereStructure(StructureDecouplingApprox):
         self.sld_new = sld_new
         self.conc = par[0]
         self.R_HS = par[1]
-
 
     def calc_S_HS(self) -> np.ndarray:
         """
@@ -1554,17 +1339,6 @@ class StructureFactor:
         self.sld_new = sld_new
         self.Stype = Stype
         self.par = par
-        #self.setAvailableStructureFactors()
-
-    @staticmethod
-    def getparname_(name: str) -> List[str]:
-        """Return the name of the parameters"""
-        pars = {
-            'HS': {'conc': 0.02,'rhs': 50},
-            'aggregation': {'R_eff': 50, 'N_aggr': 80, 'frac': 0.1},
-            'None': {}
-        }
-        return pars[name]
     
     @staticmethod
     def getparname(name: str) -> dict:
@@ -1581,7 +1355,6 @@ class StructureFactor:
         if self.Stype in self.structureFactor:
             return self.structureFactor[self.Stype](self.q, self.x_new, 
                                                     self.y_new, self.z_new, self.sld_new, self.par)
-        
         else:
             ValueError(f"Structure factor '{self.Stype}' does not exists. Choose from {list(self.structureFactor.keys())}")
 
@@ -1597,7 +1370,6 @@ class StructureFactor:
             f.write('# %-17s %-17s\n' % ('q','S(q)'))
             for (q_i, S_i) in zip(q, S_eff):
                 f.write('  %-17.5e%-17.5e\n' % (q_i, S_i))
-
 
 class ITheoretical:
     def __init__(self, q: np.ndarray):
@@ -1647,13 +1419,12 @@ class ITheoretical:
             I *= roughness
 
         return I
-    
 
     def save_I(self, I: np.ndarray, Model: str):
         """Save theoretical intensity to file"""
 
         with open('Iq_%s.dat' % Model,'w') as f:
-            f.write('# Calculated data\n')
+            f.write('# Theoretical SAS data\n')
             f.write('# %-12s %-12s\n' % ('q','I'))
             for i in range(len(I)):
                 f.write('  %-12.5e %-12.5e\n' % (self.q[i], I[i]))
@@ -1736,7 +1507,7 @@ class IExperimental:
 
     def save_Iexperimental(self, Isim: np.ndarray, sigma: np.ndarray, Model: str):
         with open('Isim_%s.dat' % Model,'w') as f:
-            f.write('# Simulated data\n')
+            f.write('# Simulated SAS data with noise\n')
             f.write('# sigma generated using Sedlak et al, k=100000, c=0.55, https://doi.org/10.1107/S1600576717003077, and rebinned with 10 per bin)\n')
             f.write('# %-12s %-12s %-12s\n' % ('q','I','sigma'))
             for i in range(len(Isim)):
@@ -1847,9 +1618,9 @@ def plot_results(q: np.ndarray,
                  Isim_list: List[np.ndarray], 
                  sigma_list: List[np.ndarray], 
                  S_list: List[np.ndarray], 
-                 names: List[str], 
+                 name_list: List[str], 
                  scales: List[float], 
-                 xscale_log: bool, 
+                 xscale_lin: bool, 
                  high_res: bool,
                  colors: List[str]) -> None:
     """
@@ -1862,7 +1633,7 @@ def plot_results(q: np.ndarray,
     fig, ax = plt.subplots(1,3,figsize=(12,4))
 
     zo = 1
-    for (r, pr, I, Isim, sigma, S, model_name, scale,color) in zip (r_list, pr_list, I_list, Isim_list, sigma_list, S_list, names, scales, colors):
+    for (r, pr, I, Isim, sigma, S, model_name, scale,color) in zip (r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name_list, scales, colors):
         ax[0].plot(r,pr,zorder=zo, color=color, label='p(r), %s' % model_name)
 
         if scale > 1: 
@@ -1886,7 +1657,7 @@ def plot_results(q: np.ndarray,
     ax[0].legend(frameon=False)
 
     ## figure settings, calculated scattering
-    if xscale_log:
+    if not xscale_lin:
         ax[1].set_xscale('log')
     ax[1].set_yscale('log')
     ax[1].set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
@@ -1894,7 +1665,7 @@ def plot_results(q: np.ndarray,
     ax[1].legend(frameon=False)
 
     ## figure settings, simulated scattering
-    if xscale_log:
+    if not xscale_lin:
         ax[2].set_xscale('log')
     ax[2].set_yscale('log')
     ax[2].set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
@@ -1909,9 +1680,50 @@ def plot_results(q: np.ndarray,
     else:
         plt.savefig('plot.png')
     plt.close()
+    
+def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, scales, high_res, colors):
+    fig, ax = plt.subplots(1,2,figsize=(8,4))
+    zo = 1
+    for (d, G, Gsim, sigmaG, model_name, scale, color) in zip (delta_list, G_list, Gsim_list, sigma_G_list, name_list, scales, colors):
 
-import matplotlib.pyplot as plt
-import numpy as np
+        ax[0].plot(d, G, zorder=zo, color=color,label=r'$G$, %s' % model_name)
+        #ax[0].set_ylabel(r'$G$ [a.u.]')
+        ax[0].set_ylabel(r'$G(\delta)$ [cm$^{-1}$]')
+        ax[0].set_xlabel(r'$\delta$ [$\mathrm{\AA}$]')
+        ax[0].set_title('theoretical SESANS, no noise')
+        ax[0].legend(frameon=False)
+                         
+        if scale > 1: 
+            ax[1].errorbar(d,Gsim*scale,yerr=sigmaG*scale,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s, scaled by %d' % (model_name,scale),zorder=1/zo)
+        else:
+            ax[1].errorbar(d,Gsim*scale,yerr=sigmaG*scale,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s' % model_name,zorder=zo)
+        ax[1].set_xlabel(r'$\delta$ [$\mathrm{\AA}$]')
+        ax[1].set_ylabel(r'$\ln(P)/(t\lambda^2)$ [$\mathrm{\AA}^{-2}$cm$^{-1}$]')
+        ax[1].set_title('simulated SESANS, with noise')
+        ax[1].legend(frameon=True)
+
+    ## figure settings
+    plt.tight_layout()
+    if high_res:
+        plt.savefig('sesans.png', dpi=600)
+    else:
+        plt.savefig('sesans.png')
+    plt.close()
+
+def save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list):
+
+    for (d, G, Gsim, sigmaG, model_name) in zip (delta_list, G_list, Gsim_list, sigma_G_list, name_list):
+        with open('G_%s.ses' % model_name,'w') as f:
+            f.write('# Theoretical SESANS data\n')
+            f.write('# %-12s %-12s\n' % ('delta','G'))
+            for i in range(len(d)):
+                f.write('  %-12.5e %-12.5e\n' % (d[i], G[i]))
+        
+        with open('Gsim_%s.ses' % model_name,'w') as f:
+            f.write('# Simulated SESANS data, with noise\n')
+            f.write('# %-12s %-12s %-12s\n' % ('delta','G','sigma_G'))
+            for i in range(len(d)):
+                f.write('  %-12.5e %-12.5e %-12.5e\n' % (d[i], Gsim[i], sigmaG[i]))
 
 def generate_pdb(x_list: List[np.ndarray], 
                  y_list: List[np.ndarray], 
@@ -1965,3 +1777,261 @@ def check_unique(A_list: List[float]) -> bool:
                     unique = False
 
     return unique
+
+def calc_G_sesans(q,delta,I) -> np.ndarray:
+    """
+    Calculated projected correlation function for SESANS from Hankel Transform of I(q)
+    """
+
+    # Init empty G(delta)
+    G = np.empty(len(delta), dtype=float)
+
+    # calculate G(delta) from I(q)
+    for i, delta_i in enumerate(delta):
+        dq_int = q[1] - q[0]
+        G[i] = 1 / 2 / np.pi * np.sum(dq_int * q * I * j0(delta_i * q))
+
+    return G
+
+def simulate_data_sesans(self) -> Vector2D:
+    """
+    Simulate SESANS data using calculated scattering and estimate for sigma
+
+    input
+    delta, G: spin-echo lengths and corresponding theoretical G_delta
+    sesans_noise: baseline noise level
+
+    output
+    sesans_sigma: simulated errors
+    Gsim: simulated data
+
+    data is also written to a file
+    """
+
+    # Compute baseline noise as sesans_noise % of min(G-G(0))
+    noise_baseline = self.sesans_noise * np.abs(np.min(self.G - self.G[0]))
+
+    # Compute delta-dependent noise as function of baseline noise
+    m = 1/50000 # 1/50000 adds a baseline worth of noise per 5 micrometers of additional spin echo length (delta)
+    sesans_sigma = np.linspace(noise_baseline, noise_baseline * (1 + m * (self.delta[-1] - self.delta[0])), np.size(self.delta))
+
+    # Simulate SESANS data using errors
+    lnPsim = np.random.normal((self.G - self.G[0]), sesans_sigma)
+
+    return lnPsim, sesans_sigma
+
+def str2bool(v):
+    """
+    Function to circumvent the argparse default behaviour 
+    of not taking False inputs, when default=True.
+    """
+    if v == "True":
+        return True
+    elif v == "False":
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+    
+def separate_string(arg):
+    arg = re.split('[ ,]+', arg)
+    return [str(i) for i in arg]
+
+def float_list(arg):
+    """
+    Function to convert a string to a list of floats.
+    Note that this function can interpret numbers with scientific notation 
+    and negative numbers.
+
+    input:
+        arg: string, input string
+
+    output:
+        list of floats
+    """
+
+    arg = re.sub(r'\s+', ' ', arg.strip())
+    arg = re.findall(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", arg)
+
+    return [float(i) for i in arg]
+
+def check_3Dinput(input: list, default: list, name: str, N_subunits: int, i: int):
+    """
+    Function to check if 3D vector input matches 
+    in lenght with the number of subunits
+
+    input:
+        input: list of floats, input values
+        default: list of floats, default values
+
+    output:
+        list of floats
+    """
+    try:
+        inputted = input[i]
+        if len(inputted) != N_subunits:
+            warnings.warn(f"The number of subunits and {name} do not match. Using {default}")
+            inputted = default * N_subunits
+    except:
+        inputted = default * N_subunits
+        #warnings.warn(f"Could not find {name}. Using default {default}.")
+
+    return inputted
+
+def check_input(input: float, default: float, name: str, i: int):
+    """
+    Function to check if input is given, 
+    if not, use default value.
+
+    input:
+        input: float, input value
+        default: float, default value
+        name: string, name of the input
+
+    output:
+        float
+    """
+    try:
+        inputted = input[i]
+    except:
+        inputted = default
+        #warnings.warn(f"Could not find {name}. Using default {default}.")
+
+    return inputted
+
+@dataclass
+class ModelPointDistribution:
+    """
+    Point distribution of a model
+    """
+
+    x: np.ndarray
+    y: np.ndarray
+    z: np.ndarray
+    sld: np.ndarray #scattering length density for each point
+    volume_total: float
+
+@dataclass
+class SimulationParameters:
+    """
+    Class containing parameters for the simulation and default parameters
+    """
+
+    qmin: float = 0.001
+    qmax: float =  0.5
+    qpoints: int = 400
+    prpoints: int = 100
+    Npoints: int = 8000
+    model_name: List[str] = field(default_factory=lambda: ['Model_1'])
+
+@dataclass
+class ModelSystem:
+    """
+    Parameters for the system
+    """
+
+    PointDistribution: ModelPointDistribution
+    Stype: str = field(default_factory=lambda: "None") #structure factor
+    par: List[float] = field(default_factory=np.ndarray) #parameters for structure factor
+    polydispersity: float = 0.0 #polydispersity
+    conc: float = 0.02 #concentration, as volume fraction
+    sigma_r: float = 0.0 #interface roughness
+
+@dataclass
+class TheoreticalScatteringCalculation:
+    """Class containing parameters for simulating
+    scattering for a given model system"""
+
+    System: ModelSystem
+    Calculation: SimulationParameters
+
+@dataclass
+class TheoreticalScattering:
+    """Class containing parameters for
+    theoretical scattering"""
+
+    q: np.ndarray
+    I0: np.ndarray
+    I: np.ndarray
+    S_eff: np.ndarray
+    r: np.ndarray #pair distance distribution
+    pr: np.ndarray #pair distance distribution
+    pr_norm: np.ndarray #normalized pair distance distribution
+
+@dataclass
+class SimulateScattering:
+    """Class containing parameters for
+    simulating scattering"""
+
+    q: np.ndarray = field(default_factory=np.ndarray)
+    I0: np.ndarray = field(default_factory=np.ndarray)
+    I: np.ndarray = field(default_factory=np.ndarray)
+    exposure: float = 500
+
+@dataclass
+class SimulatedScattering:
+    """Class containing parameters for
+    simulated scattering"""
+
+    I_sim: np.ndarray
+    q: np.ndarray
+    I_err: np.ndarray
+
+def getTheoreticalScattering(scalc: TheoreticalScatteringCalculation) -> TheoreticalScattering:
+    """Calculate theoretical scattering for a given model."""
+    sys = scalc.System
+    prof = sys.PointDistribution
+    calc = scalc.Calculation
+    x = np.concatenate(prof.x)
+    y = np.concatenate(prof.y)
+    z = np.concatenate(prof.z)
+    p = np.concatenate(prof.sld)
+
+    r, pr, pr_norm = WeightedPairDistribution(x, y, z, p).calc_pr(calc.prpoints, sys.polydispersity)
+
+    print('        calculating scattering...')
+    q = np.linspace(calc.qmin, calc.qmax, calc.qpoints)
+    I_theory = ITheoretical(q)
+    I0, Pq = I_theory.calc_Pq(r, pr, sys.conc, prof.volume_total)
+
+    S_class = StructureFactor(q, x, y, z, p, sys.Stype, sys.par)
+    S_eff = S_class.getStructureFactor().structure_eff(Pq)
+
+    I = I_theory.calc_Iq(Pq, S_eff, sys.sigma_r)
+
+    return TheoreticalScattering(q=q, I=I, I0=I0, S_eff=S_eff, r=r, pr=pr, pr_norm=pr_norm)
+
+def getSimulatedScattering(scalc: SimulateScattering) -> SimulatedScattering:
+    """Simulate scattering for a given theoretical scattering."""
+
+    Isim_class = IExperimental(scalc.q, scalc.I0, scalc.I, scalc.exposure)
+    I_sim, I_err = Isim_class.simulate_data()
+
+
+    return SimulatedScattering(I_sim=I_sim, q=scalc.q, I_err=I_err)
+
+def getPointDistribution(subunit_type,sld,dimensions,com,rotation,exclude_overlap,Npoints):
+    x_new, y_new, z_new, sld_new, volume_total = GenerateAllPoints(Npoints, com, subunit_type, dimensions, rotation, sld, exclude_overlap).onGeneratingAllPointsSeparately()
+    return ModelPointDistribution(x=x_new, y=y_new, z=z_new, sld=sld_new, volume_total=volume_total)
+
+def simulate_sesans(delta,G,error):
+    """
+    Simulate SESANS data using calculated scattering and estimate for sigma
+
+    input
+    delta, G: spin-echo lengths and theoretical G(delta)
+    error: relative error
+
+    output
+    sesans_sigma: simulated errors
+    lnPsim: simulated data
+
+    """
+    # Compute baseline noise as sesans_noise % of min(G-G(0))
+    noise_baseline = error * np.abs(np.min(G - G[0]))
+    # Compute delta-dependent noise as function of baseline noise
+    m = 1/50000 # 1/50000 adds a baseline worth of noise per 5 micrometers of additional spin echo length (delta)
+    d_delta = delta[-1] - delta[0]
+    sesans_sigma = np.linspace(noise_baseline, noise_baseline * (1 + m * d_delta), len(delta))
+    # pick random points using mean and sigma
+    lnPsim = np.random.normal((G - G[0]), sesans_sigma)
+    return lnPsim,sesans_sigma
