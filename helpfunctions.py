@@ -1,10 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import gamma,j0
-from typing import Optional, Tuple, List, Any
+from typing import Tuple, List, Any
 #from dataclasses import dataclass
 from fast_histogram import histogram1d #histogram1d from fast_histogram is faster than np.histogram (https://pypi.org/project/fast-histogram/) 
-from scipy.spatial.distance import pdist, squareform
 import inspect
 import sys
 import re
@@ -53,7 +52,7 @@ class Sphere:
         z = np.random.uniform(-self.R, self.R, N)
         d = np.sqrt(x**2 + y**2 + z**2)
 
-        idx = np.where(d < self.R) #save points insice sphere
+        idx = np.where(d < self.R) #save points inside sphere
         x_add,y_add,z_add = x[idx], y[idx], z[idx]
 
         return x_add, y_add, z_add
@@ -666,8 +665,6 @@ class GenerateAllPoints:
         #Get volume of each subunit
         for i in range(self.Number_of_subunits):
 
-            #subunitClass = self.subunitClasses[self.subunits[i]]
-            print(self.subunits[i])
             subunitClass = self.subunitClasses[self.subunits[i].lower().replace("_", "").replace(" ", "")]
             v = subunitClass(self.dimensions[i]).getVolume()
             volume.append(v)
@@ -958,8 +955,6 @@ class WeightedPairDistribution:
                     hr += hr_1
                     norm += 1.0
                 else:
-                    #dhr, _ = self.generate_histogram(dist * factor_d, contrast, r_max, Nbins)
-                    #dhr, _ = self.generate_histogram(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
                     dhr = histogram1d(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
                     res = (1.0 - factor_d) / polydispersity
                     w = np.exp(-res**2 / 2.0) # weight: normal distribution
@@ -1095,7 +1090,11 @@ class StructureDecouplingApprox:
         return S_eff
 
 
+### structure factor classes
+
 class HardSphereStructure(StructureDecouplingApprox):
+    S_aliases = ["hardsphere","hs"]
+
     def __init__(self, q: np.ndarray, 
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
@@ -1108,8 +1107,10 @@ class HardSphereStructure(StructureDecouplingApprox):
         self.y_new = y_new
         self.z_new = z_new
         self.sld_new = sld_new
-        self.conc = par[0]
-        self.R_HS = par[1]
+        if len(par) != 2:
+            print("\nERROR: structure factor hard-sphere needs 2 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
+            exit()  
+        self.conc,self.R_HS = par
 
     def calc_S_HS(self) -> np.ndarray:
         """
@@ -1167,6 +1168,8 @@ class HardSphereStructure(StructureDecouplingApprox):
         return S_eff 
 
 class Aggregation(StructureDecouplingApprox):
+    S_aliases = ["aggregation","aggr","frac2D"]
+
     def __init__(self, q: np.ndarray, 
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
@@ -1179,10 +1182,10 @@ class Aggregation(StructureDecouplingApprox):
         self.y_new = y_new
         self.z_new = z_new
         self.sld_new = sld_new
-        self.Reff = par[0]
-        self.Naggr = par[1]
-        self.fracs_aggr = par[2]
-
+        if len(par) != 3:
+            print("\nERROR: structure factor aggregation needs 3 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
+            exit()  
+        self.Reff,self.Naggr,self.fracs_aggr = par
 
     def calc_S_aggr(self) -> np.ndarray:
         """
@@ -1198,10 +1201,8 @@ class Aggregation(StructureDecouplingApprox):
         output
         S_aggr :
         """
-
         qR = self.q * self.Reff
         S_aggr = 1 + (self.Naggr - 1)/(1 + qR**2 * self.Naggr / 3)
-
         return S_aggr
     
     def structure_eff(self, Pq: np.ndarray) -> np.ndarray:
@@ -1213,6 +1214,8 @@ class Aggregation(StructureDecouplingApprox):
         return S_eff
 
 class NoStructure(StructureDecouplingApprox):
+    S_aliases = ["none","no","one","unity"]
+
     def __init__(self, q: np.ndarray, 
                  x_new: np.ndarray, 
                  y_new: np.ndarray, 
@@ -1221,39 +1224,27 @@ class NoStructure(StructureDecouplingApprox):
                  par: Any):
         super(NoStructure, self).__init__(q, x_new, y_new, z_new, sld_new)
         self.q = q
-
+        if len(par) != 0:
+            print("\nERROR:  structure factor none needs 0 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
+            exit()  
+        
     def structure_eff(self, Pq: Any) -> np.ndarray:
         """Returns unity, no structure factor"""
         return np.ones(len(self.q))
 
 class StructureFactor:
 
-    """Available structure factors"""
-    structureFactor = {
-            'HS': HardSphereStructure,
-            'hs': HardSphereStructure,
-            'hardsphere': HardSphereStructure,
-            'Hardsphere': HardSphereStructure,
-            'hard-sphere': HardSphereStructure,
-            'Hard-sphere': HardSphereStructure,
-
-            'aggregation': Aggregation,
-            'Aggregation': Aggregation,
-            'aggr': Aggregation,
-            'Aggr': Aggregation,
-            'frac2d': Aggregation,
-            'frac2D': Aggregation,
-            'Frac2D': Aggregation,
-
-            'none': NoStructure,
-            'None': NoStructure,
-            'no': NoStructure,
-            'No': NoStructure,
-            'unity': NoStructure,
-            'Unity': NoStructure,
-            '0': NoStructure,
-            '1': NoStructure
-        }
+    @staticmethod
+    def setAvailableStructureFactors():
+        """Dynamically build dictionary of Structure factor aliases (S_aliases) -> structure factor classes"""
+        current_module = sys.modules[__name__]
+        classes = inspect.getmembers(current_module, inspect.isclass)
+        registry = {}
+        for _, cls in classes:
+            if hasattr(cls, "S_aliases"):
+                for alias in cls.S_aliases:
+                    registry[alias.lower().replace("_", "").replace(" ", "")] = cls
+        return registry
         
     def __init__(self, q: np.ndarray, 
                  x_new: np.ndarray, 
@@ -1261,39 +1252,29 @@ class StructureFactor:
                  z_new: np.ndarray, 
                  sld_new: np.ndarray,
                  Stype: str,
-                 par: Optional[List[float]]):
+                 par=None):
         self.q = q
         self.x_new = x_new
         self.y_new = y_new
         self.z_new = z_new
         self.sld_new = sld_new
-        self.Stype = Stype
+        self.Stype = Stype.lower().replace("_", "").replace("-", "").replace(" ", "")
         self.par = par
-    
-    @staticmethod
-    def getparname(name: str) -> dict:
-        """Return the default parameters for a structure factor"""
-        pars = {
-            HardSphereStructure: {'conc': 0.02,'rhs': 50},
-            Aggregation: {'R_eff': 50, 'N_aggr': 80, 'frac': 0.1},
-            NoStructure: {}
-        }
-        return pars[name]
-    
+        self.registry = StructureFactor.setAvailableStructureFactors()
+
     def getStructureFactor(self):
         """Return chosen structure factor"""
-        if self.Stype in self.structureFactor:
-            return self.structureFactor[self.Stype](self.q, self.x_new, 
-                                                    self.y_new, self.z_new, self.sld_new, self.par)
+        if self.Stype in self.registry:
+            cls = self.registry[self.Stype]
+            return cls(self.q, self.x_new, self.y_new, self.z_new, self.sld_new, self.par)
         else:
-            ValueError(f"Structure factor '{self.Stype}' does not exists. Choose from {list(self.structureFactor.keys())}")
+            raise ValueError(f"Structure factor '{self.Stype}' does not exist. Choose from {list(self.registry.keys())}")
 
     @staticmethod
     def save_S(q: np.ndarray, S_eff: np.ndarray, Model: str):
         """ 
         save S to file
         """
-
         with open('Sq_%s.dat' % Model,'w') as f:
             f.write('# Structure factor, S(q), used in: I(q) = P(q)*S(q)\n')
             f.write('# Default: S(q) = 1.0\n')
@@ -1779,11 +1760,18 @@ def float_list(arg):
     output:
         list of floats
     """
-
     arg = re.sub(r'\s+', ' ', arg.strip())
     arg = re.findall(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", arg)
-
     return [float(i) for i in arg]
+
+def parse_3_floats(s):
+    # accept both commas and spaces
+    parts = s.replace(",", " ").split()
+    if len(parts) != 3:
+        raise argparse.ArgumentTypeError(
+            f"Expected exactly 3 floats (x,y,z), got {len(parts)}: {s}"
+        )
+    return [float(x) for x in parts]
 
 def check_3Dinput(input: list, default: list, name: str, N_subunits: int, i: int):
     """
