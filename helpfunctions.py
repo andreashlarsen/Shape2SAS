@@ -1954,3 +1954,9 @@ def simulate_sesans(delta,G,error):
     # pick random points using mean and sigma
     lnPsim = np.random.normal((G - G[0]), sesans_sigma)
     return lnPsim,sesans_sigma
+
+def save_points(x,y,z,sld,model_nam):
+        with open('points_%s.txt' % model_nam,'w') as f:
+            f.write('# x y z sld\n')
+            for xi,yi,zi,s in zip(x,y,z,sld):
+                f.write('%f %f %f %f\n' % (xi,yi,zi,s))
