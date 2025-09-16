@@ -232,14 +232,14 @@ The `compare.py` script compares results from calculated shape2sas models, using
 
 for usage, see [Example 4](#example-4-several-models).
 
-| Option   | Shor name  |   Arguments | Description                | Default |
-|------------------|----------------|------------|----------------|
-| `--model_name` | `-m` | name of models to compare | modelnames | No default, mandatory input |
-| `--name` | `-n`| a name | prefix of output png files | model names separated by underscore |
-| `--xscale_lin` | `-lin`  | no argument |linear q-scale | False (log scale) |
-| `--high_res` | `-hres` | no argument | high resolutino output figures | False |
+| Option         | Short name  |   Arguments | Description                | Default |
+|----------------|-------------|-------------|----------------------------|---------|
+| `--model_name` | `-m`        | name of models to compare | modelnames | No default, mandatory input |
+| `--name` | `-n`| a name      | prefix of output png files | model names separated by underscore |
+| `--xscale_lin` | `-lin`      | no argument |linear q-scale | False (log scale) |
+| `--high_res` | `-hres`       | no argument | high resolutino output figures | False |
 | `--scale`| `-s` | no argument| scale simualated data for better visualization | False |
-| `--grid`| `-g`| no argument| add grid to point distribution | -False  |
+| `--grid`| `-g`| no argument  | add grid to point distribution | -False  |
 
 output files:
 `<name>_data.png`: p(r), theoretical I and simulated I (with noise) for selected models
@@ -402,6 +402,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
