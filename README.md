@@ -87,17 +87,17 @@ The following subunits are currently available:
 
 | Subunit          | Dimension(s)   |  Alternative names<sup>*</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
-| `sphere` | radius  | ball | Sphere
-| `hollow_sphere` | outer radius, inner radius  | shell | Hollow sphere |
+| `sphere` | radius  | `ball` | Sphere
+| `hollow_sphere` | outer radius, inner radius  | `shell` | Hollow sphere |
 | `ellipsoid` | axis1, axis2, axis3  | -- | Tri-axial ellipsoid |
-| `cylinder` | radius, length  | rod | Cylinder |
-| `ring` | outer radius, inner radius, length  | hollow_cylinder, hollow_disc, cylinder_ring disc_ring | Hollow cylinder | 
-| `elliptical_cylinder` | radius1, radius2, length  | elliptical_rod | Cylinder | 
-| `cube` | side length | dice | Cube |
+| `cylinder` | radius, length  | `rod` | Cylinder |
+| `ring` | outer radius, inner radius, length  | `hollow_cylinder`, `hollow_disc`, `cylinder_ring`, `disc_ring` | Hollow cylinder | 
+| `elliptical_cylinder` | radius1, radius2, length  | `elliptical_rod` | Cylinder | 
+| `cube` | side length | `dice` | Cube |
 | `hollow_cube` | outer side length, inner side length  | -- | Hollow cube (cavity is also a cube) |
-| `cuboid` | side length 1, side length 2, side length 3, | cuboid, brick | cuboid, i.e. not same side lengths |
-| `torus` | overall radius, cross-sectional radius  | toroid, doughnut | Torus, i.e a doughnut shape | 
-| `hyperboloid` | smallest radius, curvature, half of the height  | hourglass, cooling_tower| Hyperboloid, i.e. an filled hourglass shape | 
+| `cuboid` | side length 1, side length 2, side length 3, | `cuboid`, `brick` | cuboid, i.e. not same side lengths |
+| `torus` | overall radius, cross-sectional radius  | `toroid`, `doughnut` | Torus, i.e a doughnut shape | 
+| `hyperboloid` | smallest radius, curvature, half of the height  | `hourglass`, `cooling_tower`| Hyperboloid, i.e. an filled hourglass shape | 
 | `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>**</sup> | 
 
 <sup>*</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
@@ -181,9 +181,9 @@ The following structure factors are implemented
 
 | Structure factor   | Parameters  |  Alternative names<sup>*</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
-| `hardsphere` | volume fraction, hard-sphere radius | hs | Hard-sphere structure factor 
-| `aggregation` | aggregate effective radius, particles per aggregate, fraction of particles in aggregates | aggr, frac2d | Two-dimensional fractal aggregate
-| `None` |  | no, unity | No structure factor (default)
+| `hardsphere` | volume fraction, hard-sphere radius | `hs` | Hard-sphere structure factor |
+| `aggregation` | aggregate effective radius, particles per aggregate, fraction of particles in aggregates | `aggr`, `frac2d` | Two-dimensional fractal aggregate |
+| `None` |  | `no`, `unity` | No structure factor (default) |
 
 <sup>*</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.
  
@@ -228,16 +228,18 @@ open plot.png points_sph20.png points_sph50.png points_sph80.png
 [Back to Table of contents](#table-of-contents)
 
 ### The compare script
-The `compare.py` script compares results from calculated shape2sas models, using the output files. Inputs given in the table, or by typing `python compare.py -h`
+The `compare.py` script compares results from calculated shape2sas models, using the output files. Inputs are given in the table below, or by typing `python compare.py -h`
+
+for usage, see [Example 4](#example-4-several-models).
 
 | Option   | Shor name  |   Description                | Default |
 |------------------|----------------|------------|----------------|
 | `--model_name` | `-m` | name of models to compare | No default, mandatory input |
 | `--name` | `-n`| prefix of output png files | model names separated by underscore |
 | `--xscale_lin` | `-lin`  | linear q-scale | False (log scale) |
-| `--high_res` | `-r` | high resolutino output figures |
-| `--scale`| ´-s´ | scale simualated data for better visualization |
-| `--grid`| ´-g´| add grid to point distribution |
+| `--high_res` | `-hres` | high resolutino output figures |
+| `--scale`| `-s` | scale simualated data for better visualization |
+| `--grid`| `-g`| add grid to point distribution |
 
 output files:
 `<name>_data.png`: p(r), theoretical I and simulated I (with noise) for selected models
@@ -302,21 +304,13 @@ open plot.png points_cylinders_rotated.png
 The data are simulated using a finite number of points ro represent the structures. Default is 5000 per model. This is a balance between accuracy and speed. As --Npoints is a global parameter, it cannot be selected separately for each model, therefore, three separate runs must be done:
 ```
 python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids500 --Npoints 500
-open plot.png points_ellipsoids500.png
-```
-```
 python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids5000 --Npoints 5000
-open plot.png points_ellipsoids5000.png
-```
-```
 python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids50000 --Npoints 50000
-open plot.png points_ellipsoids50000.png
+python compare.py --model_names ellipsoids500,ellipsoids5000,ellipsoids50000 --name Npoints
 ```
-computation time depends on hardware, but increases drastically with the number of points. However, the accuracy also increases, as the number of points increases, and the simulated curve is accurate up to a higher value of q. 
+computation time depends on hardware, but increases with the number of points. However, the accuracy also increases, as the number of points increases, and the simulated curve is accurate up to a higher value of q. 
 <p align="center" id="example7">
-  <img src="examples/ellipsoids500.png" style="width: 100%;" />
-  <img src="examples/ellipsoids5000.png" style="width: 100%;" />
-  <img src="examples/ellipsoids50000.png" style="width: 100%;" />
+  <img src="examples/Npoints_points.png" style="width: 100%;" />
 </p>
 
  *Example 8: Ellipsoids simulated with 500, 5000 or 50,000 points per model*
@@ -358,33 +352,33 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 ### Model-dependent (and optional) inputs:
 | Flag             | Default value | Short name | Description                                         | 
 |------------------|---------|-------------|----------------------------------------|
-| `--model_name`   | Model 0, Model 1, etc    | -name | Name of the model  |  
-| `--sld`         | 1.0     | -sld | excess cattering length density (or contrast)  | 
-| `--polydispersity`         | 0.0 (monodisperse)   | -pd | Polydispersity of model  | 
-| `--com`         | 0,0,0 (origin)    | -com | Displacement of subunit given as (x,y,z) |
-| `--rotation`         | 0,0,0  | -rot  | Rotation (in degrees) around x,y, or z-axis |
-| `--sigma_r`      | 0.0    | -sigmar | Interface roughness for each model                  |            
-| `--conc`         | 0.02  | -c  | Volume fraction (concentration) also affects hard-sphere structure factor |
-| `--exclude_overlap`    | -exclude   | bool  | True (exclude overlap)    | Exclude overlap (True) or not (False) | 
-| `--S`         | None   | -S  | Structure factor (see [structure factor table](#structure-factors)) |
-| `--S_par`         | None  | -Spar   | Structure factor parameters (see [structure factor table](#structure-factors)) |
+| `--model_name`   | Model 0, Model 1, etc    | `-m` | Name of the model  |  
+| `--sld`         | 1.0     | `-sld` | excess cattering length density (or contrast)  | 
+| `--polydispersity`         | 0.0 (monodisperse)   | `-pd` | Polydispersity of model  | 
+| `--com`         | 0,0,0 (origin)    | `-com` | Displacement of subunit given as (x,y,z) |
+| `--rotation`         | 0,0,0  | `-rot`  | Rotation (in degrees) around x,y, or z-axis |
+| `--sigma_r`      | 0.0    | `-sigmar` | Interface roughness for each model                  |            
+| `--conc`         | 0.02  | `-c`  | Volume fraction (concentration) also affects hard-sphere structure factor |
+| `--exclude_overlap`    | `-exclude`   | bool  | True (exclude overlap)    | Exclude overlap (True) or not (False) | 
+| `--S`         | None   | `-S`  | Structure factor (see [structure factor table](#structure-factors)) |
+| `--S_par`         | None  | `-Spar`   | Structure factor parameters (see [structure factor table](#structure-factors)) |
 
 ### General (and optional) inputs:
 | Flag             | Default | Short name |Description                                         |
 |-----------------|---------|------------|-----------------------------------------|
-| `--qmin`         | 0.001     | -qmin | Minimum q-value (in Å<sup>-1<\sup>) for the scattering curve  |
-| `--qmax`         | 0.5     | -qmax | Maximum q-value (in Å<sup>-1<\sup) for the scattering curve  |
-| `--qpoints`         | 400      | -Nq | Number of q points  |
-| `--prpoints`         | 100      | -Np | Number of points in the pair distance distribution function |
-| `--Npoints`         | 5000      | -N | Number of simulated points  |
-| `--exposure`         | 500      | -expo | Exposure time in arbitrary units - higher exposure time decreses simulated noise |
+| `--qmin`         | 0.001     | `-qmin` | Minimum q-value (in Å<sup>-1<\sup>) for the scattering curve  |
+| `--qmax`         | 0.5     | `-qmax` | Maximum q-value (in Å<sup>-1<\sup) for the scattering curve  |
+| `--qpoints`         | 400      | `-Nq` | Number of q points  |
+| `--prpoints`         | 100      | `-Np` | Number of points in the pair distance distribution function |
+| `--Npoints`         | 5000      | `-N` | Number of simulated points  |
+| `--exposure`         | 500      | `-expo` | Exposure time in arbitrary units - higher exposure time decreses simulated noise |
 
 ### Plot-related (and optional) inputs:
 | Flag             | Default | Short name |Description                                         |
 |-----------------|---------|------------|-----------------------------------------|
-| `--xscale_lin`         | True       | -lin | Linear q scale (default)  |
-| `--high_res`         | False       | -hres | Use high resoulution in plots (e.g., for publications) |
-| `--scale`         | 1.0       | -scale | In the plot, scale simulated intensity of each model to avoid overlap  |
+| `--xscale_lin`         | True       | `-lin` | Linear q scale (default)  |
+| `--high_res`         | False       | `-hres` | Use high resoulution in plots (e.g., for publications) |
+| `--scale`         | 1.0       | `-scale` | In the plot, scale simulated intensity of each model to avoid overlap  |
 
 [Back to Table of contents](#table-of-contents)
 
@@ -408,6 +402,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
