@@ -75,8 +75,7 @@ class HollowSphere:
         if len(dimensions) != 2:
             print("\nERROR: subunit hollow_sphere needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
-        self.R = dimensions[0]
-        self.r = dimensions[1]
+        self.R,self.r = dimensions
 
     def getVolume(self) -> float:
         """Returns the volume of a hollow sphere"""
@@ -135,8 +134,7 @@ class Cylinder:
         if len(dimensions) != 2:
             print("\nERROR: subunit cylinder needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()        
-        self.R = dimensions[0]
-        self.l = dimensions[1]
+        self.R,self.l = dimensions
 
     def getVolume(self) -> float:
         """Returns the volume of a cylinder"""
@@ -176,9 +174,7 @@ class Ellipsoid:
         if len(dimensions) != 3:
             print("\nERROR: subunit ellipsoid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()    
-        self.a = dimensions[0]
-        self.b = dimensions[1]
-        self.c = dimensions[2]
+        self.a,self.b,self.c = dimensions
 
     def getVolume(self) -> float:
         """Returns the volume of an ellipsoid"""
@@ -218,9 +214,7 @@ class EllipticalCylinder:
         if len(dimensions) != 3:
             print("\nERROR: subunit elliptical_cylinder needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()  
-        self.a = dimensions[0]
-        self.b = dimensions[1]
-        self.l = dimensions[2]
+        self.a,self.b,self.l = dimensions
 
     def getVolume(self) -> float:
         """Returns the volume of an elliptical cylinder"""
@@ -295,8 +289,7 @@ class HollowCube:
         if len(dimensions) != 2:
             print("\nERROR: subunit hollow_cube needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()  
-        self.a = dimensions[0]
-        self.b = dimensions[1]
+        self.a,self.b = dimensions
 
     def getVolume(self) -> float:
         """Returns the volume of a hollow cube"""
@@ -374,9 +367,7 @@ class Cuboid:
         if len(dimensions) != 3:
             print("\nERROR: subunit hollow_cube needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
-        self.a = dimensions[0]
-        self.b = dimensions[1]
-        self.c = dimensions[2]
+        self.a,self.b,self.c = dimensions
 
     def getVolume(self) -> float:
         """Returns the volume of a cuboid"""
@@ -405,9 +396,7 @@ class CylinderRing:
         if len(dimensions) != 3:
             print("\nERROR: subunit CylinderRing needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
-        self.R = dimensions[0]
-        self.r = dimensions[1]
-        self.l = dimensions[2]
+        self.R,self.r,self.l = dimensions
     
     def getVolume(self) -> float:
         """Returns the volume of a cylinder ring"""
@@ -417,7 +406,6 @@ class CylinderRing:
             return 2 * np.pi * self.R * self.l #surface area of a cylinder
         else: 
             return np.pi * (self.R**2 - self.r**2) * self.l
-
 
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a cylinder ring"""
@@ -461,8 +449,7 @@ class Torus:
         if len(dimensions) != 2:
             print("\nERROR: subunit Torus needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
-        self.R = dimensions[0]
-        self.r = dimensions[1]
+        self.R,self.r = dimensions
 
     def getVolume(self) -> float:
         """Returns the volume of a torus"""
@@ -680,6 +667,7 @@ class GenerateAllPoints:
         for i in range(self.Number_of_subunits):
 
             #subunitClass = self.subunitClasses[self.subunits[i]]
+            print(self.subunits[i])
             subunitClass = self.subunitClasses[self.subunits[i].lower().replace("_", "").replace(" ", "")]
             v = subunitClass(self.dimensions[i]).getVolume()
             volume.append(v)
@@ -691,7 +679,7 @@ class GenerateAllPoints:
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
             
-            x_add, y_add, z_add = self.subunitClasses[self.subunits[i].lower().replace("_", "").replace(" ", "")](self.dimensions[i]).getPointDistribution(self.Npoints)
+            x_add, y_add, z_add = self.subunitClasses[self.subunits[i].lower().replace("_", "").replace(" ", "")](self.dimensions[i]).getPointDistribution(Npoints)
             alpha, beta, gamma = self.rotation[i]
             com_x, com_y, com_z = self.com[i]
 
@@ -851,37 +839,6 @@ class WeightedPairDistribution:
         dist = dist.astype('float32')
 
         return dist
-
-
-    def calc_all_dist_(self) -> np.ndarray:
-        """
-        Calculate all pairwise distances between 3D points using scipy.
-        Same input/output as the original: flattened array of float32 distances.
-        """
-
-        # Stack into (N, 3) array of coordinates
-        coords = np.stack((self.x, self.y, self.z), axis=1)
-
-        # Compute condensed distance matrix (unique pairs only)
-        condensed = pdist(coords)  # shape (N*(N-1)/2,)
-
-        # Expand to full square distance matrix (with zeros + symmetric duplicates)
-        full_matrix = squareform(condensed)  # shape (N, N)
-
-        # Flatten and cast to float32 (same as original)
-        return full_matrix.reshape(-1).astype(np.float32)
-
-
-    def calc_all_dist_(self) -> np.ndarray:
-        """
-        Calculate all unique pairwise distances between 3D points using scipy.
-        Returns a 1D float32 array of length N*(N-1)/2.
-        """
-        # Stack into (N, 3) array of coordinates
-        coords = np.stack((self.x, self.y, self.z), axis=1)
-
-        # Compute condensed distance matrix (unique pairs only)
-        return pdist(coords).astype(np.float32)
     
     def calc_all_dist(self) -> np.ndarray:
         """
@@ -904,33 +861,6 @@ class WeightedPairDistribution:
             k += N - i - 1
 
         return out
-
-    def calc_all_contrasts_(self) -> np.ndarray:
-        """
-        calculate all pairwise contrast products
-        of p: all contrasts 
-        """
-
-        dp = np.outer(self.sld, self.sld)
-        contrast = dp.reshape(-1)
-        contrast = contrast.astype('float32')
-        return contrast
-
-    def calc_all_contrasts_(self) -> np.ndarray:
-        """
-        Calculate unique pairwise contrast products of p.
-        Returns a 1D float32 array of length N*(N-1)/2,
-        matching calc_all_dist().
-        """
-        # Outer product (N, N)
-        dsld = np.outer(self.sld, self.sld)
-
-        # Extract unique pairs (upper triangle, without diagonal)
-        i, j = np.triu_indices(len(self.sld), k=1)
-        contrast = dsld[i, j]
-
-        # Cast to float32
-        return contrast.astype(np.float32)
     
     def calc_all_contrasts(self) -> np.ndarray:
         """
@@ -1713,6 +1643,7 @@ def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, scales, 
 def save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list):
 
     for (d, G, Gsim, sigmaG, model_name) in zip (delta_list, G_list, Gsim_list, sigma_G_list, name_list):
+        model_name 
         with open('G_%s.ses' % model_name,'w') as f:
             f.write('# Theoretical SESANS data\n')
             f.write('# %-12s %-12s\n' % ('delta','G'))
