@@ -69,15 +69,15 @@ the second line opens the output plot, and the 2D representation of the sphere (
 [Back to Table of contents](#table-of-contents)
 
 ### Output files
-* 'Iq_<model_name>.dat', 'Isim_<model_name>.dat': theoretical and simulated SAS data
-* pr_<model_name>.dat: pair distribution
-* Sq_<model_name>.dat: structure factor (just unity if no structure factor is opted for).
-* plot.png: plot of p(r), theoretical data and simualated SAS data
-* points_<model_name>.png: point cloud, 2D projection
-* <model_name>.pdb: points cloud in 3D, Proten data bank format, can be opened in PyMOL, [Mol* 3D viewer](https://www.rcsb.org/3d-view), etc.
-* sesans.png: plot of sesans data (if opted for)
-* G_<model_name>.dat, G_sim_<model_name>.dat: theoretical and simulated SESANS data (if opted for)
-* shape2sas.log: log file, same as the terminal output
+* `Iq_<model_name>.dat`, `Isim_<model_name>.dat`: theoretical and simulated SAS data
+* `pr_<model_name>.dat`: pair distribution
+* `Sq_<model_name>.dat`: structure factor (just unity if no structure factor is opted for).
+* `plot.png`: plot of p(r), theoretical data and simualated SAS data
+* `points_<model_name>.png`: point cloud, 2D projection
+* `<model_name>.pdb`: points cloud in 3D, Proten data bank format, can be opened in PyMOL, [Mol* 3D viewer](https://www.rcsb.org/3d-view), etc.
+* `sesans.png`: plot of sesans data (if opted for)
+* `G_<model_name>.dat`, `G_sim_<model_name>.dat`: theoretical and simulated SESANS data (if opted for)
+* `shape2sas.log`: log file, same as the terminal output
   
 [Back to Table of contents](#table-of-contents)
 
@@ -382,6 +382,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
