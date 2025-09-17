@@ -294,7 +294,7 @@ python shape2sas.py --subunit_type "cylinder, cylinder" --dimension "20, 100" "2
 open plot.png points_cylinders_rotated.png
 ```
 ##### Known bug for COM input and solution
-if com_x is negative, you get an error (`--com "-50, 0, 0" "0, 0, 0"` or `--com "00, 0, 0" "-50, 0, 0"`). This can be circumvented by adding a space before minus, quotation marks are needed: (`--com "  -50, 0, 0" "0, 0, 0"`)
+If the COM translation x-coordinate is negative, you get an error (e.g., `--com "-50, 0, 0" "0, 0, 0"` or `--com "0, 0, 0" "-50, 0, 0"`). This can be circumvented by adding a space before the minus sign (e.g., `--com " -50, 0, 0" "0, 0, 0"`). Quotation marks are needed in this workaround.
 
 <p align="center" id="example6">
   <img src="examples/Rotated_cylinders.png" style="width: 100%;" />
@@ -407,6 +407,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
