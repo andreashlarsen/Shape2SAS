@@ -22,7 +22,8 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
     - [The compare script (table)](#the-compare-script)
   - [Example 5: Polydispersity](#example-5-polydispersity)
   - [Example 6: Multi-contrast particle - cores-shell](#example-6-multi-contrast-particle---core-shell)
-  - [Example 7: Rotation - V-shape](#example-7-rotation---V-shape)
+  - [Example 7: Rotation and translatioin - V-shape](#example-7-rotation-and-translation--V-shape)
+    - [Known bug for COM input and solution](#known-bug-for-com-input-and-solution)
   - [Example 8: Number of points - accuracy-vs-runtime](#example-8-number-of-points---accuracy-vs-runtime)
   - [Example 9: Spin-echo SANS - repulsion in real space](#example-9-spin-echo-sans---repulsion-in-real-space)
 - [Shape2SAS inputs](#shape2sas-inputs)
@@ -286,12 +287,15 @@ open plot.png points_core_shell_1.png points_core_shell_2.png points_core_shell_
 
 [Back to Table of contents](#table-of-contents)
 
-### Example 7: Rotation - V-shape
+### Example 7: Rotation and translation - V-shape
 A model of a "V" is formed with two 100-Å long cylinders with radius of 20 Å, which are rotated 45$\degree$ in each direction around the x-axis. The first cylinder i displaced by 50 Å along the y-axis (com, for centre-of-mass translation). The rotation is also around the center of mass
 ```
 python shape2sas.py --subunit_type "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
 open plot.png points_cylinders_rotated.png
 ```
+##### Known bug for COM input and solution
+if com_x is negative, you get an error (`--com "-50, 0, 0" "0, 0, 0"` or `--com "00, 0, 0" "-50, 0, 0"`). This can be circumvented by adding a space before minus, quotation marks are needed: (`--com "  -50, 0, 0" "0, 0, 0"`)
+
 <p align="center" id="example6">
   <img src="examples/Rotated_cylinders.png" style="width: 100%;" />
 </p>
@@ -403,6 +407,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
