@@ -401,7 +401,7 @@ Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Sh
 
 #### Contributors
 * Andreas Haahr Larsen: main developer 
-* Thomas Bukholt Hansen: (first version of) the batch script mode, including class structure and documentation
+* Thomas Bukholt Hansen: batch script mode, including class structure and documentation
 * Lassi Tiihonen: SESANS add-on
 
 [Back to Table of contents](#table-of-contents)
@@ -410,6 +410,7 @@ Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Sh
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
