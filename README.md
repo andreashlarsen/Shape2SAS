@@ -311,6 +311,7 @@ python compare.py --model_names ellipsoids500,ellipsoids5000,ellipsoids50000 --n
 computation time depends on hardware, but increases with the number of points. However, the accuracy also increases, as the number of points increases, and the simulated curve is accurate up to a higher value of q. 
 <p align="center" id="example7">
   <img src="examples/Npoints_points.png" style="width: 100%;" />
+  <img src="examples/Npoints_data.png" style="width: 100%;" />
 </p>
 
  *Example 8: Ellipsoids simulated with 500, 5000 or 50,000 points per model*
@@ -402,6 +403,7 @@ Updated and maintained by Andreas Haahr Larsen.
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
