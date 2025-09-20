@@ -100,9 +100,9 @@ if __name__ == "__main__":
 
     if args.sesans:
         # make extended q-range for sesans
-        Sim_par = SimulationParameters(qmin=1e-6, qmax=0.1, qpoints=20000, prpoints=args.qpoints, Npoints=args.Npoints)
+        Sim_par = SimulationParameters(qmin=1e-6, qmax=0.1, qpoints=20000, prpoints=args.prpoints, Npoints=args.Npoints)
     else:
-        Sim_par = SimulationParameters(qmin=args.qmin, qmax=args.qmax, qpoints=args.qpoints, prpoints=args.qpoints, Npoints=args.Npoints)
+        Sim_par = SimulationParameters(qmin=args.qmin, qmax=args.qmax, qpoints=args.qpoints, prpoints=args.prpoints, Npoints=args.Npoints)
     
     # read subunit type(s)
     subunit_type = args.subunit_type
@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
         #make point cloud
         Distr = getPointDistribution(subunit_type[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints)
-
+        
         ################################# Calculate Theoretical I(q) #################################
         printt(" ")
         printt("    Calculating intensity, I(q)...")
@@ -186,12 +186,14 @@ if __name__ == "__main__":
 
         #save models
         Model = "_".join(model_name.split())
-        WeightedPairDistribution.save_pr(args.qpoints, Theo_I.r, Theo_I.pr, Model)
+        WeightedPairDistribution.save_pr(args.prpoints, Theo_I.r, Theo_I.pr, Model)
         StructureFactor.save_S(Theo_I.q, Theo_I.S_eff, Model)
         ITheoretical(Theo_I.q).save_I(Theo_I.I, Model)
 
         #save points
-        save_points(Distr.x[0], Distr.y[0], Distr.z[0], Distr.sld[0], Model)
+        #save_points(Distr.x[0], Distr.y[0], Distr.z[0], Distr.sld[0], Model)
+        save_points(np.concatenate(Distr.x), np.concatenate(Distr.y), np.concatenate(Distr.z), np.concatenate(Distr.sld), Model)
+        #print(Distr.sld)
 
         ######################################### Simulate I(q) ##########################################
         exposure = args.exposure
@@ -205,7 +207,7 @@ if __name__ == "__main__":
         #check scaling for plot
         scale = check_input(args.scale, 1, "scale", i)
 
-        #save data for plots
+        ######################################### save data for plots ##########################################
         x_list.append(np.concatenate(Distr.x))
         y_list.append(np.concatenate(Distr.y))
         z_list.append(np.concatenate(Distr.z))
@@ -238,17 +240,20 @@ if __name__ == "__main__":
             G_list.append(G)
             Gsim_list.append(G_sim)
             sigma_G_list.append(sigma_G)
-            
+
+
     printt(" ")
     printt("Generating plots...")
     colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forrestgreen']
 
     #plot 2D projections
-    print("    2D projections: points_<model_name>.png ...")
+    for Model in Model_list:
+        print("    2D projection: points_" + Model + ".png ...")
     plot_2D(x_list, y_list, z_list, sld_list, Model_list, args.high_res, colors)
     
     #3D vizualization: generate pdb file with points
-    print("    3D models: <model_name>.pdb ...")
+    for Model in Model_list:
+        print("    3D models: " + Model + ".pdb ...")
     generate_pdb(x_list, y_list, z_list, sld_list, Model_list)
     
     #plot p(r) and I(q)

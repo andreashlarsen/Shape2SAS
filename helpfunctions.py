@@ -27,7 +27,7 @@ def sinc(x) -> np.ndarray:
 ### Subunits
 
 class Sphere:
-    aliases = ["sphere","ball"]
+    aliases = ["sphere","ball","sph"]
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 1:
@@ -127,7 +127,7 @@ class HollowSphere:
             return idx
 
 class Cylinder:
-    aliases = ["cylinder","rod"]
+    aliases = ["cylinder","rod","cyl"]
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
@@ -803,39 +803,6 @@ class WeightedPairDistribution:
         self.y = y
         self.z = z
         self.sld = sld #contrast
-
-    @staticmethod
-    def calc_dist(x: np.ndarray) -> np.ndarray:
-        """
-        calculate all distances between points in an array
-        """
-        # mesh this array so that you will have all combinations
-        m, n = np.meshgrid(x, x, sparse=True)
-        # get the distance via the norm
-        dist = abs(m - n) 
-        return dist
-
-
-    def calc_all_dist_(self) -> np.ndarray:
-        """ 
-        calculate all pairwise distances
-        calls calc_dist() for each set of coordinates: x,y,z
-        does a square sum of coordinates
-        convert from matrix to 
-        """
-
-        square_sum = 0
-        for arr in [self.x, self.y, self.z]:
-            square_sum += self.calc_dist(arr)**2 #arr will input x_new, then y_new and z_new so you get 
-                                            #x_new^2 + y_new^2 + z_new^2
-        d = np.sqrt(square_sum)             #then the square root is taken to get a vector for the distance
-        # convert from matrix to array
-        # reshape is slightly faster than flatten() and ravel()
-        dist = d.reshape(-1)
-        # reduce precision, for computational speed
-        dist = dist.astype('float32')
-
-        return dist
     
     def calc_all_dist(self) -> np.ndarray:
         """
@@ -881,7 +848,7 @@ class WeightedPairDistribution:
         return out
 
     @staticmethod
-    def generate_histogram(dist: np.ndarray, contrast: np.ndarray, r_max: float, Nbins: int) -> Vector2D:
+    def generate_histogram(dist: np.ndarray, Nbins: int, contrast: np.ndarray, r_max: float) -> Vector2D:
         """
         make histogram of point pairs, h(r), binned after pair-distances, r
         used for calculating scattering (fast Debye)
@@ -894,14 +861,14 @@ class WeightedPairDistribution:
 
         output
         r        : distances of bins
-        histo    : histogram, weighted by contrast
+        h    : histogram, weighted by contrast
 
         """
 
-        histo, bin_edges = np.histogram(dist, bins=Nbins, weights=contrast, range=(0,r_max)) 
+        h, bin_edges = np.histogram(dist, bins=Nbins, weights=contrast, range=(0,r_max)) 
         r = (bin_edges[:-1] + bin_edges[1:]) * 0.5
 
-        return r, histo
+        return r, h
     
     @staticmethod
     def calc_Rg(r: np.ndarray, pr: np.ndarray) -> float:
@@ -913,7 +880,6 @@ class WeightedPairDistribution:
         Rg = np.sqrt(abs(sum_pr_r2 / sum_pr) / 2)
 
         return Rg
-    
 
     def calc_hr(self, 
                 dist: np.ndarray, 
@@ -932,7 +898,7 @@ class WeightedPairDistribution:
         output:
         hr        : pair distance distribution function 
         """
-
+    
         if dist.dtype != np.float32:
             dist = dist.astype(np.float32, copy=False)
         if contrast.dtype != np.float32:
@@ -941,31 +907,50 @@ class WeightedPairDistribution:
         ## make r range in h(r) histogram slightly larger than Dmax
         ratio_rmax_dmax = 1.05
 
+        lognormal = False
         ## calc h(r) with/without polydispersity
         if polydispersity > 0.0:
-            Dmax = np.amax(dist) * (1 + 3 * polydispersity)
+            if lognormal:
+                Dmax = np.amax(dist)*np.exp(3* polydispersity)
+            else:
+                Dmax = np.amax(dist) * (1 + 3 * polydispersity)
             r_max = Dmax * ratio_rmax_dmax
-            r, hr_1 = self.generate_histogram(dist, contrast, r_max, Nbins)
-            N_poly_integral = 10
-            factor_range = 1 + np.linspace(-3, 3, N_poly_integral, dtype=np.float32) * polydispersity
+            r, hr_1 = self.generate_histogram(dist, Nbins, contrast, r_max)
+            N_poly_integral = 25 # should be uneven to include 1 in factor_range (precalculated)
             hr  = np.zeros_like(hr_1, dtype=np.float32)
-            norm = 0.0
-            for factor_d in factor_range:
+            #norm = 0.0
+            if lognormal:
+                log_factors = np.linspace(-3*polydispersity, 3*polydispersity, N_poly_integral, dtype=np.float32)
+                factor_range = np.exp(log_factors)
+            else:
+                factor_range = 1 + np.linspace(-3, 3, N_poly_integral, dtype=np.float32) * polydispersity
+            res_range = (1.0 - factor_range) / polydispersity
+            if lognormal:
+                w_range = np.exp(-(np.log(factor_range))**2 / (2*polydispersity**2)) / (factor_range * polydispersity * np.sqrt(2*np.pi))
+            else:
+                w_range = np.exp(-0.5*res_range**2)
+            vol2_range = factor_range**6
+            norm_range = w_range*vol2_range
+            for i,factor_d in enumerate(factor_range):
                 if factor_d == 1.0:
                     hr += hr_1
-                    norm += 1.0
+                    #norm += 1.0
                 else:
+                    # calculate in the same bins so histograms can be added
                     dhr = histogram1d(dist * factor_d, bins=Nbins, weights=contrast, range=(0,r_max))
-                    res = (1.0 - factor_d) / polydispersity
-                    w = np.exp(-res**2 / 2.0) # weight: normal distribution
-                    vol2 = (factor_d**3)**2 # weight: relative volume, because larger particles scatter more
-                    hr += dhr * w * vol2
-                    norm += w * vol2
+                    #res = (1.0 - factor_d) / polydispersity
+                    #w = np.exp(-res**2 / 2.0) # weight: normal distribution
+                    #vol2 = (factor_d**3)**2 # weight: relative volumen squared, because larger particles scatter more
+                    #dnorm = w * vol2
+                    #norm += dnorm
+                    #hr += dhr * dnorm
+                    hr += dhr * norm_range[i]
+            norm = np.sum(norm_range)
             hr /= norm
         else:
             Dmax = np.amax(dist)
             r_max = Dmax * ratio_rmax_dmax
-            r, hr = self.generate_histogram(dist, contrast, r_max,Nbins)
+            r, hr = self.generate_histogram(dist, Nbins, contrast, r_max)
 
         # print Dmax
         print(f"        Dmax: {Dmax:.3e} A")
@@ -1112,56 +1097,108 @@ class HardSphereStructure(StructureDecouplingApprox):
             exit()  
         self.conc,self.R_HS = par
 
+    # def calc_S_HS_(self) -> np.ndarray:
+    #     """
+    #     calculate the hard-sphere structure factor
+    #     calls function calc_G()
+
+    #     input
+    #     q       : momentum transfer
+    #     eta     : volume fraction
+    #     R       : estimation of the hard-sphere radius
+
+    #     output
+    #     S_HS    : hard-sphere structure factor
+    #     """
+    #     if self.conc > 0.0:
+    #         A = 2 * self.R_HS * self.q 
+    #         G = self.calc_G(A, self.conc)
+    #         S_HS = 1 / (1 + 24 * self.conc * G / A) # percus-yevick approximation
+    #     else:                         
+    #         S_HS = np.ones(len(self.q))
+
+    #     return S_HS
+    
+    # @staticmethod
+    # def calc_G(A: np.ndarray, eta: float) -> np.ndarray:
+    #     """ 
+    #     calculate G in the hard-sphere potential
+    #     A  : 2*R*q
+    #     eta: volume fraction
+    #     """
+    #     a = (1 + 2 * eta)**2 / (1 - eta)**4
+    #     b = -6 * eta * (1 + eta / 2)**2/(1 - eta)**4 
+    #     c = eta * a / 2
+    #     sinA = np.sin(A)
+    #     cosA = np.cos(A)
+    #     A2,A3,A4,A5 = A**2,A**3,A**4,A**5
+    #     fa = sinA - A * cosA
+    #     fb = 2 * A * sinA + (2 - A2) * cosA-2
+    #     fc = -A4 * cosA + 4 * ((3 * A2 - 6) * cosA + (A3 - 6 * A) * sinA + 6)
+    #     G = a * fa / A2 + b * fb / A3 + c * fc / A5
+    #     return G
+
     def calc_S_HS(self) -> np.ndarray:
         """
-        calculate the hard-sphere structure factor
-        calls function calc_G()
-
-        input
-        q       : momentum transfer
-        eta     : volume fraction
-        R       : estimation of the hard-sphere radius
-
-        output
-        S_HS    : hard-sphere structure factor
+        Calculate the hard-sphere structure factor using the Percus-Yevick approximation.
+        Implements the stable version with Taylor expansion for small A = 2*R*q.
+        adapted directly from the sasview code
         """
+        if self.conc <= 0.0:
+            return np.ones(len(self.q))
 
-        if self.conc > 0.0:
-            A = 2 * self.R_HS * self.q 
-            G = self.calc_G(A, self.conc)
-            S_HS = 1 / (1 + 24 * self.conc * G / A) #percus-yevick approximation for
-        else:                         #calculating the structure factor
-            S_HS = np.ones(len(self.q))
+        vf = self.conc
+        R = self.R_HS
+        q = self.q
+        X = np.abs(2.0 * R * q)  # same as A in your earlier code
+
+        # Precompute constants
+        denom = (1.0 - vf)
+        if denom < 1e-12:  # avoid division by zero
+            return np.ones_like(q)
+
+        Xinv = 1.0 / denom
+        D = Xinv * Xinv
+        A = (1.0 + 2.0 * vf) * D
+        A *= A
+        B = (1.0 + 0.5 * vf) * D
+        B *= B
+        B *= -6.0 * vf
+        G = 0.5 * vf * A
+
+        # Cutoffs
+        cutoff_tiny = 5e-6
+        cutoff_series = 0.05  # corresponds to CUTOFFHS in C code
+
+        S_HS = np.empty_like(q)
+
+        for i, x in enumerate(X):
+            if x < cutoff_tiny:
+                # limit q -> 0
+                S_HS[i] = 1.0 / A
+            elif x < cutoff_series:
+                # Taylor series expansion
+                x2 = x * x
+                # Equivalent to the FF expression in the C code
+                FF = (8.0 * A + 6.0 * B + 4.0 * G
+                    + (-0.8 * A - B / 1.5 - 0.5 * G
+                        + (A / 35.0 + 0.0125 * B + 0.02 * G) * x2) * x2)
+                S_HS[i] = 1.0 / (1.0 + vf * FF)
+            else:
+                # Normal expression
+                x2 = x * x
+                x4 = x2 * x2
+                s, c = np.sin(x), np.cos(x)
+                # FF expression refactored from the C code
+                FF = ((G * ((4.0 * x2 - 24.0) * x * s
+                            - (x4 - 12.0 * x2 + 24.0) * c
+                            + 24.0) / x2
+                    + B * (2.0 * x * s - (x2 - 2.0) * c - 2.0)) / x
+                    + A * (s - x * c)) / x
+                S_HS[i] = 1.0 / (1.0 + 24.0 * vf * FF / x2)
 
         return S_HS
-    
-    @staticmethod
-    def calc_G(A: np.ndarray, eta: float) -> np.ndarray:
-        """ 
-        calculate G in the hard-sphere potential
 
-        input
-        A  : 2*R*q
-        q  : momentum transfer
-        R  : hard-sphere radius
-        eta: volume fraction
-
-        output:
-        G  
-        """
-
-        a = (1 + 2 * eta)**2 / (1 - eta)**4
-        b = -6 * eta * (1 + eta / 2)**2/(1 - eta)**4 
-        c = eta * a / 2
-        sinA = np.sin(A)
-        cosA = np.cos(A)
-        fa = sinA - A * cosA
-        fb = 2 * A * sinA + (2 - A**2) * cosA-2
-        fc = -A**4 * cosA + 4 * ((3 * A**2 - 6) * cosA + (A**3 - 6 * A) * sinA + 6)
-        G = a * fa / A**2 + b * fb / A**3 + c * fc / A**5
-
-        return G
-    
     def structure_eff(self, Pq: np.ndarray) -> np.ndarray:
         S = self.calc_S_HS()
         S_eff = self.decoupling_approx(Pq, S)

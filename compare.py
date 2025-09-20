@@ -13,16 +13,24 @@ if __name__ == "__main__":
     parser.add_argument('-hres', '--high_res', action='store_true', default=False, 
                             help='include flag (no input) to output high resolution plot.')
     parser.add_argument('-s', '--scale', action='store_true', default=False,
-                            help='include flag (no input) to scale the simulated intensity of each model in the plots to avoid overlap.')    
+                            help='include flag (no input) to scale the simulated intensity of each model in the plots to avoid overlap')    
     parser.add_argument('-n', '--name', help='output filename', default='None')   
-    parser.add_argument('-g', '--grid',action='store_true',help="add grid in 2D point representation",default=False)
+    parser.add_argument('-g', '--grid',action='store_true',help='add grid in 2D point representation',default=False)
+    parser.add_argument('-ss', '--sesans', action='store_true',help='plot SESANS data',default=False)
+
     args = parser.parse_args()
 
     # colors and models
     colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forrestgreen']
     models = re.split('[ ,]+', args.model_names)
 
-    # plot data: p(r), I(q), Isim(q)
+    # resolution
+    if args.high_res:
+        dpi=600
+    else:
+        dpi='figure'
+
+    ### plot SAS data: p(r), I(q), Isim(q)
     fig, ax = plt.subplots(1,3,figsize=(12,4))
     scale_factor = 1
     zo=1
@@ -33,11 +41,11 @@ if __name__ == "__main__":
         ax[0].plot(r,pr,color=colors[i],label=model)
 
         Iq_filename = 'Iq_' + model + '.dat'
-        q,I = np.genfromtxt(Iq_filename,skip_header=1,unpack=True)
+        q,I = np.genfromtxt(Iq_filename,skip_header=2,unpack=True)
         ax[1].plot(q,I,color=colors[i],label=model)
 
         Isim_filename = 'Isim_' + model + '.dat'
-        q,Isim,sigma = np.genfromtxt(Isim_filename,skip_header=1,unpack=True)
+        q,Isim,sigma = np.genfromtxt(Isim_filename,skip_header=3,unpack=True)
         if args.scale: 
             ax[2].errorbar(q,Isim*scale_factor,yerr=sigma*scale_factor,linestyle='none',marker='.', color=colors[i],label=r'$I_\mathrm{sim}(q)$, %s, scaled by %1.0e' % (model,scale_factor),zorder=1/zo)
             scale_factor *= 0.1
@@ -74,7 +82,9 @@ if __name__ == "__main__":
     else:
         plt.savefig(args.name + '_data')
 
-    # plot points: 2D projection
+
+    ### plot points: 2D projection
+
     fig, ax = plt.subplots(len(models),3,figsize=(12,4*len(models)))
     #f,   ax = plt.subplots(1,3,figsize=(12,4))
     #plt.show()
@@ -150,6 +160,45 @@ if __name__ == "__main__":
         plt.savefig(all_model_names + '_points')
     else:
         plt.savefig(args.name + '_points')
+    
+    ### plot sesans data, G(delta), G_sim(delta) - if opted for
+
+    if args.sesans:
+
+        fig, ax = plt.subplots(1,2,figsize=(6,4))
+        scale_factor = 1
+        for i,model in enumerate(models):
+            G_filename = 'G_' + model + '.ses'
+            d,G = np.genfromtxt(G_filename,skip_header=2,unpack=True)
+            ax[0].plot(d,G,color=colors[i],label=model)
+
+            ax[0].set_ylabel(r'$G(\delta)$ [cm$^{-1}$]')
+            ax[0].set_xlabel(r'$\delta$ [$\mathrm{\AA}$]')
+            ax[0].set_title('theoretical SESANS, no noise')
+            ax[0].legend(frameon=False)
+        
+            Gsim_filename = 'Gsim_' + model + '.ses'
+            d,Gsim,sigmaG = np.genfromtxt(Gsim_filename,skip_header=2,unpack=True)
+            if args.scale: 
+                ax[1].errorbar(d,Gsim*scale_factor,yerr=sigmaG*scale_factor,linestyle='none',marker='.', color=colors[i],label=r'$I_\mathrm{sim}(q)$, %s, scaled by %1.0e' % (model,scale_factor),zorder=1/zo)
+                scale_factor *= 0.1
+            else:
+                ax[1].errorbar(d,Gsim,yerr=sigmaG,linestyle='none',marker='.', color=colors[i],label=r'$I_\mathrm{sim}(q)$, %s' % model,zorder=zo)
+            if i > 0:
+                all_model_names += '_'
+            all_model_names += model
+
+            ax[1].set_xlabel(r'$\delta$ [$\mathrm{\AA}$]')
+            ax[1].set_ylabel(r'$\ln(P)/(t\lambda^2)$ [$\mathrm{\AA}^{-2}$cm$^{-1}$]')
+            ax[1].set_title('simulated SESANS, with noise')
+            ax[1].legend(frameon=True)
+
+        plt.tight_layout()
+        if args.name == 'None':
+            plt.savefig(all_model_names + '_sesans',dpi=dpi)
+        else:
+            plt.savefig(args.name + '_sesans',dpi=dpi)
+
     plt.show()
 
 

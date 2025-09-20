@@ -89,10 +89,10 @@ The following subunits are currently available:
 
 | Subunit          | Dimension(s)   |  Alternative names<sup>*</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
-| `sphere` | radius  | `ball` | Sphere
+| `sphere` | radius  | `ball`, `sph` | Sphere
 | `hollow_sphere` | outer radius, inner radius  | `shell` | Hollow sphere |
 | `ellipsoid` | axis1, axis2, axis3  | -- | Tri-axial ellipsoid |
-| `cylinder` | radius, length  | `rod` | Cylinder |
+| `cylinder` | radius, length  | `rod`, `cyl` | Cylinder |
 | `ring` | outer radius, inner radius, length  | `hollow_cylinder`, `hollow_disc`, `cylinder_ring`, `disc_ring` | Hollow cylinder | 
 | `elliptical_cylinder` | radius1, radius2, length  | `elliptical_rod` | Cylinder | 
 | `cube` | side length | `dice` | Cube |
@@ -238,6 +238,7 @@ for usage, see [Example 4](#example-4-several-models).
 |--------------------|-------------|---------------------------|----------------------------|---------|
 | `--model_name` | `-m`        | name of models to compare | modelnames | No default, mandatory input |
 | `--name` | `-n`| a name      | prefix of output png files | model names separated by underscore |
+| `--sesans` | `-ss`| no argument      | include sesans data |
 | `--xscale_lin` | `-lin`      | no argument |linear q-scale | False (log scale) |
 | `--high_res` | `-hres`       | no argument | high resolutino output figures | False |
 | `--scale`| `-s` | no argument| scale simualated data for better visualization | False |
@@ -330,7 +331,7 @@ The q-range is extended and sampled with many points to make the tranformation m
 
 Spheres with or without hard-sphere intearaction in SESANS: 
 ```
-python shape2sas.py --sesans --subunit_type sphere --dimension 50 --S None --S_par " " --model_name sphere --subunit_type sphere --dimension 50 --S HS --S_par 0.01,60 --model_name sphere_HS
+python shape2sas.py --sesans --subunit_type sphere --dimension 50 --S None --S_par " " --model_name sphere --subunit_type sphere --dimension 50 --S HS --S_par 0.1,60 --model_name sphere_HS
 open plot.png points_sphere.png points_sphere_HS.png sesans.png
 ```
 One sphere (radius 250 Å) vs two spheres separated by 1000 Å:
@@ -352,8 +353,8 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 ### Mandatory inputs (model-dependent):
 | Flag             | Default value | Short name | Description                                         |
 |-----------------|---------|-------------------|----------------------------------|
-| `--subunit_type`         | Mandatory, no default      | -subunit | Type of subunits (see [subunit table](#subunits)) |  
-| `--dimension`         | Mandatory, no default    | -dim | Dimensions of subunit (see [subunit table](#subunits)) |
+| `--subunit_type`         | Mandatory, no default      | `-subunit` | Type of subunits (see [subunit table](#subunits)) |  
+| `--dimension`         | Mandatory, no default    | `-dim` | Dimensions of subunit (see [subunit table](#subunits)) |
 
 ### Model-dependent (and optional) inputs:
 | Flag             | Default value | Short name | Description                                         | 
@@ -365,7 +366,7 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 | `--rotation`         | 0,0,0  | `-rot`  | Rotation (in degrees) around x,y, or z-axis |
 | `--sigma_r`      | 0.0    | `-sigmar` | Interface roughness for each model                  |            
 | `--conc`         | 0.02  | `-c`  | Volume fraction (concentration) also affects hard-sphere structure factor |
-| `--exclude_overlap`    | `-exclude`   | bool  | True (exclude overlap)    | Exclude overlap (True) or not (False) | 
+| `--exclude_overlap`    | False   | `-exclude`  | True (exclude overlap)    | Exclude overlap (True) or not (False) | 
 | `--S`         | None   | `-S`  | Structure factor (see [structure factor table](#structure-factors)) |
 | `--S_par`         | None  | `-Spar`   | Structure factor parameters (see [structure factor table](#structure-factors)) |
 
