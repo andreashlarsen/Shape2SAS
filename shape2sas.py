@@ -3,7 +3,7 @@ import time
 import argparse
 from sys import argv
 import numpy as np
-from helpfunctions import *
+from shape2sas_helpfunctions import *
 
 # current version
 version = 2.2
@@ -273,3 +273,4 @@ if __name__ == "__main__":
     printt(" ")
 
     f_out.close()
+
