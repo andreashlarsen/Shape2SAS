@@ -35,9 +35,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Shape2SaS - calculates small-angle scattering from a given shape defined by the user.')
       
     # Mandatory inputs
-    parser.add_argument('-subunit', '--subunit_type', type=separate_string, nargs='+', action='extend',
+    parser.add_argument('-s', '--subunit', type=separate_string, nargs='+', action='extend',
                        help='Type of subunits for each model.')
-    parser.add_argument('-dim', '--dimension', type=float_list, nargs='+', action='append',
+    parser.add_argument('-d', '--dimension', type=float_list, nargs='+', action='append',
                         help='dimensions of subunits for each model.')
     
     # Optional model-dependent inputs:

@@ -62,9 +62,9 @@ Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory
 ```
 cd <PATH-TO-DIRECTORY>
 ```
-Shape2SAS requires at least two inputs: --subunit_type (or -subtype) and --dimension (or -dim). The scattering from a sphere with radius of 50 Å can be simulated with:
+Shape2SAS requires at least two inputs: --subunit (or -s) and --dimension (or -d). The scattering from a sphere with radius of 50 Å can be simulated with:
 ```
-python shape2sas.py --subunit_type sphere --dimension 50
+python shape2sas.py --subunit sphere --dimension 50
 open plot.png points_Model_0.png
 ```
 the second line opens the output plot, and the 2D representation of the sphere (Model_0 is the default model name if none is provided).
@@ -113,17 +113,17 @@ A list of all options can be found below all the examples.
 ### Example 1: More dimensions - cylinder
 A model of a cylinder with radius 50 Å and length 300 Å is simulated, and named "cylinder". The name is used in plots and output filenames:
 ```
-python shape2sas.py --subunit_type cylinder --dimension 50,300 --model_name cylinder
+python shape2sas.py --subunit cylinder --dimension 50,300 --model_name cylinder
 open plot.png points_cylinder.png
 ```
 Dimensions should be given as a list without space, or between quotation marks (then spaces are allowed):
 ```
-python shape2sas.py --subunit_type cylinder --dimension "50, 300" --model_name cylinder
+python shape2sas.py --subunit cylinder --dimension "50, 300" --model_name cylinder
 open plot.png points_cylinder.png
 ```
 If quotation marks are used, commas may be omitted from the list: 
 ```
-python shape2sas.py --subunit_type cylinder --dimension "50 300" --model_name cylinder
+python shape2sas.py --subunit cylinder --dimension "50 300" --model_name cylinder
 open plot.png points_cylinder.png
 ```
 <p align="center" id="example1">
@@ -137,17 +137,17 @@ open plot.png points_cylinder.png
 ### Example 2: Multiple subunits - dumbbell
 A model can be built of several subunits. For example, a dumbbell can be built by three subunits: two spheres with radius 25 Å displaced from the origin by 50 Å along the z-axiz, and one cylinder with radius of 10 Å and length of 100 Å, aligned along the z axis (default direction):
 ```
-python shape2sas.py --subunit_type sphere,sphere,cylinder --dimension 25 25 10,100 --com 0,0,-50 0,0,50 0,0,0 --Npoints 6000 --model_name dumbbell
+python shape2sas.py --subunit sphere,sphere,cylinder --dimension 25 25 10,100 --com 0,0,-50 0,0,50 0,0,0 --Npoints 6000 --model_name dumbbell
 open plot.png points_dumbbell.png
 ```
-If you use quotation marks for input with several values, for example --subunit_type, then spaces are allowed, also in the name (space is replaced with underscore in file names):  
+If you use quotation marks for input with several values, for example --subunit, then spaces are allowed, also in the name (space is replaced with underscore in file names):  
 ```
-python shape2sas.py --subunit_type "sphere, sphere, cylinder" --dimension "25" "25" "10, 100" --com "0, 0, -50" "0, 0, 50" "0, 0, 0" --model_name "my dumbbell"
+python shape2sas.py --subunit "sphere, sphere, cylinder" --dimension "25" "25" "10, 100" --com "0, 0, -50" "0, 0, 50" "0, 0, 0" --model_name "my dumbbell"
 open plot.png points_my_dumbbell.png
 ```
 and, as mentioned in Example 1, you may omit commas if you use quotation marks:
 ```
-python shape2sas.py --subunit_type "sphere, sphere, cylinder" --dimension 25 25 "10 100" --com "0 0 -50" "0 0 50" "0 0 0" --model_name "my dumbbell"
+python shape2sas.py --subunit "sphere, sphere, cylinder" --dimension 25 25 "10 100" --com "0 0 -50" "0 0 50" "0 0 0" --model_name "my dumbbell"
 open plot.png points_my_dumbbell.png
 ```
 <p align="center" id="example2">
@@ -162,12 +162,12 @@ open plot.png points_my_dumbbell.png
 Structure factors can be added. This will affect the calculated scattering but not the displayed $p(r)$. 
 Below a sample of ellipsoids with semi-axes 50, 60, and 50 Å with hard-sphere repulsion with volume fraction of 0.1 and hard-sphere radius of 60 Å:
 ```
-python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S HS --S_par 0.1,60 --model_name ellipsoid_HS
+python shape2sas.py --subunit ellipsoid --dimension 50,60,50 --S HS --S_par 0.1,60 --model_name ellipsoid_HS
 open plot.png points_ellipsoid_HS.png
 ```
 Aggregation can also be simulated through a structure factor. Below a sample containing aggregates wirh effective radius of 60, 90 particles per aggregate. A fraction of 10% of the particles are aggregated, the rest are monomeric:
 ```
-python shape2sas.py --subunit_type ellipsoid --dimension "50, 60, 50" --S aggregation --S_par 60,90,0.1 --model_name ellipsoid_aggr
+python shape2sas.py --subunit ellipsoid --dimension "50, 60, 50" --S aggregation --S_par 60,90,0.1 --model_name ellipsoid_aggr
 open plot.png points_ellipsoid_aggr.png
 ```
 <p align="center" id="example3">
@@ -196,29 +196,29 @@ Several models can be created simultaneously. They are made individually, but pl
 
 Spheres and cylinders: 
 ```
-python shape2sas.py --subunit_type sphere --dimension 50 --model_name sphere --subunit_type cylinder --dimension 20,300 --model_name cylinder 
+python shape2sas.py --subunit sphere --dimension 50 --model_name sphere --subunit cylinder --dimension 20,300 --model_name cylinder 
 open plot.png points_sphere.png points_cylinder.png
 ```
 Alternatively (and pehaps simpler), they can be made separately, and plotted together with the compare.py script
 ```
-python shape2sas.py --subunit_type sphere --dimension 50 --model_name sphere
-python shape2sas.py --subunit_type cylinder --dimension 20,300 --model_name cylinder
+python shape2sas.py --subunit sphere --dimension 50 --model_name sphere
+python shape2sas.py --subunit cylinder --dimension 20,300 --model_name cylinder
 python compare.py --model_names sphere,cylinder --name sph_cyl
 ```
 Ellipsoids with or without a hard-sphere structure factor:
 ```
-python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S None --S_par " " --model_name ellipsoid --subunit_type ellipsoid --dimension 50,60,50 --S HS --S_par 0.05,60 --model_name ellipsoid_HS
+python shape2sas.py --subunit ellipsoid --dimension 50,60,50 --S None --S_par " " --model_name ellipsoid --subunit ellipsoid --dimension 50,60,50 --S HS --S_par 0.05,60 --model_name ellipsoid_HS
 open plot.png points_ellipsoid.png points_ellipsoid_HS.png
 ```
 or, using the compare script:
 ```
-python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --model_name ellipsoid
-python shape2sas.py --subunit_type ellipsoid --dimension 50,60,50 --S HS --S_par 0.05,60 --model_name ellipsoid_HS
+python shape2sas.py --subunit ellipsoid --dimension 50,60,50 --model_name ellipsoid
+python shape2sas.py --subunit ellipsoid --dimension 50,60,50 --S HS --S_par 0.05,60 --model_name ellipsoid_HS
 python compare.py --model_name ellipsoid,ellipsoid_HS
 ```
 Increasing sphere size: 
 ```
-python shape2sas.py --subunit_type sphere --dimension 20 --model_name sph20 --subunit_type sphere --dimension 50 --model_name sph50 --subunit_type sphere --dimension 80 --model_name sph80 
+python shape2sas.py --subunit sphere --dimension 20 --model_name sph20 --subunit sphere --dimension 50 --model_name sph50 --subunit sphere --dimension 80 --model_name sph80 
 open plot.png points_sph20.png points_sph50.png points_sph80.png
 ```
 <p align="center" id="example4">
@@ -253,7 +253,7 @@ output files:
 ### Example 5: Polydispersity
 Sphere with radius of 40 Å and relative polydispersity of 20% are here compared to monodisperse spheres with the same radius:
 ```
-python shape2sas.py --subunit_type sphere --dimension 40 --polydispersity 0.2 --model_name sphere_poly --subunit_type sphere --dimension 40 --model_name sphere_mono
+python shape2sas.py --subunit sphere --dimension 40 --polydispersity 0.2 --model_name sphere_poly --subunit sphere --dimension 40 --model_name sphere_mono
 open plot.png points_sphere_poly.png points_sphere_mono.png
 ```
 <p align="center" id="example5">
@@ -267,18 +267,18 @@ open plot.png points_sphere_poly.png points_sphere_mono.png
 ### Example 6: Multi-contrast particle - core-shell
 The contrast (excess scattering length density, sld) of each subunit can be adjusted to form multi-contrast particles. For example, a core-shell sphere with core ΔSLD of -1 and shell ΔSLD of 2 may be simulated: 
 ```
-python shape2sas.py --subunit_type sphere,sphere --dimension 30 45 --sld -1 1 --model_name core_shell
+python shape2sas.py --subunit sphere,sphere --dimension 30 45 --sld -1 1 --model_name core_shell
 open plot.png points_core_shell.png
 ```
 the small (radius 30-Å) and the large (radius 45 Å) sphere overlap. In that case, the overlapping points of the *latter* model are excluded. So order is important!
 The following will just give the scattering of the large sphere, as all points from the smaller sphere are excluded: 
 ```
-python shape2sas.py --subunit_type sphere,sphere --dimension 45 30 --sld 1 -1 --model_name "not core shell just a sphere"
+python shape2sas.py --subunit sphere,sphere --dimension 45 30 --sld 1 -1 --model_name "not core shell just a sphere"
 open plot.png points_not_core_shell_just_a_sphere.png
 ```
 The spherical core-shell model can also be modelled with a sphere for the core and a hollow sphere for the shell. Or, it can be modelled with the two solid spheres by disabling exclusion of overlapping points, but also changing the contrast of the small sphere to -2. The results are the same, but the third method is less effective (accuracy vs number of points).
 ```
-python shape2sas.py --subunit_type sphere,sphere --dimension 30 45 --sld -1 1 --exclude_overlap True --model_name core_shell_1 --subunit_type sphere,hollow_sphere --dimension 30 45,30 --sld -1 1 --exclude_overlap True --model_name core_shell_2 --subunit_type sphere,sphere --dimension 30 45 --sld -2 1 --exclude_overlap False --model_name core_shell_3
+python shape2sas.py --subunit sphere,sphere --dimension 30 45 --sld -1 1 --exclude_overlap True --model_name core_shell_1 --subunit sphere,hollow_sphere --dimension 30 45,30 --sld -1 1 --exclude_overlap True --model_name core_shell_2 --subunit sphere,sphere --dimension 30 45 --sld -2 1 --exclude_overlap False --model_name core_shell_3
 open plot.png points_core_shell_1.png points_core_shell_2.png points_core_shell_3.png
 ```
 <p align="center" id="example6">
@@ -292,7 +292,7 @@ open plot.png points_core_shell_1.png points_core_shell_2.png points_core_shell_
 ### Example 7: Rotation and translation - V-shape
 A model of a "V" is formed with two 100-Å long cylinders with radius of 20 Å, which are rotated 45$\degree$ in each direction around the x-axis. The first cylinder i displaced by 50 Å along the y-axis (com, for centre-of-mass translation). The rotation is also around the center of mass
 ```
-python shape2sas.py --subunit_type "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
+python shape2sas.py --subunit "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
 open plot.png points_cylinders_rotated.png
 ```
 ##### Known bug for COM input and solution
@@ -309,9 +309,9 @@ If the COM translation x-coordinate is negative, you get an error (e.g., `--com 
 ### Example 8: Number of points - accuracy vs runtime
 The data are simulated using a finite number of points ro represent the structures. Default is 5000 per model. This is a balance between accuracy and speed. As --Npoints is a global parameter, it cannot be selected separately for each model, therefore, three separate runs must be done:
 ```
-python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids500 --Npoints 500
-python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids5000 --Npoints 5000
-python shape2sas.py --subunit_type ellipsoid --dimension 40,40,60 --model_name ellipsoids50000 --Npoints 50000
+python shape2sas.py --subunit ellipsoid --dimension 40,40,60 --model_name ellipsoids500 --Npoints 500
+python shape2sas.py --subunit ellipsoid --dimension 40,40,60 --model_name ellipsoids5000 --Npoints 5000
+python shape2sas.py --subunit ellipsoid --dimension 40,40,60 --model_name ellipsoids50000 --Npoints 50000
 python compare.py --model_names ellipsoids500,ellipsoids5000,ellipsoids50000 --name Npoints
 ```
 computation time depends on hardware, but increases with the number of points. However, the accuracy also increases, as the number of points increases, and the simulated curve is accurate up to a higher value of q. 
@@ -331,12 +331,12 @@ The q-range is extended and sampled with many points to make the tranformation m
 
 Spheres with or without hard-sphere intearaction in SESANS: 
 ```
-python shape2sas.py --sesans --subunit_type sphere --dimension 50 --S None --S_par " " --model_name sphere --subunit_type sphere --dimension 50 --S HS --S_par 0.1,60 --model_name sphere_HS
+python shape2sas.py --sesans --subunit sphere --dimension 50 --S None --S_par " " --model_name sphere --subunit sphere --dimension 50 --S HS --S_par 0.1,60 --model_name sphere_HS
 open plot.png points_sphere.png points_sphere_HS.png sesans.png
 ```
 One sphere (radius 250 Å) vs two spheres separated by 1000 Å:
 ```
-python shape2sas.py --sesans --subunit_type sphere --dimension 250 --com 0,0,0 --model_name sphere --subunit_type sphere,sphere --dimension 250 250 --com 0,-500,0 0,500,0 --model_name two_spheres
+python shape2sas.py --sesans --subunit sphere --dimension 250 --com 0,0,0 --model_name sphere --subunit sphere,sphere --dimension 250 250 --com 0,-500,0 0,500,0 --model_name two_spheres
 open plot.png points_sphere.png points_two_spheres.png sesans.png
 ```
 <p align="center" id="example7">
@@ -353,8 +353,8 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 ### Mandatory inputs (model-dependent):
 | Flag             | Default value | Short name | Description                                         |
 |-----------------|---------|-------------------|----------------------------------|
-| `--subunit_type`         | Mandatory, no default      | `-subunit` | Type of subunits (see [subunit table](#subunits)) |  
-| `--dimension`         | Mandatory, no default    | `-dim` | Dimensions of subunit (see [subunit table](#subunits)) |
+| `--subunit`         | Mandatory, no default      | `-s` | Type of subunits (see [subunit table](#subunits)) |  
+| `--dimension`         | Mandatory, no default    | `-d` | Dimensions of subunit (see [subunit table](#subunits)) |
 
 ### Model-dependent (and optional) inputs:
 | Flag             | Default value | Short name | Description                                         | 
@@ -408,7 +408,7 @@ Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Sh
 [Back to Table of contents](#table-of-contents)
 
 ## Notes
-Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit_type" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit_type" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
+Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
 
