@@ -8,6 +8,7 @@ import inspect
 import sys
 import re
 import warnings
+import os
 from dataclasses import dataclass, field
 
 
@@ -167,7 +168,7 @@ class Cylinder:
         return idx
 
 class Ellipsoid:
-    aliases = ["ellipsoid"]
+    aliases = ["ellipsoid","ellips"]
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
@@ -997,12 +998,12 @@ class WeightedPairDistribution:
     def save_pr(Nbins: int,
                 r: np.ndarray, 
                 pr_norm: np.ndarray, 
-                Model: str):
+                model_filename: str):
         """
         save p(r) to textfile
         """
-
-        with open('pr_%s.dat' % Model,'w') as f:
+        os.makedirs(model_filename, exist_ok=True)  
+        with open('%s/pr_%s.dat' % (model_filename,model_filename),'w') as f:
             f.write('# %-17s %-17s\n' % ('r','p(r)'))
             for i in range(Nbins):
                 f.write('  %-17.5e %-17.5e\n' % (r[i], pr_norm[i]))
@@ -1308,11 +1309,11 @@ class StructureFactor:
             raise ValueError(f"Structure factor '{self.Stype}' does not exist. Choose from {list(self.registry.keys())}")
 
     @staticmethod
-    def save_S(q: np.ndarray, S_eff: np.ndarray, Model: str):
+    def save_S(q: np.ndarray, S_eff: np.ndarray, model_filename: str):
         """ 
         save S to file
         """
-        with open('Sq_%s.dat' % Model,'w') as f:
+        with open('%s/Sq_%s.dat' % (model_filename,model_filename),'w') as f:
             f.write('# Structure factor, S(q), used in: I(q) = P(q)*S(q)\n')
             f.write('# Default: S(q) = 1.0\n')
             f.write('# %-17s %-17s\n' % ('q','S(q)'))
@@ -1355,9 +1356,6 @@ class ITheoretical:
         calculates intensity
         """
 
-        ## save structure factor to file
-        #self.save_S(self.q, S_eff, Model)
-
         ## multiply formfactor with structure factor
         I = Pq * S_eff
 
@@ -1368,10 +1366,10 @@ class ITheoretical:
 
         return I
 
-    def save_I(self, I: np.ndarray, Model: str):
+    def save_I(self, I: np.ndarray, model_filename: str):
         """Save theoretical intensity to file"""
 
-        with open('Iq_%s.dat' % Model,'w') as f:
+        with open('%s/Iq_%s.dat' % (model_filename,model_filename),'w') as f:
             f.write('# Theoretical SAS data\n')
             f.write('# %-12s %-12s\n' % ('q','I'))
             for i in range(len(I)):
@@ -1453,8 +1451,8 @@ class IExperimental:
 
         return Isim, sigma
 
-    def save_Iexperimental(self, Isim: np.ndarray, sigma: np.ndarray, Model: str):
-        with open('Isim_%s.dat' % Model,'w') as f:
+    def save_Iexperimental(self, Isim: np.ndarray, sigma: np.ndarray, model_filename: str):
+        with open('%s/Isim_%s.dat' % (model_filename,model_filename),'w') as f:
             f.write('# Simulated SAS data with noise\n')
             f.write('# sigma generated using Sedlak et al, k=100000, c=0.55, https://doi.org/10.1107/S1600576717003077, and rebinned with 10 per bin)\n')
             f.write('# %-12s %-12s %-12s\n' % ('q','I','sigma'))
@@ -1489,7 +1487,7 @@ def plot_2D(x_list: np.ndarray,
             y_list: np.ndarray, 
             z_list: np.ndarray, 
             sld_list: np.ndarray, 
-            Models: np.ndarray, 
+            model_filename_list: np.ndarray, 
             high_res: bool,
             colors: List[str]) -> None:
     """
@@ -1501,10 +1499,10 @@ def plot_2D(x_list: np.ndarray,
     input
     (x_list,y_list,z_list) : coordinates of simulated points
     sld_list               : excess scattering length densities (contrast) of simulated points
-    Model                  : Model number
+    model_filename_list    : list of model names
 
     output
-    plot                   : points<Model>.png
+    plot                   : points_<model_filename>.png
 
     """
 
@@ -1513,7 +1511,7 @@ def plot_2D(x_list: np.ndarray,
     max_l = get_max_dimension(x_list, y_list, z_list)*1.1
     lim = [-max_l, max_l]
 
-    for x,y,z,p,Model,color in zip(x_list,y_list,z_list,sld_list,Models,colors):
+    for x,y,z,p,model_filename,color in zip(x_list,y_list,z_list,sld_list,model_filename_list,colors):
 
         ## find indices of positive, zero and negatative contrast
         idx_neg = np.where(p < 0.0)
@@ -1554,9 +1552,9 @@ def plot_2D(x_list: np.ndarray,
     
         plt.tight_layout()
         if high_res:
-            plt.savefig('points_%s.png' % Model,dpi=600)
+            plt.savefig('%s/points_%s.pdf' % (model_filename,model_filename))
         else:
-            plt.savefig('points_%s.png' % Model)
+            plt.savefig('%s/points_%s.png' % (model_filename,model_filename))
         plt.close()
 
 def plot_results(q: np.ndarray, 
@@ -1624,7 +1622,7 @@ def plot_results(q: np.ndarray,
     ## figure settings
     plt.tight_layout()
     if high_res:
-        plt.savefig('plot.png', dpi=600)
+        plt.savefig('plot.pdf')
     else:
         plt.savefig('plot.png')
     plt.close()
@@ -1652,23 +1650,21 @@ def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, scales, 
 
     ## figure settings
     plt.tight_layout()
-    if high_res:
-        plt.savefig('sesans.png', dpi=600)
-    else:
-        plt.savefig('sesans.png')
+
+    plt.savefig('sesans.pdf')
     plt.close()
 
 def save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list):
 
     for (d, G, Gsim, sigmaG, model_name) in zip (delta_list, G_list, Gsim_list, sigma_G_list, name_list):
         model_name 
-        with open('G_%s.ses' % model_name,'w') as f:
+        with open('%s/G_%s.ses' % (model_name,model_name),'w') as f:
             f.write('# Theoretical SESANS data\n')
             f.write('# %-12s %-12s\n' % ('delta','G'))
             for i in range(len(d)):
                 f.write('  %-12.5e %-12.5e\n' % (d[i], G[i]))
         
-        with open('Gsim_%s.ses' % model_name,'w') as f:
+        with open('%s/Gsim_%s.ses' % (model_name,model_name),'w') as f:
             f.write('# Simulated SESANS data, with noise\n')
             f.write('# %-12s %-12s %-12s\n' % ('delta','G','sigma_G'))
             for i in range(len(d)):
@@ -1678,7 +1674,7 @@ def generate_pdb(x_list: List[np.ndarray],
                  y_list: List[np.ndarray], 
                  z_list: List[np.ndarray], 
                  sld_list: List[np.ndarray], 
-                 Model_list: List[str]) -> None:
+                 model_filename_list: List[str]) -> None:
     """
     Generates a visualisation file in PDB format with the simulated points (coordinates) and contrasts
     ONLY FOR VISUALIZATION!
@@ -1690,9 +1686,9 @@ def generate_pdb(x_list: List[np.ndarray],
     IMPORTANT: IT WILL NOT GIVE THE CORRECT RESULTS IF SCATTERING IS CACLLUATED FROM THIS MODEL WITH E.G. CRYSOL, PEPSI-SAXS, FOXS, CAPP OR THE LIKE!
     """
 
-    for (x,y,z,p,Model) in zip(x_list, y_list, z_list, sld_list, Model_list):
-        with open('%s.pdb' % Model,'w') as f:
-            f.write('TITLE    POINT SCATTER FOR MODEL: %s\n' % Model)
+    for (x,y,z,p,model_filename) in zip(x_list, y_list, z_list, sld_list, model_filename_list):
+        with open('%s/%s.pdb' % (model_filename,model_filename),'w') as f:
+            f.write('TITLE    POINT SCATTER FOR MODEL: %s\n' % model_filename)
             f.write('REMARK   GENERATED WITH Shape2SAS\n')
             f.write('REMARK   EACH BEAD REPRESENTED BY DUMMY ATOM\n')
             f.write('REMARK   CARBON, C : POSITIVE EXCESS SCATTERING LENGTH\n')
@@ -1992,8 +1988,8 @@ def simulate_sesans(delta,G,error):
     lnPsim = np.random.normal((G - G[0]), sesans_sigma)
     return lnPsim,sesans_sigma
 
-def save_points(x,y,z,sld,model_nam):
-        with open('points_%s.txt' % model_nam,'w') as f:
+def save_points(x,y,z,sld,model_name):
+        with open('%s/points_%s.txt' % (model_name,model_name),'w') as f:
             f.write('# x y z sld\n')
             for xi,yi,zi,s in zip(x,y,z,sld):
                 f.write('%f %f %f %f\n' % (xi,yi,zi,s))

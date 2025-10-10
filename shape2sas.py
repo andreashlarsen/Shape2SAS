@@ -3,6 +3,7 @@ import time
 import argparse
 from sys import argv
 import numpy as np
+import shutil
 from shape2sas_helpfunctions import *
 
 # current version
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     # Optional structure factor related inputs
     parser.add_argument('-S', '--S', type=str, nargs='+', action='extend',
                         help='structure factor: None/HS/aggregation in each model.')
-    parser.add_argument('-Spar', '--S_par', type=float_list, nargs='+', action='append',
+    parser.add_argument('-Sp', '--S_par', type=float_list, nargs='+', action='append',
                         help='parameters of structure factor for each model.')
 
     # Optional general inputs
@@ -105,20 +106,19 @@ if __name__ == "__main__":
         Sim_par = SimulationParameters(qmin=args.qmin, qmax=args.qmax, qpoints=args.qpoints, prpoints=args.prpoints, Npoints=args.Npoints)
     
     # read subunit type(s)
-    subunit_type = args.subunit_type
-    if subunit_type is None:
-        raise argparse.ArgumentError(subunit_type, "No subunit type was given as an input.")
+    if args.subunit is None:
+        raise argparse.ArgumentError(args.subunit, "No subunit type was given as an input.")
     
     # read dimensions
     #dimensions = args.dimension
     if args.dimension is None:
         raise argparse.ArgumentError(args.dimension, "No dimensions were given as an input.")
-    for subunit, dimension in zip(subunit_type, args.dimension):
+    for subunit, dimension in zip(args.subunit, args.dimension):
          if len(subunit) != len(dimension):
             raise argparse.ArgumentTypeError("Mismatch between number subunit types (%d) and dimensions lists (%d)." % (len(subunit),len(dimension)))
     
     # read number of models
-    num_models = len(subunit_type)
+    num_models = len(args.subunit)
     if num_models == 1:
         printt(f"Simulating {num_models} model...")
     else: 
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     # prepare lists (if several models are simulated simultaneously)
     r_list, pr_norm_list, I_list, Isim_list, sigma_list, S_eff_list = [], [], [], [], [], [] 
-    x_list, y_list, z_list, sld_list, Model_list, scale_list, name_list = [], [], [], [], [], [], []
+    x_list, y_list, z_list, sld_list, model_filename_list, scale_list, name_list = [], [], [], [], [], [], []
     if args.sesans:
         delta_list,G_list,Gsim_list,sigma_G_list = [],[],[],[]
 
@@ -143,9 +143,7 @@ if __name__ == "__main__":
         printt(f"    Generating points for Model: " + model_name)
 
         # read subunit and dimensions for model i
-        #subunits = subunit_type[i]
-        #dims = dimensions[i]
-        N_subunits = len(subunit_type[i])
+        N_subunits = len(args.subunit[i])
 
         #read for SLD, COM, and rotation for model i
         sld = check_3Dinput(args.sld, [1.0], "SLD", N_subunits, i)
@@ -156,7 +154,7 @@ if __name__ == "__main__":
         exclude_overlap = check_input(args.exclude_overlap, True, "exclude_overlap", i)
 
         #make point cloud
-        Distr = getPointDistribution(subunit_type[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints)
+        Distr = getPointDistribution(args.subunit[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints)
         
         ################################# Calculate Theoretical I(q) #################################
         printt(" ")
@@ -185,15 +183,13 @@ if __name__ == "__main__":
         Theo_I = getTheoreticalScattering(Theo_calc)
 
         #save models
-        Model = "_".join(model_name.split())
-        WeightedPairDistribution.save_pr(args.prpoints, Theo_I.r, Theo_I.pr, Model)
-        StructureFactor.save_S(Theo_I.q, Theo_I.S_eff, Model)
-        ITheoretical(Theo_I.q).save_I(Theo_I.I, Model)
+        model_filename = "_".join(model_name.split()) # remove whitespace
+        WeightedPairDistribution.save_pr(args.prpoints, Theo_I.r, Theo_I.pr, model_filename)
+        StructureFactor.save_S(Theo_I.q, Theo_I.S_eff, model_filename)
+        ITheoretical(Theo_I.q).save_I(Theo_I.I, model_filename)
 
         #save points
-        #save_points(Distr.x[0], Distr.y[0], Distr.z[0], Distr.sld[0], Model)
-        save_points(np.concatenate(Distr.x), np.concatenate(Distr.y), np.concatenate(Distr.z), np.concatenate(Distr.sld), Model)
-        #print(Distr.sld)
+        save_points(np.concatenate(Distr.x), np.concatenate(Distr.y), np.concatenate(Distr.z), np.concatenate(Distr.sld), model_filename)
 
         ######################################### Simulate I(q) ##########################################
         exposure = args.exposure
@@ -202,7 +198,7 @@ if __name__ == "__main__":
 
         # Save simulated I(q) using IExperimental
         Isim_class = IExperimental(q=Sim_I.q, I0=Theo_I.I0, I=Theo_I.I, exposure=exposure)
-        Isim_class.save_Iexperimental(Sim_I.I_sim, Sim_I.I_err, Model)
+        Isim_class.save_Iexperimental(Sim_I.I_sim, Sim_I.I_err, model_filename)
 
         #check scaling for plot
         scale = check_input(args.scale, 1, "scale", i)
@@ -221,7 +217,7 @@ if __name__ == "__main__":
         Isim_list.append(Sim_I.I_sim)
         sigma_list.append(Sim_I.I_err)
 
-        Model_list.append(Model)
+        model_filename_list.append(model_filename)
         scale_list.append(scale)
         name_list.append(model_name)
 
@@ -247,14 +243,14 @@ if __name__ == "__main__":
     colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forrestgreen']
 
     #plot 2D projections
-    for Model in Model_list:
-        print("    2D projection: points_" + Model + ".png ...")
-    plot_2D(x_list, y_list, z_list, sld_list, Model_list, args.high_res, colors)
+    for m in model_filename_list:
+        print("    2D projection: points_" + m + ".png ...")
+    plot_2D(x_list, y_list, z_list, sld_list, model_filename_list, args.high_res, colors)
     
     #3D vizualization: generate pdb file with points
-    for Model in Model_list:
-        print("    3D models: " + Model + ".pdb ...")
-    generate_pdb(x_list, y_list, z_list, sld_list, Model_list)
+    for m in model_filename_list:
+        print("    3D models: " + m + ".pdb ...")
+    generate_pdb(x_list, y_list, z_list, sld_list, model_filename_list)
     
     #plot p(r) and I(q)
     print("    plot pr and Iq and Isim: plot.png ...")
@@ -264,7 +260,7 @@ if __name__ == "__main__":
     #plot and save sesans
     if args.sesans:
         plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, scale_list, args.high_res, colors)
-        save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, Model_list)
+        save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, model_filename_list)
 
     time_total = time.time() - start_total
     printt(" ")
@@ -272,5 +268,8 @@ if __name__ == "__main__":
     printt("    Total run time: " + str(round(time_total, 1)) + " seconds.")
     printt(" ")
 
+    # close log file and copy into model directories
     f_out.close()
-
+    for model_filename in model_filename_list:
+        shutil.copy('shape2sas.log','%s/%s.log' % (model_filename,model_filename))
+        shutil.copy('plot.png','%s/plot_%s.png' % (model_filename,model_filename))

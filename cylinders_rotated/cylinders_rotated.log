@@ -1,0 +1,16 @@
+#######################################################################################
+RUNNING shape2sas.py version 2.3 
+ - for instructions type: python shape2sas.py -h
+command used: python shape2sas.py --subunit "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
+#######################################################################################
+Simulating 1 model...
+ 
+    Generating points for Model: cylinders_rotated
+ 
+    Calculating intensity, I(q)...
+ 
+Generating plots...
+ 
+Simulation successfully completed.
+    Total run time: 1.9 seconds.
+ 

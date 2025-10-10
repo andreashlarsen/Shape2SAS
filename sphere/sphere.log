@@ -1,0 +1,16 @@
+#######################################################################################
+RUNNING shape2sas.py version 2.3 
+ - for instructions type: python shape2sas.py -h
+command used: python shape2sas.py --sesans --subunit sphere --dimension 250 --model_name sphere
+#######################################################################################
+Simulating 1 model...
+ 
+    Generating points for Model: sphere
+ 
+    Calculating intensity, I(q)...
+ 
+Generating plots...
+ 
+Simulation successfully completed.
+    Total run time: 6.3 seconds.
+ 

@@ -1,0 +1,16 @@
+#######################################################################################
+RUNNING shape2sas.py version 2.3 
+ - for instructions type: python shape2sas.py -h
+command used: python shape2sas.py --subunit ellipsoid --dimension 30,30,100 --model_name ellipsoid
+#######################################################################################
+Simulating 1 model...
+ 
+    Generating points for Model: ellipsoid
+ 
+    Calculating intensity, I(q)...
+ 
+Generating plots...
+ 
+Simulation successfully completed.
+    Total run time: 2.0 seconds.
+ 

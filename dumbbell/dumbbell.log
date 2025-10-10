@@ -1,0 +1,16 @@
+#######################################################################################
+RUNNING shape2sas.py version 2.3 
+ - for instructions type: python shape2sas.py -h
+command used: python shape2sas.py --subunit sphere,sphere,cylinder --dimension 25 25 10,100 --com 0,0,-50 0,0,50 0,0,0 --Npoints 6000 --model_name dumbbell
+#######################################################################################
+Simulating 1 model...
+ 
+    Generating points for Model: dumbbell
+ 
+    Calculating intensity, I(q)...
+ 
+Generating plots...
+ 
+Simulation successfully completed.
+    Total run time: 1.7 seconds.
+ 
