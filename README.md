@@ -26,6 +26,8 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
     - [Known bug for COM input and solution](#known-bug-for-com-input-and-solution)
   - [Example 8: Number of points - accuracy-vs-runtime](#example-8-number-of-points---accuracy-vs-runtime)
   - [Example 9: Spin-echo SANS - repulsion in real space](#example-9-spin-echo-sans---repulsion-in-real-space)
+  - [Example 10: Mixtures - small and large spheres](#example-10-mixtures---small-and-large-spheres)
+    - [The mixture script (table)](#the-mixture-script)
 - [Shape2SAS inputs](#shape2sas-inputs)
   - [Mandatory inputs](#mandatory-inputs-model-dependent)
   - [Model-dependent inputs](#model-dependent-and-optional-inputs)
@@ -363,6 +365,8 @@ python shape2sas.py -s sph -d 30 -m sph_small
 python shape2sas.py -s sph -d 60 -m sph_large
 python mixture.py -m sph_small,sph_large -f 95,5
 ```
+
+[Back to Table of contents](#table-of-contents)
 
 ### The mixture script
 The `mixture.py` script calculate scattering from a mixture of non-interacting particles, using pre-calculated output files from shape2sas. Inputs are given in the table below, or by typing `python mixture.py -h`
