@@ -28,9 +28,9 @@ if __name__ == "__main__":
 
     # resolution
     if args.high_res:
-        format = 'pdf'
+        format = '.pdf'
     else:
-        format ='png'
+        format ='.png'
 
     ### plot SAS data: p(r), I(q), Isim(q)
     fig, ax = plt.subplots(1,3,figsize=(12,4))
@@ -90,9 +90,9 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     if args.name == 'None':
-        plt.savefig(all_model_names + '_data' + 'format')
+        plt.savefig(all_model_names + '_compare' + format)
     else:
-        plt.savefig(args.name + '_data' + 'format')
+        plt.savefig(args.name + '_compare' + format)
 
 
     ### plot points: 2D projection  - if opted for
@@ -172,9 +172,9 @@ if __name__ == "__main__":
         
         plt.tight_layout()
         if args.name == 'None':
-            plt.savefig(all_model_names + '_points')
+            plt.savefig(all_model_names + '_compare_points' + format)
         else:
-            plt.savefig(args.name + '_points')
+            plt.savefig(args.name + '_compare_points' + format)
     
     ### plot sesans data, G(delta), G_sim(delta) - if opted for
     if args.sesans:
@@ -209,9 +209,9 @@ if __name__ == "__main__":
 
         plt.tight_layout()
         if args.name == 'None':
-            plt.savefig(all_model_names + '_sesans' + 'format')
+            plt.savefig(all_model_names + '_sesans' + format)
         else:
-            plt.savefig(args.name + '_sesans' + 'format')
+            plt.savefig(args.name + '_sesans' + format)
 
     plt.show()
 

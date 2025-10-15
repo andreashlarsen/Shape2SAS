@@ -248,9 +248,9 @@ for usage, see [Example 4](#example-4-several-models).
 | `--grid`| `-g`| no argument  | add grid to point distribution | False  |
 | `--plot_points` | `-p`| no argument      | plot point cloud 2D projections | False |
 
-output files:
-`<name>_data.png`: p(r), theoretical I and simulated I (with noise) for selected models
-`<name>_points.png`: 2D representations of structures
+##### `compare.py` output files:
+`<name>_compare.png`: p(r), theoretical I and simulated I (with noise) for selected models
+`<name>_compare_points.png`: 2D projections of the models (if opted for by the `--plot_points' flag)
 
 [Back to Table of contents](#table-of-contents)
 
@@ -353,6 +353,38 @@ python compare.py -m two_spheres,sphere --sesans
 </p>
 
  *Example 9: SESANS spheres with or without hard-sphere interaction*
+
+[Back to Table of contents](#table-of-contents)
+
+### Example 10: Mixtures - small and large spheres
+If you have different particles on solution and the do not interact, you can model this as a mixture. This can be modelled with the mixture script. E.g a sample with non-interacting small and large spheres. The fraction of large is set to 5%:
+```
+python shape2sas.py -s sph -d 30 -m sph_small
+python shape2sas.py -s sph -d 60 -m sph_large
+python mixture.py -m sph_small,sph_large -f 95,5
+```
+
+### The mixture script
+The `mixture.py` script calculate scattering from a mixture of non-interacting particles, using pre-calculated output files from shape2sas. Inputs are given in the table below, or by typing `python mixture.py -h`
+
+for usage, see [Example 4](#example-4-several-models).
+
+| Option             | Short name  |   Arguments               | Description                | Default |
+|--------------------|-------------|---------------------------|----------------------------|---------|
+| `--model_name` | `-m`        | model names | names of models to compare | No default, mandatory input |
+| `--fraction` | `-f`| fractions | relative fraction of each model | No default, mandatory input |
+| `--name` | `-n`| a name      | prefix of output plot files | model names separated by underscore |
+| `--normalization` | `-norm`| max or I0 or none | normalization of p(r) with maximum value or I(0) = sum(pr*dr) or no normalization | max |
+| `--sesans` | `-ss`| no argument      | include SESANS data | False |
+| `--xscale_lin` | `-lin`      | no argument |linear q-scale | False (log scale) |
+| `--high_res` | `-hres`       | no argument | high resolution output figures (pdf) | False |
+| `--scale`| `-s` | no argument| scale simualated data for better visualization | False |
+| `--grid`| `-g`| no argument  | add grid to point distribution | False  |
+| `--norm` | `-n`| max, I0 or none  | normalization of p(r) | I0 |
+
+##### `mixture.py`output files:
+`mixture_<name>/pr_<name>.dat`, `mixture_<name>/Iq_<name>.dat`, `mixture_<name>/Isim_<name>.dat`: p(r), theoretical I and simulated I (with noise) for mixture of selected models (using `--model_name` optioin), at selected fractions (using the `--fraction`option)   
+`mixture_<name>/<name>.png`: plots of the above, campared with the p(r) and scattering from the components. 
 
 [Back to Table of contents](#table-of-contents)
 

@@ -10,14 +10,15 @@ if __name__ == "__main__":
     # input arguments
     parser = argparse.ArgumentParser(description='Compare results from Shape2SAS')
     parser.add_argument('-m', '--model_names',help='Model names')
+    parser.add_argument('-f', '--fractions',help='relative fractions of populations',default=False)
+
     parser.add_argument('-lin', '--xscale_lin', action='store_true', default=False, help='include flag (no input) to make q scale linear instead of logarithmic.')
     parser.add_argument('-hres', '--high_res', action='store_true', default=False, help='include flag (no input) to output high resolution plot.')
     parser.add_argument('-s', '--scale', action='store_true', default=False,help='include flag (no input) to scale the simulated intensity of each model in the plots to avoid overlap')    
-    parser.add_argument('-n', '--name', help='output filename', default='None')   
+    parser.add_argument('-n', '--name', help='output filename', default=None)   
     parser.add_argument('-g', '--grid',action='store_true',help='add grid in 2D point representation',default=False)
     parser.add_argument('-norm', '--normalization',help='normalization method: max, I0 (default) or none ',default='max')
     parser.add_argument('-ss', '--sesans', action='store_true',help='plot SESANS data',default=False)
-    parser.add_argument('-f', '--fractions',help='relative fractions of populations',default=False)
     parser.add_argument('-expo', '--exposure', type=float, default=500, help='Exposure time in arbitrary units.')
     args = parser.parse_args()
 
@@ -26,12 +27,12 @@ if __name__ == "__main__":
     models = re.split('[ ,]+', args.model_names)
     fractions = [float(f) for f in re.split('[ ,]+', args.fractions)]
     fractions /= np.sum(fractions)
-    
+
     # resolution
     if args.high_res:
-        format = 'pdf'
+        format = '.pdf'
     else:
-        format ='png'
+        format ='.png'
 
     ### plot SAS data: p(r), I(q), Isim(q)
     fig, ax = plt.subplots(1,3,figsize=(12,4))
@@ -81,9 +82,13 @@ if __name__ == "__main__":
             dmax = np.max(r)
 
     # prepare output folder
-    folder = 'mixture_' + all_model_names
+    if args.name == None:
+        name = all_model_names
+    else:
+        name = args.name
+    folder = 'mixture_' + name
     os.makedirs(folder, exist_ok=True)
-    
+
     r_mix = np.linspace(0,dmax,100)
     pr_mix = np.zeros_like(r)
     w_sum,I_mix,pr_mix,I0_mix = 0,0,0,0
@@ -103,14 +108,14 @@ if __name__ == "__main__":
     else: 
         print('\n\nERROR: unknown normalization argument: ' + args.normalization + '. Should be "max" or "I0" or "none".\n\n')
         exit()
-    with open(folder + '/pr_1.dat','w') as f:
+    with open(folder + '/pr_%s.dat' % name,'w') as f:
         f.write('# %-17s %-17s\n' % ('r','p(r)'))
         for i in range(len(r)):
             f.write('  %-17.5e %-17.5e\n' % (r[i], pr_mix[i]))
     
     I_mix /= w_sum
     I0_mix /= w_sum
-    with open(folder + '/Iq_1.dat','w') as f:
+    with open(folder + '/Iq_%s.dat' % name,'w') as f:
         f.write('# Theoretical SAS data\n')
         f.write('# %-12s %-12s\n' % ('q','I'))
         for i in range(len(q)):
@@ -156,10 +161,8 @@ if __name__ == "__main__":
     ax[2].legend(frameon=True)
 
     plt.tight_layout()
-    if args.name == 'None':
-        plt.savefig(all_model_names + '_data' + 'format')
-    else:
-        plt.savefig(args.name + '_data' + 'format')
+    plt.savefig(folder + '/' + name + '_mixture' + format)
+
     
     ### plot sesans data, G(delta), G_sim(delta) - if opted for
     if args.sesans:
@@ -193,10 +196,7 @@ if __name__ == "__main__":
             ax[1].legend(frameon=True)
 
         plt.tight_layout()
-        if args.name == 'None':
-            plt.savefig(all_model_names + '_sesans' + 'format')
-        else:
-            plt.savefig(args.name + '_sesans' + 'format')
+        plt.savefig(folder + '/' + name + '_sesans' + format)
 
     plt.show()
 

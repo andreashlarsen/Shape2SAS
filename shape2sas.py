@@ -111,7 +111,6 @@ if __name__ == "__main__":
         raise argparse.ArgumentError(args.subunit, "No subunit type was given as an input.")
     
     # read dimensions
-    #dimensions = args.dimension
     if args.dimension is None:
         raise argparse.ArgumentError(args.dimension, "No dimensions were given as an input.")
     for subunit, dimension in zip(args.subunit, args.dimension):
