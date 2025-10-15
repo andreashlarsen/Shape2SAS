@@ -1,7 +1,8 @@
 rm *pdb
 rm *png
+rm *pdf
 rm *dat
 rm *ses
 rm *txt
 rm shape2sas.log
-rm -r __pycache__
+find . -maxdepth 1 -type d ! -name "." ! -name "examples" ! -name ".git" -exec rm -rf {} +
