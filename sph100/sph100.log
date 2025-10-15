@@ -1,0 +1,16 @@
+#######################################################################################
+RUNNING shape2sas.py version 2.3 
+ - for instructions type: python shape2sas.py -h
+command used: python shape2sas.py -s sph -d 100 -m sph100
+#######################################################################################
+Simulating 1 model...
+ 
+    Generating points for Model: sph100
+ 
+    Calculating intensity, I(q)...
+ 
+Generating plots...
+ 
+Simulation successfully completed.
+    Total run time: 2.3 seconds.
+ 
