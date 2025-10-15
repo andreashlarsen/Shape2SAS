@@ -121,8 +121,8 @@ if __name__ == "__main__":
         for i in range(len(q)):
             f.write('  %-12.5e %-12.5e\n' % (q[i], I_mix[i]))
 
-    ax[0].plot(r,pr_mix,color='black',label='mix')
-    ax[1].plot(q,I_mix,color='black',label='mix')
+    ax[0].plot(r,pr_mix,color='black',label='mixture')
+    ax[1].plot(q,I_mix,color='black',label='mixture')
 
     ######################################### Simulate I(q) ##########################################
     exposure = args.exposure
