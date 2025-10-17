@@ -263,4 +263,12 @@ if __name__ == "__main__":
     #f_out.close()
     for model_filename in model_filename_list:
         shutil.copy('shape2sas.log','%s/%s.log' % (model_filename,model_filename))
-        shutil.copy('plot.png','%s/plot_%s.png' % (model_filename,model_filename))
+        if args.high_res:
+            shutil.copy('plot.pdf','%s/plot_%s.pdf' % (model_filename,model_filename))
+        else:
+            shutil.copy('plot.png','%s/plot_%s.png' % (model_filename,model_filename))
+        if args.sesans:
+            if args.high_res:
+                shutil.copy('sesans.pdf','%s/sesans_%s.pdf' % (model_filename,model_filename))
+            else:
+                shutil.copy('sesans.png','%s/sesans_%s.png' % (model_filename,model_filename))

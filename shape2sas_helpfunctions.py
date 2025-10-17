@@ -1648,7 +1648,10 @@ def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, high_res
     ## figure settings
     plt.tight_layout()
 
-    plt.savefig('sesans.pdf')
+    if high_res:
+        plt.savefig('sesans.pdf')
+    else:
+        plt.savefig('sesans.png')
     plt.close()
 
 def save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list):

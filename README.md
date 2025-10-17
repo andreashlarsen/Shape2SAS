@@ -243,7 +243,7 @@ for usage, see [Example 4](#example-4-several-models).
 | `--model_name` | `-m`        | name of models to compare | modelnames | No default, mandatory input |
 | `--name` | `-n`| a name      | prefix of output plot files | model names separated by underscore |
 | `--normalization` | `-norm`| max or I0 or none | normalization of p(r) with maximum value or I(0) = sum(pr*dr) or no normalization | max |
-| `--sesans` | `-ss`| no argument      | include SESANS data | False |
+| `--sesans` | `-ss`| no argument      | simulate SESANS data | False |
 | `--xscale_lin` | `-lin`      | no argument |linear q-scale | False (log scale) |
 | `--high_res` | `-hres`       | no argument | high resolution output figures (pdf) | False |
 | `--scale`| `-s` | no argument| scale simualated data for better visualization | False |
