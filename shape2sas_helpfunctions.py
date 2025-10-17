@@ -11,6 +11,11 @@ import warnings
 import os
 from dataclasses import dataclass, field
 
+def printt(s): 
+    """ print and write to log file"""
+    print(s)
+    with open('shape2sas.log','a') as f:
+        f.write('%s\n' %s)
 
 ################################ Data classes ################################
 
@@ -32,7 +37,7 @@ class Sphere:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 1:
-            print("\nERROR: subunit sphere needs 1 dimension, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit sphere needs 1 dimension, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
         self.R = dimensions[0]
 
@@ -73,7 +78,7 @@ class HollowSphere:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
-            print("\nERROR: subunit hollow_sphere needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit hollow_sphere needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
         self.R,self.r = dimensions
 
@@ -132,7 +137,7 @@ class Cylinder:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
-            print("\nERROR: subunit cylinder needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit cylinder needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()        
         self.R,self.l = dimensions
 
@@ -172,7 +177,7 @@ class Ellipsoid:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
-            print("\nERROR: subunit ellipsoid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit ellipsoid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()    
         self.a,self.b,self.c = dimensions
 
@@ -212,7 +217,7 @@ class EllipticalCylinder:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
-            print("\nERROR: subunit elliptical_cylinder needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit elliptical_cylinder needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()  
         self.a,self.b,self.l = dimensions
 
@@ -251,7 +256,7 @@ class Cube:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 1:
-            print("\nERROR: subunit cube needs 1 dimension, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit cube needs 1 dimension, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()  
         self.a = dimensions[0]
 
@@ -287,7 +292,7 @@ class HollowCube:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
-            print("\nERROR: subunit hollow_cube needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit hollow_cube needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()  
         self.a,self.b = dimensions
 
@@ -365,7 +370,7 @@ class Cuboid:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
-            print("\nERROR: subunit hollow_cube needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit hollow_cube needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
         self.a,self.b,self.c = dimensions
 
@@ -394,7 +399,7 @@ class CylinderRing:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
-            print("\nERROR: subunit CylinderRing needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit CylinderRing needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
         self.R,self.r,self.l = dimensions
     
@@ -447,7 +452,7 @@ class Torus:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
-            print("\nERROR: subunit Torus needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit Torus needs 2 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
         self.R,self.r = dimensions
 
@@ -490,7 +495,7 @@ class Hyperboloid:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
-            print("\nERROR: subunit Hyperboloid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit Hyperboloid needs 3 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
         self.r,self.c,self,h = dimensions
 
@@ -526,7 +531,7 @@ class Superellipsoid:
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 4:
-            print("\nERROR: subunit Superellipsoid needs 4 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
+            printt("\nERROR: subunit Superellipsoid needs 4 dimensions, but " + str(len(dimensions)) + ' dimensions were given: ' + str(dimensions) + '\n')
             exit()
         self.R,self.eps,self.t,self.s = dimensions
 
@@ -714,18 +719,18 @@ class GenerateAllPoints:
         for j in range(self.Number_of_subunits):
             srho = rho[j] * self.sld[j]
             N_remain.append(N[j] - N_exclude[j])
-            print(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
-            print(f"             Point density     : {rho[j]:.3e} (points per volume)")
-            print(f"             Scattering density: {srho:.3e} (density times scattering length)")
+            printt(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
+            printt(f"             Point density     : {rho[j]:.3e} (points per volume)")
+            printt(f"             Scattering density: {srho:.3e} (density times scattering length)")
             if self.exclude_overlap:
-                print(f"             Excluded points   : {N_exclude[j]} (overlap region)")
+                printt(f"             Excluded points   : {N_exclude[j]} (overlap region)")
             else:
-                print(f"             Excluded points   : none - exclude overlap disabled")
-            print(f"             Remaining points  : {N_remain[j]} (non-overlapping region)")
+                printt(f"             Excluded points   : none - exclude overlap disabled")
+            printt(f"             Remaining points  : {N_remain[j]} (non-overlapping region)")
         N_total = sum(N_remain)
-        print(f"        Total points in model: {N_total}")
-        print(f"        Total volume of model: {volume_total:.3e} A^3")
-        print(" ")
+        printt(f"        Total points in model: {N_total}")
+        printt(f"        Total volume of model: {volume_total:.3e} A^3")
+        printt(" ")
 
         return x_new, y_new, z_new, sld_new, volume_total
 
@@ -782,16 +787,16 @@ class GenerateAllPoints:
         for j in range(self.Number_of_subunits):
             srho = rho[j] * self.sld[j]
             N_remain.append(N[j] - N_exclude[j])
-            print(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
-            print(f"             Point density     : {rho[j]:.3e} (points per volume)")
-            print(f"             Scattering density: {srho:.3e} (density times scattering length)")
-            print(f"             Excluded points   : {N_exclude[j]} (overlap region)")
-            print(f"             Remaining points  : {N_remain[j]} (non-overlapping region)")
+            printt(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
+            printt(f"             Point density     : {rho[j]:.3e} (points per volume)")
+            printt(f"             Scattering density: {srho:.3e} (density times scattering length)")
+            printt(f"             Excluded points   : {N_exclude[j]} (overlap region)")
+            printt(f"             Remaining points  : {N_remain[j]} (non-overlapping region)")
 
         N_total = sum(N_remain)
-        print(f"        Total points in model: {N_total}")
-        print(f"        Total volume of model: {volume_total:.3e} A^3")
-        print(" ")
+        printt(f"        Total points in model: {N_total}")
+        printt(f"        Total volume of model: {volume_total:.3e} A^3")
+        printt(" ")
 
         return x_new, y_new, z_new, sld_new, volume_total
 
@@ -954,7 +959,7 @@ class WeightedPairDistribution:
             r, hr = self.generate_histogram(dist, Nbins, contrast, r_max)
 
         # print Dmax
-        print(f"        Dmax: {Dmax:.3e} A")
+        printt(f"        Dmax: {Dmax:.3e} A")
 
         return r, hr
 
@@ -971,15 +976,15 @@ class WeightedPairDistribution:
         output:
         pr        : pair distance distribution function
         """
-        print('        calculating distances...')
+        printt('        calculating distances...')
         dist = self.calc_all_dist()
-        print('        calculating contrasts...')
+        printt('        calculating contrasts...')
         contrast = self.calc_all_contrasts()
 
         ## calculate pr
         #idx_nonzero = np.where(dist > 0.0) #  nonzero elements
         #r, pr = self.calc_hr(dist[idx_nonzero], Nbins, contrast[idx_nonzero], polydispersity)
-        print('        calculating pr...')
+        printt('        calculating pr...')
         r, pr = self.calc_hr(dist, Nbins, contrast, polydispersity)
 
         ## normalize so pr_max = 1
@@ -987,7 +992,7 @@ class WeightedPairDistribution:
 
         ## calculate Rg
         Rg = self.calc_Rg(r, pr_norm)
-        print(f"        Rg  : {Rg:.3e} A")
+        printt(f"        Rg  : {Rg:.3e} A")
 
         #returned N values after generating
         pr /= len(self.x)**2 #NOTE: N_total**2
@@ -1094,7 +1099,7 @@ class HardSphereStructure(StructureDecouplingApprox):
         self.z_new = z_new
         self.sld_new = sld_new
         if len(par) != 2:
-            print("\nERROR: structure factor hard-sphere needs 2 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
+            printt("\nERROR: structure factor hard-sphere needs 2 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
             exit()  
         self.conc,self.R_HS = par
 
@@ -1221,7 +1226,7 @@ class Aggregation(StructureDecouplingApprox):
         self.z_new = z_new
         self.sld_new = sld_new
         if len(par) != 3:
-            print("\nERROR: structure factor aggregation needs 3 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
+            printt("\nERROR: structure factor aggregation needs 3 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
             exit()  
         self.Reff,self.Naggr,self.fracs_aggr = par
 
@@ -1263,7 +1268,7 @@ class NoStructure(StructureDecouplingApprox):
         super(NoStructure, self).__init__(q, x_new, y_new, z_new, sld_new)
         self.q = q
         if len(par) != 0:
-            print("\nERROR:  structure factor none needs 0 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
+            printt("\nERROR:  structure factor none needs 0 parameters, but " + str(len(par)) + ' parameters were given: ' + str(par) + '\n')
             exit()  
         
     def structure_eff(self, Pq: Any) -> np.ndarray:
@@ -1416,8 +1421,7 @@ class IExperimental:
         c = 0.85
 
         # convert from intensity units to counts
-        scale = self.exposure
-        I_sed = scale * self.I0 * self.I
+        I_sed = self.exposure * self.I0 * self.I
 
         # make N
         N = k * self.q # original expression from Sedlak2017 paper
@@ -1442,8 +1446,7 @@ class IExperimental:
         sigma_sed = np.sqrt(v_sed)
 
         # rescale
-        #sigma = noise * sigma_sed/scale
-        sigma = sigma_sed / scale
+        sigma = sigma_sed / self.exposure
 
         ## simulate data using errors
         mu = self.I0 * self.I
@@ -1565,7 +1568,6 @@ def plot_results(q: np.ndarray,
                  sigma_list: List[np.ndarray], 
                  S_list: List[np.ndarray], 
                  name_list: List[str], 
-                 scales: List[float], 
                  xscale_lin: bool, 
                  high_res: bool,
                  colors: List[str]) -> None:
@@ -1579,13 +1581,10 @@ def plot_results(q: np.ndarray,
     fig, ax = plt.subplots(1,3,figsize=(12,4))
 
     zo = 1
-    for (r, pr, I, Isim, sigma, S, model_name, scale,color) in zip (r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name_list, scales, colors):
+    for (r, pr, I, Isim, sigma, S, model_name,color) in zip (r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name_list, colors):
         ax[0].plot(r,pr,zorder=zo, color=color, label='p(r), %s' % model_name)
 
-        if scale > 1: 
-            ax[2].errorbar(q,Isim*scale,yerr=sigma*scale,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s, scaled by %d' % (model_name,scale),zorder=1/zo)
-        else:
-            ax[2].errorbar(q,Isim*scale,yerr=sigma*scale,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s' % model_name,zorder=zo)
+        ax[2].errorbar(q,Isim,yerr=sigma,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s' % model_name,zorder=zo)
 
         if S[0] != 1.0 or S[-1] != 1.0:
             ax[1].plot(q, S, linestyle='--', color=color, zorder=0, label=r'$S(q)$, %s' % model_name)
@@ -1627,10 +1626,10 @@ def plot_results(q: np.ndarray,
         plt.savefig('plot.png')
     plt.close()
     
-def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, scales, high_res, colors):
+def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, high_res, colors):
     fig, ax = plt.subplots(1,2,figsize=(8,4))
     zo = 1
-    for (d, G, Gsim, sigmaG, model_name, scale, color) in zip (delta_list, G_list, Gsim_list, sigma_G_list, name_list, scales, colors):
+    for (d, G, Gsim, sigmaG, model_name, color) in zip (delta_list, G_list, Gsim_list, sigma_G_list, name_list, colors):
 
         ax[0].plot(d, G, zorder=zo, color=color,label=r'$G$, %s' % model_name)
         #ax[0].set_ylabel(r'$G$ [a.u.]')
@@ -1639,10 +1638,8 @@ def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, scales, 
         ax[0].set_title('theoretical SESANS, no noise')
         ax[0].legend(frameon=False)
                          
-        if scale > 1: 
-            ax[1].errorbar(d,Gsim*scale,yerr=sigmaG*scale,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s, scaled by %d' % (model_name,scale),zorder=1/zo)
-        else:
-            ax[1].errorbar(d,Gsim*scale,yerr=sigmaG*scale,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s' % model_name,zorder=zo)
+
+        ax[1].errorbar(d,Gsim,yerr=sigmaG,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s' % model_name,zorder=zo)
         ax[1].set_xlabel(r'$\delta$ [$\mathrm{\AA}$]')
         ax[1].set_ylabel(r'$\ln(P)/(t\lambda^2)$ [$\mathrm{\AA}^{-2}$cm$^{-1}$]')
         ax[1].set_title('simulated SESANS, with noise')
@@ -1940,7 +1937,7 @@ def getTheoreticalScattering(scalc: TheoreticalScatteringCalculation) -> Theoret
 
     r, pr, pr_norm = WeightedPairDistribution(x, y, z, p).calc_pr(calc.prpoints, sys.polydispersity)
 
-    print('        calculating scattering...')
+    printt('        calculating scattering...')
     q = np.linspace(calc.qmin, calc.qmax, calc.qpoints)
     I_theory = ITheoretical(q)
     I0, Pq = I_theory.calc_Pq(r, pr, sys.conc, prof.volume_total)

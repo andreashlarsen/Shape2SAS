@@ -12,13 +12,9 @@ version = 2.3
 
 if __name__ == "__main__":
        
-    ### make log file and define printt function
-    f_out = open('shape2sas.log','w')
-    def printt(s): 
-        """ print and write to log file"""
-        print(s)
-        f_out.write('%s\n' %s)
-    
+    ## remove existing log file
+    open('shape2sas.log','w').close()
+
     ### welcome message
     printt('#######################################################################################')
     printt('RUNNING shape2sas.py version %s \n - for instructions type: python shape2sas.py -h' % version)
@@ -31,6 +27,7 @@ if __name__ == "__main__":
     printt('command used: %s' % command)
     printt('#######################################################################################')
 
+    # timing
     start_total = time.time()
 
     ### input values 
@@ -85,8 +82,6 @@ if __name__ == "__main__":
                         help='include flag (no input) to make q scale linear instead of logarithmic.')
     parser.add_argument('-hres', '--high_res', action='store_true', default=False, 
                         help='include flag (no input) to output high resolution plot.')
-    parser.add_argument('-scale', '--scale', action='store_true', default=False,
-                        help='include flag (no input) to scale the simulated intensity of each model in the plots to avoid overlap.')       
 
     # Optional SESANS-related options (Shape2SESANS)
     parser.add_argument('-ss', '--sesans', action='store_true', default=False,
@@ -126,7 +121,7 @@ if __name__ == "__main__":
 
     # prepare lists (if several models are simulated simultaneously)
     r_list, pr_norm_list, I_list, Isim_list, sigma_list, S_eff_list = [], [], [], [], [], [] 
-    x_list, y_list, z_list, sld_list, model_filename_list, scale_list, name_list = [], [], [], [], [], [], []
+    x_list, y_list, z_list, sld_list, model_filename_list, name_list = [], [], [], [], [], []
     if args.sesans:
         delta_list,G_list,Gsim_list,sigma_G_list = [],[],[],[]
 
@@ -200,9 +195,6 @@ if __name__ == "__main__":
         Isim_class = IExperimental(q=Sim_I.q, I0=Theo_I.I0, I=Theo_I.I, exposure=exposure)
         Isim_class.save_Iexperimental(Sim_I.I_sim, Sim_I.I_err, model_filename)
 
-        #check scaling for plot
-        scale = check_input(args.scale, 1, "scale", i)
-
         ######################################### save data for plots ##########################################
         x_list.append(np.concatenate(Distr.x))
         y_list.append(np.concatenate(Distr.y))
@@ -218,7 +210,6 @@ if __name__ == "__main__":
         sigma_list.append(Sim_I.I_err)
 
         model_filename_list.append(model_filename)
-        scale_list.append(scale)
         name_list.append(model_name)
 
         ######################################### SESANS ##########################################
@@ -255,11 +246,11 @@ if __name__ == "__main__":
     #plot p(r) and I(q)
     print("    plot pr and Iq and Isim: plot.png ...")
     plot_results(Theo_I.q, r_list, pr_norm_list, I_list, Isim_list, 
-                 sigma_list, S_eff_list, name_list, scale_list, args.xscale_lin, args.high_res, colors)
+                 sigma_list, S_eff_list, name_list, args.xscale_lin, args.high_res, colors)
 
     #plot and save sesans
     if args.sesans:
-        plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, scale_list, args.high_res, colors)
+        plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, args.high_res, colors)
         save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, model_filename_list)
 
     time_total = time.time() - start_total
@@ -269,7 +260,7 @@ if __name__ == "__main__":
     printt(" ")
 
     # close log file and copy into model directories
-    f_out.close()
+    #f_out.close()
     for model_filename in model_filename_list:
         shutil.copy('shape2sas.log','%s/%s.log' % (model_filename,model_filename))
         shutil.copy('plot.png','%s/plot_%s.png' % (model_filename,model_filename))

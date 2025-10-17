@@ -430,7 +430,6 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 |-----------------|---------|------------|-----------------------------------------|
 | `--xscale_lin`         | True       | `-lin` | Linear q scale (default)  |
 | `--high_res`         | False       | `-hres` | Use high resoulution in plots (e.g., for publications) |
-| `--scale`         | 1.0       | `-scale` | In the plot, scale simulated intensity of each model to avoid overlap  |
 
 [Back to Table of contents](#table-of-contents)
 
