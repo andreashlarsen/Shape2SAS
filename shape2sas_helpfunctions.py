@@ -128,7 +128,7 @@ class HollowSphere:
             return idx
 
 class Cylinder:
-    aliases = ["cylinder","rod","cyl"]
+    aliases = ["cylinder","disc","rod","cyl"]
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 2:
@@ -390,7 +390,7 @@ class Cuboid:
         return idx
 
 class CylinderRing:
-    aliases = ["cylinderring","ring","discring","hollowcylinder","hollowdisc","hollowrod"]
+    aliases = ["cylinderring","ring","cylring","discring","hollowcylinder","hollowdisc","hollowrod"]
 
     def __init__(self, dimensions: List[float]):
         if len(dimensions) != 3:
