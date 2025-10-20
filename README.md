@@ -89,7 +89,7 @@ the second line opens the output plot, and the 2D representation of the sphere (
 ### Subunits
 The following subunits are currently available: 
 
-| Subunit          | Dimension(s)   |  Alternative names<sup>*</sup>           | Description                |
+| Subunit          | Dimension(s)<sup>*</sup>   |  Alternative names<sup>**</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
 | `sphere` | radius  | `ball`, `sph` | Sphere
 | `hollow_sphere` | outer radius, inner radius  | `shell` | Hollow sphere |
@@ -102,10 +102,11 @@ The following subunits are currently available:
 | `cuboid` | side length 1, side length 2, side length 3, | `cuboid`, `brick` | cuboid, i.e. not same side lengths |
 | `torus` | overall radius, cross-sectional radius  | `toroid`, `doughnut` | Torus, i.e a doughnut shape | 
 | `hyperboloid` | smallest radius, curvature, half of the height  | `hourglass`, `cooling_tower`| Hyperboloid, i.e. an filled hourglass shape | 
-| `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>**</sup> | 
+| `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>***</sup> | 
 
-<sup>*</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
-<sup>**</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)
+<sup>*</sup> input order is important.   
+<sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
+<sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)
 
 [Back to Table of contents](#table-of-contents)
 
@@ -183,13 +184,14 @@ open ellipsoid_aggr/plot_ellipsoid_aggr.png ellipsoid_aggr/points_ellipsoid_aggr
 ### Structure factors
 The following structure factors are implemented
 
-| Structure factor   | Parameters  |  Alternative names<sup>*</sup>           | Description                |
+| Structure factor   | Parameters<sup>*</sup>   |  Alternative names<sup>**</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
 | `hardsphere` | volume fraction, hard-sphere radius | `hs` | Hard-sphere structure factor |
 | `aggregation` | aggregate effective radius, particles per aggregate, fraction of particles in aggregates | `aggr`, `frac2d` | Two-dimensional fractal aggregate |
 | `None` |  | `no`, `unity` | No structure factor (default) |
 
-<sup>*</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.
+<sup>*</sup> provided with flag `--S_par` (or `-Sp`) - input order is important.   
+<sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.
  
 [Back to Table of contents](#table-of-contents)
 

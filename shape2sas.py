@@ -8,7 +8,7 @@ import shutil
 from shape2sas_helpfunctions import *
 
 # current version
-version = 2.3
+version = 2.4
 
 if __name__ == "__main__":
        
