@@ -18,12 +18,12 @@ if __name__ == "__main__":
     ### welcome message
     printt('#######################################################################################')
     printt('RUNNING shape2sas.py version %s \n - for instructions type: python shape2sas.py -h' % version)
-    command = "python"
-    for aa in argv:
+    command = "python shape2sas.py"
+    for aa in argv[1:]:
         if ' ' in aa:
             command += " \"%s\"" % aa
         else:
-            command += " %s" %aa
+            command += " %s" % aa
     printt('command used: %s' % command)
     printt('#######################################################################################')
 
