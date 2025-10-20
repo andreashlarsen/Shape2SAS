@@ -22,7 +22,7 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
     - [The compare script (table)](#the-compare-script)
   - [Example 5: Polydispersity](#example-5-polydispersity)
   - [Example 6: Multi-contrast particle - cores-shell](#example-6-multi-contrast-particle---core-shell)
-  - [Example 7: Rotation and translatioin - V-shape](#example-7-rotation-and-translation--V-shape)
+  - [Example 7: Rotation and translation - V-shape](#example-7-rotation-and-translation---V-shape)
     - [Known bug for COM input and solution](#known-bug-for-com-input-and-solution)
   - [Example 8: Number of points - accuracy-vs-runtime](#example-8-number-of-points---accuracy-vs-runtime)
   - [Example 9: Spin-echo SANS - repulsion in real space](#example-9-spin-echo-sans---repulsion-in-real-space)
