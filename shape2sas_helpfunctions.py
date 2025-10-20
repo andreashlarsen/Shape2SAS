@@ -303,7 +303,7 @@ class HollowCube:
         if self.a == self.b:
             return 6 * self.a**2 #surface area of a cube
         else: 
-            return (self.a - self.b)**3
+            return self.a**3 - self.b**3
     
     def getPointDistribution(self, Npoints: int) -> Vector3D:
         """Returns the point distribution of a hollow cube"""
