@@ -225,7 +225,7 @@ Increasing sphere size:
 python shape2sas.py --subunit sphere --dimension 20 --model_name sph20 
 python shape2sas.py --subunit sphere --dimension 50 --model_name sph50 
 python shape2sas.py --subunit sphere --dimension 80 --model_name sph80 
-python compare.py -m sph20,sph50,sph80s
+python compare.py -m sph20,sph50,sph80
 ```
 <p align="center" id="example4">
   <img src="examples/sizes.png" style="width: 100%;" />
