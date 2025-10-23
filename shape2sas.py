@@ -144,6 +144,16 @@ if __name__ == "__main__":
         z_list.append(np.concatenate(point_distribution.z))
         sld_list.append(np.concatenate(point_distribution.sld))
 
+        ### read concentration, interface roughness/fuzziness, structure factor and structure factor-related parameters for model i
+        conc = check_input(args.conc, 0.02, "concentration", i)
+        sigma_r = check_input(args.sigma_r, 0.0, "sigma_r", i)
+        S_type = check_input(args.S, 'None', "Structure type", i)
+        stype = S_type.lower().replace("_", "").replace(" ", "")
+        try:
+            S_par = args.S_par[i][0]
+        except:
+            S_par = []
+
         ### calculate p(r)
         printt("\n    Calculating pair distance distribution, p(r)...")
         polydispersity = check_input(args.polydispersity, 0.0, "polydispersity", i)
@@ -152,30 +162,31 @@ if __name__ == "__main__":
         r_list.append(r)
         pr_norm_list.append(pr_norm)
 
-        ### define q 
+        ### define q (and if sesans is opted for, also define the spin echo length, delta)
         if args.sesans:
             # make extended q-range for sesans
-            qmin,qmax,qpoints = 1e-6,0.1,20000
+            aliasses_aggr = ['aggregation','aggr','aggregate','frac2d']
+            if stype in aliasses_aggr:
+                Reff,Naggr,fracs_aggr = S_par
+                qmin = 0.001 * np.pi/(2*Reff)
+                deltamax = 3*Reff
+            else:
+                qmin = 0.001 * np.pi/dmax
+                deltamax = 3 * dmax
+            qmax = 1e4 * qmin
+            qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)
+            delta = np.linspace(0, deltamax, args.deltapoints)
         else:
             q = np.linspace(args.qmin,args.qmax,args.qpoints)
 
         printt("\n    Calculating intensity, I(q)...")
 
-        # read concentration, interface roughness/fuzziness, structure factor and structure factor-related parameters for model i
-        conc = check_input(args.conc, 0.02, "concentration", i)
-        sigma_r = check_input(args.sigma_r, 0.0, "sigma_r", i)
-        S_type = check_input(args.S, 'None', "Structure type", i)
-        try:
-            S_par = args.S_par[i][0]
-        except:
-            S_par = []
-
         ### calculate form factor and forward scattering I0
         I0, Pq = calc_Pq_func(q, r, pr_norm, conc, point_distribution.volume_total)
 
         ### calculate structure factor
-        S = calc_S_func(q,point_distribution, S_type, S_par, Pq)
+        S = calc_S_func(q,point_distribution, stype, S_par, Pq)
         save_S_func(q,S,model_filename)
         S_list.append(S)
 
@@ -192,8 +203,6 @@ if __name__ == "__main__":
 
         ### calculate and simulate sesans
         if args.sesans:
-            # make spin echo length (delta) range (x-axis in SESANS)
-            delta = np.linspace(0, 3 * np.max(r), args.deltapoints)
 
             # calculated theoretical SESANS
             G = calc_G_sesans(q,delta,I)

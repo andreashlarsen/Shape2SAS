@@ -388,23 +388,24 @@ def check_Spar(n,S_par):
             printt("\nERROR: structure factor hard-sphere needs " + str(n) + "  parameters (provided after --S_par or -Sp), but " + str(len(S_par)) + ' parameters were given: ' + str(S_par) + '\n')
             exit()
 
-def calc_S_func(q,point_distribution,Stype,S_par,Pq):
+def calc_S_func(q,point_distribution,stype,S_par,Pq):
     aliasses_HS = ['hardsphere','hs','hard-sphere']
     aliasses_aggr = ['aggregation','aggr','aggregate','frac2d']
 
-    stype = Stype.lower().replace("_", "").replace(" ", "")
+    #stype = Stype.lower().replace("_", "").replace(" ", "")
     if stype in aliasses_HS:
-        #check_Spar(2,S_par)
-        if len(S_par) != 2:
-            printt("\nERROR: structure factor hard-sphere needs 2 parameters (provided after --S_par or -Sp), but " + str(len(S_par)) + ' parameters were given: ' + str(S_par) + '\n')
-            exit()
+        check_Spar(2,S_par)
+        # if len(S_par) != 2:
+        #     printt("\nERROR: structure factor hard-sphere needs 2 parameters (provided after --S_par or -Sp), but " + str(len(S_par)) + ' parameters were given: ' + str(S_par) + '\n')
+        #     exit()
         conc,R_HS = S_par
         S = calc_S_HS_func(q,conc,R_HS)
         S_eff = decoupling_approx_func(q,point_distribution,Pq, S)
     elif stype in aliasses_aggr:
-        if len(S_par) != 3:
-            printt("\nERROR: structure factor aggregation needs 3 parameters (provided after --S_par or -Sp), but " + str(len(S_par)) + ' parameters were given: ' + str(S_par) + '\n')
-            exit()
+        check_Spar(3,S_par)
+        # if len(S_par) != 3:
+        #     printt("\nERROR: structure factor aggregation needs 3 parameters (provided after --S_par or -Sp), but " + str(len(S_par)) + ' parameters were given: ' + str(S_par) + '\n')
+        #     exit()
         Reff,Naggr,fracs_aggr = S_par
         S = calc_S_aggr_func(q,Reff,Naggr)
         S_eff = decoupling_approx_func(q,point_distribution,Pq, S)
