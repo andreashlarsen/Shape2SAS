@@ -8,7 +8,7 @@ import shutil
 from shape2sas_helpfunctions import *
 
 # current version
-version = 2.4
+version = 2.5
 
 if __name__ == "__main__":
        
@@ -157,9 +157,7 @@ if __name__ == "__main__":
             # make extended q-range for sesans
             qmin,qmax,qpoints = 1e-6,0.1,20000
             q = np.linspace(qmin,qmax,qpoints)
-            # Sim_par = SimulationParameters(qmin=1e-6, qmax=0.1, qpoints=20000, prpoints=args.prpoints, Npoints=args.Npoints)
         else:
-            # Sim_par = SimulationParameters(qmin=args.qmin, qmax=args.qmax, qpoints=args.qpoints, prpoints=args.prpoints, Npoints=args.Npoints)
             q = np.linspace(args.qmin,args.qmax,args.qpoints)
 
         printt("\n    Calculating intensity, I(q)...")
