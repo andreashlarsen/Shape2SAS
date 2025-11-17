@@ -1,4 +1,4 @@
-## Shape2SAS
+/## Shape2SAS
  *version 2.5*
 
 Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes. The models are build from geometrical subunits, e.g., a dumbbell constructed from a cylinder and two translated spheres. The shape is filled with points and the scattering is calculated by a Debye sum.
@@ -28,11 +28,13 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
   - [Example 9: Spin-echo SANS - repulsion in real space](#example-9-spin-echo-sans---repulsion-in-real-space)
   - [Example 10: Mixtures - small and large spheres](#example-10-mixtures---small-and-large-spheres)
     - [The mixture script (table)](#the-mixture-script)
+  - [Example 11: Fit experimental data - sphere sizes](#example-11-fit---sphere-sizes)
 - [Shape2SAS inputs](#shape2sas-inputs)
   - [Mandatory inputs](#mandatory-inputs-model-dependent)
   - [Model-dependent inputs](#model-dependent-and-optional-inputs)
   - [General inputs](#general-and-optional-inputs)
   - [Plot-related inputs](#plot-related-and-optional-inputs)
+  - [Fit-related inputs](#fit-related-and-optional-inputs)
 - [GUI](#gui)
 - [Credit](#credit)
   - [Contributors](#contributors)
@@ -122,7 +124,7 @@ open cylinder/plot_cylinder.png cylinder/points_cylinder.png
 Dimensions should be given as a list without space, or between quotation marks (then spaces are allowed):
 ```
 python shape2sas.py --subunit cylinder --dimension "50, 300" --model_name cylinder
-open cylinder/plot_cylinder.png cylinder/points_cylinder_cylinder.png
+open cylinder/plot_cylinder.png cylinder/points_cylinder.png
 ```
 If quotation marks are used, commas may be omitted from the list: 
 ```
@@ -394,6 +396,24 @@ for usage, see [Example 4](#example-4-several-models).
 
 [Back to Table of contents](#table-of-contents)
 
+##### Example 11: Fit experimental data - sphere sizes
+"ith the `--data` (or `-dat`) option, the calculated scattering can be compared with experimental (or simulated) data. For example, first simulate data of a 40-radius sphere:
+```
+python shape2sas.py --subunit sphere --dimension 40 --model_name sph40
+```
+and use this as the experimental data to compare with spheres of varying sizes:
+```
+python shape2sas.py -s sph -d 80 -m sph80 -s sph -d 20 -m sph20 -s sph -d 35 -m sph35 -dat sph40/Isim_sph40.dat
+open fit.png
+```
+No automatic fitting is possible yet, as we are working on implementing this as part of SasView. 
+
+<p align="center" id="example7">
+  <img src="examples/fit.png" style="width: 100%;" />
+</p>
+
+[Back to Table of contents](#table-of-contents)
+
 ## Shape2SAS inputs
 Shape2SAS has two types of inputs: model-dependent inputs, that only affect the specific model in question, and general inputs that affects all models.  
 
@@ -432,6 +452,13 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 |-----------------|---------|------------|-----------------------------------------|
 | `--xscale_lin`         | True       | `-lin` | Linear q scale (default)  |
 | `--high_res`         | False       | `-hres` | Use high resoulution in plots (e.g., for publications) |
+
+[Back to Table of contents](#table-of-contents)
+
+### Fit-related (and optional) inputs:
+| Flag             | Default | Short name |Description                                         |
+|-----------------|---------|------------|-----------------------------------------|
+| `--data`         | None       | `-dat` | Experimental data for comparison  |
 
 [Back to Table of contents](#table-of-contents)
 

@@ -8,7 +8,7 @@ import sys
 import re
 import warnings
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 def printt(s): 
     """ print and write to log file"""
@@ -22,6 +22,34 @@ def sinc(x) -> np.ndarray:
     numpy.sinc is defined as sinc(x) = sin(pi*x)/(pi*x)
     """
     return np.sinc(x / np.pi)   
+
+def get_header_footer(file):
+    """Count header and footer lines with non-numeric entries."""
+    header, footer = 0, 0
+    with open(file, errors='ignore') as f:
+        lines = f.readlines()
+
+    CONTINUE_H, CONTINUE_F = True, True
+    j = 0
+    while CONTINUE_H or CONTINUE_F:
+        line_h, line_f = lines[j], lines[-1-j]
+        tmp_h, tmp_f = line_h.split(), line_f.split()
+        if CONTINUE_H:
+            try:
+                for val in tmp_h[:3]:
+                    float(val)
+                CONTINUE_H = False
+            except:
+                header += 1
+        if CONTINUE_F:
+            try:
+                for val in tmp_f[:3]:
+                    float(val)
+                CONTINUE_F = False
+            except:
+                footer += 1
+        j += 1
+    return header, footer
 
 ### data classes 
 Vector3D = Tuple[np.ndarray, np.ndarray, np.ndarray]
@@ -791,13 +819,7 @@ def get_max_dimension(x_list, y_list, z_list):
 
     return max_l
 
-def plot_2D(x_list: np.ndarray, 
-            y_list: np.ndarray, 
-            z_list: np.ndarray, 
-            sld_list: np.ndarray, 
-            model_filename_list: np.ndarray, 
-            high_res: bool,
-            colors: List[str]) -> None:
+def plot_2D(x_list, y_list, z_list, sld_list, model_filename_list, filetype, colors):
     """
     plot 2D-projections of generated points (shapes):
     positive contrast in red (Model 1) or blue (Model 2) or yellow (Model 3) or green (Model 4)
@@ -858,20 +880,17 @@ def plot_2D(x_list: np.ndarray,
         ax[2].set_title('pointmodel, (x,y), "bottom"')
     
         plt.tight_layout()
-        if high_res:
-            plt.savefig('%s/points_%s.pdf' % (model_filename,model_filename))
-        else:
-            plt.savefig('%s/points_%s.png' % (model_filename,model_filename))
+        plt.savefig('%s/points_%s.%s' % (model_filename,model_filename,filetype))
         plt.close()
 
-def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name_list, xscale_lin, high_res, colors):
+def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name_list, xscale_lin, filetype, colors):
     """
     plot results for all models:
     - p(r) 
     - calculated formfactor P(r) times structure factor S(q) on log-log or log-lin scale
     - simulated data on log-log or log-lin scale
     """
-    fig, ax = plt.subplots(1,3,figsize=(12,4))
+    __, ax = plt.subplots(1,3,figsize=(12,4))
 
     zo = 1
     for (r, pr, I, Isim, sigma, S, model_name,color) in zip (r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name_list, colors):
@@ -913,13 +932,50 @@ def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name
 
     ## figure settings
     plt.tight_layout()
-    if high_res:
-        plt.savefig('plot.pdf')
-    else:
-        plt.savefig('plot.png')
+    plt.savefig('plot.' + filetype)
+    plt.close()
+
+def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, filetype, colors):
+    """
+    plot results for all models:
+    - p(r) 
+    - calculated formfactor P(r) times structure factor S(q) on log-log or log-lin scale
+    - simulated data on log-log or log-lin scale
+    """
+    N_models = len(I_list)
+    width = N_models*4
+    __, ax = plt.subplots(1,N_models,figsize=(width,4))
+
+    # estimate offset and scaling
+    background = np.mean(I_exp[-5:])
+    I0 = np.mean(I_exp[0:3])
+
+    i = 0
+    for (I, model_name,color) in zip (I_list, name_list, colors):
+        if N_models == 1:
+            p = ax
+        else:
+            p = ax[i]
+        p.errorbar(q,I_exp,yerr=sigma_exp,linestyle='none',marker='.', color='grey',zorder=0, label = data_filename) #label=r'$I_\mathrm{exp}(q)$')
+        I_model = I0 * I + background
+        p.plot(q, I_model, zorder=1, color=color, label=r'%s' % model_name)
+        p.set_ylabel(r'$I(q)$')
+        i += 1
+
+        if not xscale_lin:
+            p.set_xscale('log')
+        p.set_yscale('log')
+        p.set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
+        p.set_ylabel(r'$I(q)$ [a.u.]')
+        # p.set_title('Data and fit')
+        p.legend(frameon=True)
+
+    ## figure settings
+    plt.tight_layout()
+    plt.savefig('fit.' + filetype)
     plt.close()
     
-def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, high_res, colors):
+def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, filetype, colors):
     fig, ax = plt.subplots(1,2,figsize=(8,4))
     zo = 1
     for (d, G, Gsim, sigmaG, model_name, color) in zip (delta_list, G_list, Gsim_list, sigma_G_list, name_list, colors):
@@ -939,11 +995,7 @@ def plot_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list, high_res
 
     ## figure settings
     plt.tight_layout()
-
-    if high_res:
-        plt.savefig('sesans.pdf')
-    else:
-        plt.savefig('sesans.png')
+    plt.savefig('sesans.' + filetype)
     plt.close()
 
 def save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list):
@@ -962,11 +1014,7 @@ def save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list):
             for i in range(len(d)):
                 f.write('  %-12.5e %-12.5e %-12.5e\n' % (d[i], Gsim[i], sigmaG[i]))
 
-def generate_pdb(x_list: List[np.ndarray], 
-                 y_list: List[np.ndarray], 
-                 z_list: List[np.ndarray], 
-                 sld_list: List[np.ndarray], 
-                 model_filename_list: List[str]) -> None:
+def generate_pdb(x_list, y_list, z_list, sld_list, model_filename_list):
     """
     Generates a visualisation file in PDB format with the simulated points (coordinates) and contrasts
     ONLY FOR VISUALIZATION!
@@ -1000,7 +1048,7 @@ def generate_pdb(x_list: List[np.ndarray],
                 f.write('ATOM  %6i %s   ALA A%6i  %8.3f%8.3f%8.3f  1.00  0.00           %s \n'  % (i,atom,i,x[i],y[i],z[i],atom))
             f.write('END')
 
-def calc_G_sesans(q,delta,I) -> np.ndarray:
+def calc_G_sesans(q,delta,I):
     """
     Calculated projected correlation function for SESANS from Hankel Transform of I(q)
     """
@@ -1200,11 +1248,8 @@ class HollowSphere:
         x_add, y_add, z_add = x[idx], y[idx], z[idx]
         return x_add, y_add, z_add
 
-    def checkOverlap(self, x_eff: np.ndarray, 
-                           y_eff: np.ndarray, 
-                           z_eff: np.ndarray) -> np.ndarray:
+    def checkOverlap(self, x_eff, y_eff, z_eff):
         """Check for points within a hollow sphere"""
-
         d = np.sqrt(x_eff**2+y_eff**2+z_eff**2)
         if self.r > self.R:
              self.r, self.R = self.R, self.r
@@ -1516,6 +1561,43 @@ class CylinderRing:
             idx = np.where((d > self.R) | (d < self.r) | (abs(z_eff) > self.l / 2))
             return idx
 
+class Ellipsoid_shell:
+    aliases = ["ellipsoid_shell","ellips_shell"]
+
+    def __init__(self, dimensions: List[float]):
+        check_dimension(self.aliases[0],dimensions,4)     
+        self.a,self.b,self.c,self.T = dimensions
+
+        # define outer dimensions ( = semiaxis + half thickness)
+        self.a_plus,self.b_plus,self.c_plus = self.a+self.T/2,self.b+self.T/2,self.c+self.T/2
+
+    def getVolume(self) -> float:
+        return (4 / 3) * np.pi * (self.a_plus * self.b_plus * self.c_plus - (self.a_plus-self.T) * (self.b_plus-self.T) * (self.c_plus-self.T))
+
+    def getPointDistribution(self, Npoints: int) -> Vector3D:
+        Volume = self.getVolume()
+        Volume_max = 2 * self.a_plus * 2 * self.b_plus * 2 * self.c_plus
+        Vratio = Volume_max / Volume
+
+        N = int(Vratio * Npoints)
+        x = np.random.uniform(-self.a_plus, self.a_plus, N)
+        y = np.random.uniform(-self.b_plus, self.b_plus, N)
+        z = np.random.uniform(-self.c_plus, self.c_plus, N)
+
+        d2_max = x**2 / self.a_plus**2 + y**2 / self.b_plus**2 + z**2 / self.c_plus**2
+        d2_min = x**2 / (self.a_plus-self.T)**2 + y**2 / (self.b_plus-self.T)**2 + z**2 / (self.c_plus-self.T)**2
+        idx = np.where((d2_max < 1) & (d2_min > 1))
+        x_add, y_add, z_add = x[idx], y[idx], z[idx]
+
+        return x_add, y_add, z_add
+
+    def checkOverlap(self, x_eff, y_eff, z_eff):
+        d2_max = x_eff**2 / self.a_plus**2 + y_eff**2 / self.b_plus**2 + z_eff**2 / self.c_plus**2
+        d2_min = x_eff**2 / (self.a_plus-self.T)**2 + y_eff**2 / (self.b_plus-self.T)**2 + z_eff**2 / (self.c_plus-self.T)**2
+        idx = np.where((d2_max > 1) | (d2_min < 1))
+
+        return idx
+        
 class Torus:
     aliases = ["torus","toroid","doughnut"]
 
@@ -1546,10 +1628,7 @@ class Torus:
 
         return x_add, y_add, z_add
 
-    def checkOverlap(self, x_eff: np.ndarray, 
-                           y_eff: np.ndarray, 
-                           z_eff: np.ndarray) -> np.ndarray:
-        """Check for points within a torus"""
+    def checkOverlap(self, x_eff, y_eff, z_eff):
         d = np.sqrt(x_eff**2 + y_eff**2)
         idx = np.where((self.R-d)**2 + z_eff**2 > self.r**2)
         return idx

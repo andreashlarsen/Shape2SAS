@@ -8,7 +8,7 @@ import shutil
 from shape2sas_helpfunctions import *
 
 # current version
-version = 2.5
+version = 2.6
 
 if __name__ == "__main__":
        
@@ -90,6 +90,10 @@ if __name__ == "__main__":
                         help='Baseline SESANS error relative to max signal.')
     parser.add_argument('-Nd', '--deltapoints', type=int, default=150,
                         help='Number of points in delta.')
+    
+    # optional experimental data-related options (Shape2SAS-fit)
+    parser.add_argument('-dat','--data', 
+                        help='Path to experimental data')
     
     args = parser.parse_args()
 
@@ -177,6 +181,9 @@ if __name__ == "__main__":
             qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)
             delta = np.linspace(0, deltamax, args.deltapoints)
+        elif args.data:
+            header,footer = get_header_footer(args.data) # replace with function
+            q,I_exp,sigma_exp = np.genfromtxt(args.data,skip_header=header,skip_footer=footer,usecols=[0,1,2],unpack=True)
         else:
             q = np.linspace(args.qmin,args.qmax,args.qpoints)
 
@@ -190,54 +197,61 @@ if __name__ == "__main__":
         save_S_func(q,S,model_filename)
         S_list.append(S)
 
-        ### calculate theoretical scattering
+        ### calculate theoretical SAS (and SESANS)
         I = calc_Iq_func(q, Pq, S, sigma_r)
         save_I_func(q,I,model_filename)
         I_list.append(I)
+        if args.sesans:
+            # calculated theoretical SESANS
+            G = calc_G_sesans(q,delta,I)
+            delta_list.append(delta)
+            G_list.append(G)
 
-        ### simulate SAXS data
+        ### simulate SAXS (and SESANS)
         I_sim,sigma = simulate_data_func(q,I,I0,args.exposure)
         save_Isim_func(q,I_sim,sigma,model_filename)
         I_sim_list.append(I_sim)
-        sigma_list.append(sigma)
-
-        ### calculate and simulate sesans
+        sigma_list.append(sigma) 
         if args.sesans:
-
-            # calculated theoretical SESANS
-            G = calc_G_sesans(q,delta,I)
-
             # simulate sesans data         
             G_sim,sigma_G = simulate_sesans(delta,G,args.sesans_error)
-            
             # append to list (in case of multiple models)
-            delta_list.append(delta)
-            G_list.append(G)
             G_sim_list.append(G_sim)
-            sigma_G_list.append(sigma_G)
+            sigma_G_list.append(sigma_G)   
 
     printt(" ")
-    printt("Generating plots...")
+    printt("Generating plots")
     colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forrestgreen']
 
-    #plot 2D projections
+    if args.high_res:
+        filetype = 'pdf'
+    else:
+        filetype = 'png'
+
+    # plot 2D projections
     for m in model_filename_list:
-        print("    2D projection: points_" + m + ".png ...")
-    plot_2D(x_list, y_list, z_list, sld_list, model_filename_list, args.high_res, colors)
+        print("    2D projection      : points_" + m + "." + filetype)
+    plot_2D(x_list, y_list, z_list, sld_list, model_filename_list, filetype, colors)
     
-    #3D vizualization: generate pdb file with points
+    # 3D vizualization: generate pdb file with points
     for m in model_filename_list:
-        print("    3D models: " + m + ".pdb ...")
+        print("    3D models          : " + m + ".pdb")
     generate_pdb(x_list, y_list, z_list, sld_list, model_filename_list)
     
-    #plot p(r) and I(q)
-    print("    plot pr and Iq and Isim: plot.png ...")
-    plot_results(q, r_list, pr_norm_list, I_list, I_sim_list, 
-                 sigma_list, S_list, model_name_list, args.xscale_lin, args.high_res, colors)
+    # plot p(r) and I(q)
+    print("    pr, Iq, and Isim   : plot." + filetype)
+    plot_results(q, r_list, pr_norm_list, I_list, I_sim_list, sigma_list, S_list, model_name_list, args.xscale_lin, filetype, colors)
 
-    #plot and save sesans
+    # plot fit
+    if args.data:
+        data_filename = args.data.split('/')[-1]
+        print("    fit(s) to exp data : fit." + filetype)
+        plot_fit(q, I_list, I_exp, sigma_exp, model_name_list, data_filename, args.xscale_lin, filetype, colors)
+
+    # plot and save sesans 
     if args.sesans:
-        plot_sesans(delta_list, G_list, G_sim_list, sigma_G_list, model_name_list, args.high_res, colors)
+        print("    SESANS G and Gsim  : sesans." + filetype)
+        plot_sesans(delta_list, G_list, G_sim_list, sigma_G_list, model_name_list, filetype, colors)
         save_sesans(delta_list, G_list, G_sim_list, sigma_G_list, model_filename_list)
 
     time_total = time.time() - start_total
@@ -248,14 +262,11 @@ if __name__ == "__main__":
 
     # close log file and copy into model directories
     #f_out.close()
+    extension = '.' + filetype
     for model_filename in model_filename_list:
-        shutil.copy('shape2sas.log','%s/%s.log' % (model_filename,model_filename))
-        if args.high_res:
-            shutil.copy('plot.pdf','%s/plot_%s.pdf' % (model_filename,model_filename))
-        else:
-            shutil.copy('plot.png','%s/plot_%s.png' % (model_filename,model_filename))
+        shutil.copy('shape2sas.log', model_filename + '/' + model_filename + '.log' )
+        shutil.copy('plot' + extension, model_filename + '/plot_' + model_filename + extension)
+        if args.data:
+            shutil.copy('fit' + extension, model_filename + '/fit_' + model_filename + '_' + data_filename + extension)
         if args.sesans:
-            if args.high_res:
-                shutil.copy('sesans.pdf','%s/sesans_%s.pdf' % (model_filename,model_filename))
-            else:
-                shutil.copy('sesans.png','%s/sesans_%s.png' % (model_filename,model_filename))
+            shutil.copy('sesans' + extension, model_filename + '/sesans_' + model_filename + extension )
