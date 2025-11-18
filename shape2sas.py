@@ -8,7 +8,7 @@ import shutil
 from shape2sas_helpfunctions import *
 
 # current version
-version = 2.6
+version = 2.7
 
 if __name__ == "__main__":
        
@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
     printt(" ")
     printt("Generating plots")
-    colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forrestgreen']
+    colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forestgreen','gold','darkred','coral','peru','olive','springgreen','teal','skyblue','navy','lavender','blueviolet','deeppink']
 
     if args.high_res:
         filetype = 'pdf'

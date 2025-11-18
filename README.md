@@ -1,4 +1,4 @@
-/## Shape2SAS
+## Shape2SAS
  *version 2.5*
 
 Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes. The models are build from geometrical subunits, e.g., a dumbbell constructed from a cylinder and two translated spheres. The shape is filled with points and the scattering is calculated by a Debye sum.
@@ -46,11 +46,11 @@ To install Shape2SAS do the following:
 
 * Install Python3 (you need python3.8 or newer)
 * Install necessary python packages (see other dependencies).
-* Download the bin folder containing shape2sas.py and helpfunctions.py. 
+* Download `shape2sas.py`, `helpfunctions.py` and the `subunits` folder - these should be in the same location on your computer.
 
 #### Other dependencies
 
-All python packagees can be downloaded via pip install
+Shape2sas use the following python packages, which can be downloaded via pip install:
 * numpy
 * matplotlib
 * scipy
@@ -66,7 +66,7 @@ Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory
 ```
 cd <PATH-TO-DIRECTORY>
 ```
-Shape2SAS requires at least two inputs: --subunit (or -s) and --dimension (or -d). The scattering from a sphere with radius of 50 Å can be simulated with:
+Shape2SAS requires at least two inputs: `--subunit` (or `-s`) and `--dimension` (or `-d`). The scattering from a sphere with radius of 50 Å can be simulated with:
 ```
 python shape2sas.py --subunit sphere --dimension 50
 open Model_0/plot_Model_0.png Model_0/points_Model_0.png
@@ -109,6 +109,8 @@ The following subunits are currently available:
 <sup>*</sup> input order is important.   
 <sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
 <sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)
+
+For developers: new subunits can be added to the `subunits`folder, following the format of the other subunits, then `shape2sas` will automatically detect them. 
 
 [Back to Table of contents](#table-of-contents)
 
@@ -285,7 +287,7 @@ The small (radius 30-Å) and the large (radius 45 Å) sphere overlap. In that ca
 The following will just give the scattering of the large sphere, as all points from the smaller sphere are excluded: 
 ```
 python shape2sas.py --subunit sphere,sphere --dimension 45 30 --sld 1 -1 --model_name "not core shell just a sphere"
-open not_core_shell_just_a_sphere/plot.png not_core_shell_just_a_sphere/points_not_core_shell_just_a_sphere.png
+open not_core_shell_just_a_sphere/plot_not_core_shell_just_a_sphere.png not_core_shell_just_a_sphere/points_not_core_shell_just_a_sphere.png
 ```
 The spherical core-shell model can also be modelled with a sphere for the core and a hollow sphere for the shell. Or, it can be modelled with the two solid spheres by disabling exclusion of overlapping points, but also changing the contrast of the small sphere to -2. The results are the same, but the third method is less effective (accuracy vs number of points).
 ```
@@ -464,12 +466,12 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 [Back to Table of contents](#table-of-contents)
 
 ## GUI
-A GUI of Shape2SAS can be found at [https://somo.chem.utk.edu/shape2sas/](https://somo.chem.utk.edu/shape2sas/) (newest features may not be available at all times). 
+A GUI of Shape2SAS can be found at [https://somo.chem.utk.edu/shape2sas/](https://somo.chem.utk.edu/shape2sas/) (newest features may not be available in the GUI). 
 
 [Back to Table of contents](#table-of-contents)
 
 ## Credit
-If usefull for your work, please cite our paper:
+If useful for your work, please cite our paper:
 
 Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Shape2SAS: a web application to simulate small-angle scattering data and pair distance distributions from user-defined shapes*. Journal of Applied Crystallography 56, 1287-1294 \
 [https://doi.org/10.1107/S1600576723005848](https://doi.org/10.1107/S1600576723005848)
