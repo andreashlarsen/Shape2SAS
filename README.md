@@ -129,7 +129,7 @@ open cylinder/plot_cylinder.png cylinder/points_cylinder.png
 If quotation marks are used, commas may be omitted from the list: 
 ```
 python shape2sas.py --subunit cylinder --dimension "50 300" --model_name cylinder
-open cylinder/plot.png cylinder/points_cylinder.png
+open cylinder/plot_cylinder.png cylinder/points_cylinder.png
 ```
 <p align="center" id="example1">
   <img src="examples/cylinder_plot.png" style="width: 100%;" />
