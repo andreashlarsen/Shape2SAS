@@ -1,5 +1,5 @@
 ## Shape2SAS
- *version 2.5*
+ *version 2.7*
 
 Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes. The models are build from geometrical subunits, e.g., a dumbbell constructed from a cylinder and two translated spheres. The shape is filled with points and the scattering is calculated by a Debye sum.
 
