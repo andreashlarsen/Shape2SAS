@@ -230,16 +230,16 @@ if __name__ == "__main__":
 
     # plot 2D projections
     for m in model_filename_list:
-        print("    2D projection      : points_" + m + "." + filetype)
+        print("    2D projection:       points_" + m + "." + filetype)
     plot_2D(x_list, y_list, z_list, sld_list, model_filename_list, filetype, colors)
     
     # 3D vizualization: generate pdb file with points
     for m in model_filename_list:
-        print("    3D models          : " + m + ".pdb")
+        print("    3D models:           " + m + ".pdb")
     generate_pdb(x_list, y_list, z_list, sld_list, model_filename_list)
     
     # plot p(r) and I(q)
-    print("    pr, Iq, and Isim   : plot." + filetype)
+    print("    pr, Iq, and Isim:    plot." + filetype)
     plot_results(q, r_list, pr_norm_list, I_list, I_sim_list, sigma_list, S_list, model_name_list, args.xscale_lin, filetype, colors)
 
     # plot fit
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     time_total = time.time() - start_total
     printt(" ")
     printt("Simulation successfully completed.")
-    printt("    Total run time: " + str(round(time_total, 1)) + " seconds.")
+    printt("    Total run time:      " + str(round(time_total, 1)) + " seconds.")
     printt(" ")
 
     # close log file and copy into model directories
