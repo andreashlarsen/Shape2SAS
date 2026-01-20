@@ -46,7 +46,7 @@ To install Shape2SAS do the following:
 
 * Install Python3 (you need python3.8 or newer)
 * Install necessary python packages (see other dependencies).
-* Download `shape2sas.py`, `helpfunctions.py` and the `subunits` folder - these should be in the same location on your computer.
+* Download `shape2sas.py`, `shape2sas_helpfunctions.py` and the `subunits` folder - these should be in the same location on your computer.
 
 #### Other dependencies
 
@@ -61,7 +61,7 @@ Versions numpy==1.26, matplotlib==3.8, scipy==1.12, and fast_histogram==0.12 hav
 
 ## Run Shape2SAS
 
-Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing Shape2SAS.py and helpfunctions.py (should be in the same folder):
+Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (`shape2sas_helpfunctions.py` and the folder `subunits` should be in the same folder):
 
 ```
 cd <PATH-TO-DIRECTORY>
@@ -487,6 +487,7 @@ Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Sh
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
+
 
 
 
