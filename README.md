@@ -466,7 +466,7 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 [Back to Table of contents](#table-of-contents)
 
 ## GUI
-A GUI of Shape2SAS can be found at [https://somo.chem.utk.edu/shape2sas/](https://somo.chem.utk.edu/shape2sas/) (newest features may not be available in the GUI). 
+you can run Shape2SAS as a webapp or through SasView, see [sastools.org/shape2sas](https://sastools.org/Shape2SAS/Shape2SAS.html) (newest features may not be available in the GUI). 
 
 [Back to Table of contents](#table-of-contents)
 
