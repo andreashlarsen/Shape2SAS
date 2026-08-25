@@ -987,11 +987,26 @@ def save_sesans(delta_list, G_list, Gsim_list, sigma_G_list, name_list):
             for i in range(len(d)):
                 f.write('  %-12.5e %-12.5e\n' % (d[i], G[i]))
         
-        with open('%s/Gsim_%s.ses' % (model_name,model_name),'w') as f:
-            f.write('# Simulated SESANS data, with noise\n')
-            f.write('# %-12s %-12s %-12s\n' % ('delta','G','sigma_G'))
-            for i in range(len(d)):
-                f.write('  %-12.5e %-12.5e %-12.5e\n' % (d[i], Gsim[i], sigmaG[i]))
+        with open('%s/lnP_%s.ses' % (model_name,model_name),'w') as f:
+            #f.write('# Simulated SESANS data, with noise\n')
+            #f.write('# %-12s %-12s %-12s\n' % ('delta','G','sigma_G'))
+            f.write('FileFormatVersion      1.0\n')
+            f.write('DataFileTitle          Shape2SAS Simulated SESANS data\n')
+            f.write('Sample                 Simulated particle\n')
+            f.write('Thickness              1.310000\n')
+            f.write('Thickness_unit         mm\n')
+            f.write('Theta_zmax             0.10000000000000001\n')
+            f.write('Theta_zmax_unit        radians\n')
+            f.write('Theta_ymax             0.10000000000000001\n')
+            f.write('Theta_ymax_unit        radians\n')
+            f.write('SpinEchoLength_unit    A\n')
+            f.write('Depolarisation_unit    A-2 cm-1\n')
+            f.write('Wavelength_unit        A\n')
+            f.write('\n')
+            f.write('BEGIN_DATA\n')
+            f.write('SpinEchoLength Depolarisation Depolarisation_error Wavelength\n')
+            for i in range(1,len(d)):
+                f.write('  %-12.5e %-12.5e %-12.5e 2\n' % (d[i], Gsim[i], sigmaG[i]))
 
 def generate_pdb(x_list, y_list, z_list, sld_list, model_filename_list):
     """
