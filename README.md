@@ -47,22 +47,16 @@ To install Shape2SAS do the following:
 
 * Install Python3 (you need python3.8 or newer)
 * Install necessary python packages (see other dependencies).
-* Download the repository (or clone it). Keep `shape2sas.py` and the `shape2sas_core` folder together - the entry point looks for the package next to itself. See [code organisation](#code-organisation).
-
-#### Other dependencies
-
-Shape2sas use the following python packages, which can be downloaded via pip install:
-* numpy
-* matplotlib
-* scipy
-* fast_histogram     
-Versions numpy==1.26, matplotlib==3.8, scipy==1.12, and fast_histogram==0.12 have been tested, but other versions may work as well.
+* Download the repository by clicking the green "<> Code" button and "Download ZIP". 
+  Extract the ZIP file where you want Shape2SAS to be installed. 
+* Install the dependencies listed in `tools/dependencies.txt` by running the command: 
+  `pip install -r tools/dependencies.txt`.
 
 [Back to Table of contents](#table-of-contents)
 
 ## Run Shape2SAS
 
-Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (the `shape2sas_core` folder should be in the same folder):
+Open a terminal (Linux) or a command prompt (Windows). Navigate to the extracted directory containing `shape2sas.py`:
 
 ```
 cd <PATH-TO-DIRECTORY>
@@ -124,8 +118,8 @@ The following subunits are currently available:
 | `ellipsoid` | axis1, axis2, axis3  | `ellips` | Tri-axial ellipsoid |
 | `ellipsoid_shell` | axis1, axis2, axis3, thickness  | `ellips_shell` | Shell of a tri-axial ellipsoid |
 | `cylinder` | radius, length  | `rod`, `cyl` | Cylinder |
-| `disc` | radius1, radius2, length  | `disk`, `elliptical_disc` | Elliptical disc, i.e. a short elliptical cylinder<sup>****</sup> |
-| `circular_disc` | radius, length  | `round_disc` | Circular disc, i.e. a short cylinder<sup>****</sup> |
+| `disc` | radius1, radius2, length  | `disk`, `elliptical_disc` | Elliptical disc, i.e. a short elliptical cylinder. |
+| `circular_disc` | radius, length  | `round_disc` | Circular disc, i.e. a short cylinder. |
 | `ring` | outer radius, inner radius, length  | `hollow_cylinder`, `hollow_disc`, `cylinder_ring`, `disc_ring` | Hollow cylinder | 
 | `elliptical_cylinder` | radius1, radius2, length  | `elliptical_rod` | Cylinder | 
 | `cube` | side length | `dice` | Cube |
@@ -224,10 +218,8 @@ The following structure factors are implemented
 | `None` |  | `no`, `unity`, `no_structure` | No structure factor (default) |
 
 <sup>*</sup> provided with flag `--S_par` (or `-Sp`) - input order is important.   
-<sup>**</sup> names are not case-sensitive, and spaces, underscores and hyphens are ignored, so for example Hardsphere or hard_sphere or hard-sphere or HaRd SpHeRe all give the same structure factor. An unrecognised name is an error - it is not silently treated as no structure factor.
+<sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.
 
-For developers: new structure factors can be added to the `shape2sas_core/structure_factors` folder, following the format of the other structure factors (see `shape2sas_core/structure_factors/Template.txt`), then `shape2sas` will automatically detect them, including all names listed in the class's `aliases`.
- 
 [Back to Table of contents](#table-of-contents)
 
 ### Example 4: Several models
