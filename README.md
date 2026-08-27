@@ -4,7 +4,7 @@
 Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes. The models are build from geometrical subunits, e.g., a dumbbell constructed from a cylinder and two translated spheres. The shape is filled with points and the scattering is calculated by a Debye sum.
 
 <p align="center" id="dumbbell">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/dumbbell_shape2SASGuide.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/dumbbell_shape2SASGuide.png" style="width: 100%;" />
 </p>
 
 ## Table of Contents
@@ -128,6 +128,21 @@ so the repository root holds only packaging files. Shape2SAS writes its output
 into the directory it is run from and into one directory per model; all of that
 is covered by `.gitignore`, so `git clean -Xfd` removes it and nothing else.
 
+The figures used above are not in this branch. They live on the orphan `media`
+branch, so that they are neither checked out with the code nor shipped in the
+wheel, and the README links to them by absolute URL so that they render both
+here and on PyPI. To add one:
+
+```
+git switch media
+cp <somewhere>/my_figure.png .
+git add my_figure.png && git commit -m "add my_figure" && git push
+git switch -
+```
+
+then reference it as
+`https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/my_figure.png`.
+
 [Back to Table of contents](#table-of-contents)
 
 ### Subunits
@@ -179,7 +194,7 @@ shape2sas --subunit cylinder --dimension "50 300" --model_name cylinder
 open cylinder/plot_cylinder.png cylinder/points_cylinder.png
 ```
 <p align="center" id="example1">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/cylinder_plot.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/cylinder_plot.png" style="width: 100%;" />
 </p>
 
  *Example 1: Shape2SAS simulation showing the "side" and "bottom" of the cylinder model and simulated SAXS with noise.*
@@ -203,7 +218,7 @@ shape2sas --subunit "sphere, sphere, cylinder" --dimension 25 25 "10 100" --com 
 open my_dumbbell/plot_my_dumbbell.png my_dumbbell/points_my_dumbbell.png
 ```
 <p align="center" id="example2">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/dumbbell_plot.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/dumbbell_plot.png" style="width: 100%;" />
 </p>
 
  *Example 2: Dumbbell model and simulated SAXS data.*
@@ -223,7 +238,7 @@ shape2sas --subunit ellipsoid --dimension "50, 60, 50" --S aggregation --S_par 6
 open ellipsoid_aggr/plot_ellipsoid_aggr.png ellipsoid_aggr/points_ellipsoid_aggr.png
 ```
 <p align="center" id="example3">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/ellipsoid_HS_aggr.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/ellipsoid_HS_aggr.png" style="width: 100%;" />
 </p>
 
  *Example 3: Ellipsoids with a hard-sphere structure factor (left) or with aggregation (right).*
@@ -279,7 +294,7 @@ shape2sas --subunit sphere --dimension 80 --model_name sph80
 shape2sas-compare -m sph20,sph50,sph80
 ```
 <p align="center" id="example4">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/sizes.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/sizes.png" style="width: 100%;" />
 </p>
 
  *Example 4: Scattering from spheres of increasing size.*
@@ -317,7 +332,7 @@ shape2sas --subunit sphere --dimension 40 --model_name sphere
 shape2sas-compare -m sphere,sphere_pd
 ```
 <p align="center" id="example5">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/polydispersity.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/polydispersity.png" style="width: 100%;" />
 </p>
 
  *Example 5: Scattering from monodisperse versus polydisperse spheres. Polydispersity is also reflected in the $p(r)$*
@@ -344,7 +359,7 @@ shape2sas --subunit sphere,sphere --dimension 30 45 --sld -2 1 --exclude_overlap
 shape2sas-compare -m core_shell_1,core_shell_2,core_shell_3 -p
 ```
 <p align="center" id="example6">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/core-shell.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/core-shell.png" style="width: 100%;" />
 </p>
 
  *Example 7: Spherical core-shell particles with core ΔSLD of -1 and shell ΔSLD of 1, simulated in three different ways*
@@ -366,7 +381,7 @@ The rotation is applied before the `--com` translation, so the two can be combin
 If the COM translation x-coordinate is negative, you (may) get an error (e.g., `--com "-50, 0, 0" "0, 0, 0"` or `--com "0, 0, 0" "-50, 0, 0"`). This can be circumvented by adding a space before the minus sign (e.g., `--com " -50, 0, 0" "0, 0, 0"`). Quotation marks are needed in this workaround.
 
 <p align="center" id="example6">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/Rotated_cylinders.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/Rotated_cylinders.png" style="width: 100%;" />
 </p>
 
  *Example 7: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
@@ -383,8 +398,8 @@ shape2sas-compare --model_names ellipsoids500,ellipsoids5000,ellipsoids50000 --n
 ```
 Computation time depends on hardware, but increases with the number of points. However, the accuracy also increases, as the number of points increases, and the simulated curve is accurate up to a higher value of q. 
 <p align="center" id="example7">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/Npoints_points.png" style="width: 100%;" />
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/Npoints_data.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/Npoints_points.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/Npoints_data.png" style="width: 100%;" />
 </p>
 
  *Example 8: Ellipsoids simulated with 500, 5000 or 50,000 points per model*
@@ -409,7 +424,7 @@ shape2sas --sesans --subunit sphere,sphere --dimension 250 250 --com 0,-500,0 0,
 shape2sas-compare -m two_spheres,sphere --sesans
 ```
 <p align="center" id="example7">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/sesans_HS.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/sesans_HS.png" style="width: 100%;" />
 </p>
 
  *Example 9: SESANS spheres with or without hard-sphere interaction*
@@ -464,7 +479,7 @@ The point is of course to compare with actual measured data.
 *Automatic fitting is not available (yet) - only data comparison and 'manual' fitting.*
 
 <p align="center" id="example7">
-  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/main/examples/fit.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/fit.png" style="width: 100%;" />
 </p>
 
 [Back to Table of contents](#table-of-contents)

@@ -21,6 +21,3 @@ run_extracted_examples.sh
 *.png
 *.pdf
 points_*.txt
-
-# except the figures used in the README
-!examples/**

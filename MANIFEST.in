@@ -1,7 +1,3 @@
 # ship the tests in the sdist so that downstream packagers can run them
 include tests/*.py
 recursive-include tools *.sh
-
-# the README figures are large and only needed on GitHub, where the README
-# links to them directly
-prune examples
