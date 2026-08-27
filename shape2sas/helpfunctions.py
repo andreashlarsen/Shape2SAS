@@ -37,7 +37,7 @@ def lookup_alias(registry, name, what):
 
 def getStructureFactorClass(stype):
     """look up a structure factor class by any of its aliases"""
-    from shape2sas_core import structure_factors
+    from . import structure_factors
     return lookup_alias(build_alias_registry(structure_factors), stype, "structure factor")
 
 def printt(s): 

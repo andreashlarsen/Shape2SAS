@@ -3,10 +3,12 @@ import re
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from shape2sas_core.theoretical_scattering import save_I_func, save_pr_func
-from shape2sas_core.simulated_scattering import save_Isim_func, simulate_data_func
+from .theoretical_scattering import save_I_func, save_pr_func
+from .simulated_scattering import save_Isim_func, simulate_data_func
 
-if __name__ == "__main__":
+
+def main(argv=None):
+    """Entry point for the ``shape2sas-mixture`` command."""
 
     ### input arguments
     parser = argparse.ArgumentParser(description='Compare results from Shape2SAS')
@@ -21,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument('-norm', '--normalization',help='normalization method: max, I0 (default) or none ',default='max')
     parser.add_argument('-ss', '--sesans', action='store_true',help='plot SESANS data',default=False)
     parser.add_argument('-expo', '--exposure', type=float, default=500, help='Exposure time in arbitrary units.')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     ### colors, models, fractions
     colors = ['blue','red','green','orange','purple','cyan','magenta','grey','pink','forrestgreen']
@@ -187,5 +189,5 @@ if __name__ == "__main__":
     plt.show()
 
 
-
-
+if __name__ == "__main__":
+    main()

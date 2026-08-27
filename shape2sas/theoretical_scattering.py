@@ -6,7 +6,7 @@ import os
 import numpy as np
 from fast_histogram import histogram1d #histogram1d from fast_histogram is faster than np.histogram (https://pypi.org/project/fast-histogram/) 
 
-from shape2sas_core.helpfunctions import getStructureFactorClass, printt, sinc
+from .helpfunctions import getStructureFactorClass, printt, sinc
 
 def calc_all_dist_func(point_distribution):
     """

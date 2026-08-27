@@ -3,7 +3,9 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 
-if __name__ == "__main__":
+
+def main(argv=None):
+    """Entry point for the ``shape2sas-compare`` command."""
 
     # input arguments
     parser = argparse.ArgumentParser(description='Compare results from Shape2SAS')
@@ -20,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument('-ss', '--sesans', action='store_true',help='plot SESANS data',default=False)
     parser.add_argument('-p', '--plot_points', action='store_true',help='plot point distribution data',default=False)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # colors and models
     colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forrestgreen']
@@ -216,5 +218,5 @@ if __name__ == "__main__":
     plt.show()
 
 
-
-
+if __name__ == "__main__":
+    main()
