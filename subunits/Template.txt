@@ -1,0 +1,55 @@
+Template for writing a new subunit class.
+
+Save as subunits/<Name>.py - the subunits package imports it automatically.
+
+`aliases` is the list of names the user can type after --subunit/-s. They are
+matched case-insensitively and ignoring spaces and underscores, so "hollow
+sphere", "Hollow_Sphere" and "hollowsphere" all resolve to the same class.
+The first alias is the canonical name and is the one used in error messages.
+
+NOTE: getPointDistribution() and checkOverlap() must describe the SAME body.
+The generating box must enclose the subunit, and getVolume() must return the
+volume of the subunit itself - not of the box.
+
+import numpy as np
+from .subunits_helpfunctions import check_dimension
+
+class <NAME OF SUBUNIT HERE>:
+    aliases = ["<CANONICAL NAME>", "<OTHER ACCEPTED NAMES>"]
+
+    def __init__(self, dimensions):
+        check_dimension(self.aliases[0], dimensions, <NUMBER OF DIMENSIONS>)
+        self.<PARAMETER NAME>, self.<PARAMETER NAME> = dimensions
+
+    def getVolume(self):
+        """Returns the volume of the subunit"""
+
+        <WRITE VOLUME CALCULATION OF THE SUBUNIT HERE>
+
+        return <VOLUME>
+
+    def getPointDistribution(self, Npoints):
+        """Returns the point distribution of the subunit"""
+
+        Volume = self.getVolume()
+        Volume_max = <VOLUME OF THE BOX AROUND THE SUBUNIT>
+        Vratio = Volume_max / Volume
+
+        # generate Vratio times more points than requested, then reject the
+        # ones that fall outside the subunit, so that Npoints survive
+        N = int(Vratio * Npoints)
+
+        <WRITE POINT DISTRIBUTION HERE>
+
+        return x_add, y_add, z_add
+
+    def checkOverlap(self, x_eff, y_eff, z_eff):
+        """Return the indices of the points that are OUTSIDE the subunit.
+
+        Points are given in the subunit's own frame (rotation and translation
+        already undone by the caller).
+        """
+
+        <WRITE OVERLAP CHECK HERE>
+
+        return idx

@@ -50,6 +50,8 @@ if __name__ == "__main__":
                          help='displacement for each subunits in each model.')
     parser.add_argument('-rot', '--rotation', type=float_list, nargs='+', action='append',
                          help='rotation for each subunits in each model.')
+    parser.add_argument('-rotp', '--rotation_points', type=float_list, nargs='+', action='append',
+                         help='point to rotate around, for each subunit in each model (default: the subunit centre).')
     parser.add_argument('-sigmar', '--sigma_r', type=float, nargs='+', action='extend',
                         help='interface roughness for each model.')
     parser.add_argument('-c', '--conc', type=float, nargs='+', action='extend',
@@ -137,11 +139,12 @@ if __name__ == "__main__":
         sld = check_3Dinput(args.sld, [1.0], "SLD", N_subunits, i)
         com = check_3Dinput(args.com, [[0, 0, 0]], "COM", N_subunits, i)
         rotation = check_3Dinput(args.rotation, [[0, 0, 0]], "rotation", N_subunits, i)
+        rotation_points = check_3Dinput(args.rotation_points, [[0, 0, 0]], "rotation points", N_subunits, i)
         exclude_overlap = check_input(args.exclude_overlap, True, "exclude_overlap", i)
 
         ### make point cloud
         printt(f"    Generating points for Model: " + model_name)        
-        point_distribution = getPointDistribution(args.subunit[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints)
+        point_distribution = getPointDistribution(args.subunit[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints,rotation_points)
         save_points(point_distribution, model_filename)
         x_list.append(np.concatenate(point_distribution.x))
         y_list.append(np.concatenate(point_distribution.y))

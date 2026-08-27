@@ -14,10 +14,11 @@ class Cuboid:
     
     def getPointDistribution(self, Npoints):
         """Returns the point distribution of a cuboid"""
-        Volume = self.getVolume()
-        x_add = np.random.uniform(-self.a, self.a, Npoints)
-        y_add = np.random.uniform(-self.b, self.b, Npoints)
-        z_add = np.random.uniform(-self.c, self.c, Npoints)
+        # a, b and c are the full side lengths, so the generating box spans
+        # [-a/2,a/2] etc., matching both getVolume() and checkOverlap()
+        x_add = np.random.uniform(-self.a / 2, self.a / 2, Npoints)
+        y_add = np.random.uniform(-self.b / 2, self.b / 2, Npoints)
+        z_add = np.random.uniform(-self.c / 2, self.c / 2, Npoints)
         return x_add, y_add, z_add
     
     def checkOverlap(self, x_eff, y_eff, z_eff):

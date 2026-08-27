@@ -95,22 +95,25 @@ The following subunits are currently available:
 |------------------|----------------|--------------------------------|----------------------------|
 | `sphere` | radius  | `ball`, `sph` | Sphere
 | `hollow_sphere` | outer radius, inner radius  | `shell` | Hollow sphere |
-| `ellipsoid` | axis1, axis2, axis3  | -- | Tri-axial ellipsoid |
+| `ellipsoid` | axis1, axis2, axis3  | `ellips` | Tri-axial ellipsoid |
+| `ellipsoid_shell` | axis1, axis2, axis3, thickness  | `ellips_shell` | Shell of a tri-axial ellipsoid |
 | `cylinder` | radius, length  | `rod`, `cyl` | Cylinder |
+| `disc` | radius1, radius2, length  | `disk`, `elliptical_disc` | Elliptical disc, i.e. a short elliptical cylinder<sup>****</sup> |
+| `circular_disc` | radius, length  | `round_disc` | Circular disc, i.e. a short cylinder<sup>****</sup> |
 | `ring` | outer radius, inner radius, length  | `hollow_cylinder`, `hollow_disc`, `cylinder_ring`, `disc_ring` | Hollow cylinder | 
 | `elliptical_cylinder` | radius1, radius2, length  | `elliptical_rod` | Cylinder | 
 | `cube` | side length | `dice` | Cube |
 | `hollow_cube` | outer side length, inner side length  | -- | Hollow cube (cavity is also a cube) |
-| `cuboid` | side length 1, side length 2, side length 3, | `cuboid`, `brick` | cuboid, i.e. not same side lengths |
+| `cuboid` | side length 1, side length 2, side length 3 | `brick` | cuboid, i.e. not same side lengths |
 | `torus` | overall radius, cross-sectional radius  | `toroid`, `doughnut` | Torus, i.e a doughnut shape | 
 | `hyperboloid` | smallest radius, curvature, half of the height  | `hourglass`, `cooling_tower`| Hyperboloid, i.e. an filled hourglass shape | 
 | `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>***</sup> | 
 
 <sup>*</sup> input order is important.   
 <sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
-<sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)
+<sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)   
 
-For developers: new subunits can be added to the `subunits`folder, following the format of the other subunits, then `shape2sas` will automatically detect them. 
+For developers: new subunits can be added to the `subunits` folder, following the format of the other subunits (see `subunits/Template.txt`), then `shape2sas` will automatically detect them, including all names listed in the class's `aliases`. 
 
 [Back to Table of contents](#table-of-contents)
 
@@ -310,6 +313,11 @@ A model of a "V" is formed with two 100-Å long cylinders with radius of 20 Å, 
 python shape2sas.py --subunit "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
 open cylinders_rotated/plot_cylinders_rotated.png cylinders_rotated/points_cylinders_rotated.png
 ```
+By default each subunit is rotated around its own centre. Use `--rotation_points` (or `-rotp`) to rotate around another point instead, given in the subunit's own frame. For example, to swing the second cylinder around one of its ends rather than its middle:
+```
+python shape2sas.py --subunit "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "0, 0, 0" "0, 90, 0" --rotation_points "0, 0, 0" "0, 0, 50" --model_name cylinders_hinged
+```
+The rotation is applied before the `--com` translation, so the two can be combined freely.
 ##### Known bug for COM/Rotation input, and solution/work-around
 If the COM translation x-coordinate is negative, you (may) get an error (e.g., `--com "-50, 0, 0" "0, 0, 0"` or `--com "0, 0, 0" "-50, 0, 0"`). This can be circumvented by adding a space before the minus sign (e.g., `--com " -50, 0, 0" "0, 0, 0"`). Quotation marks are needed in this workaround.
 
