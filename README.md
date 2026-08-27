@@ -10,6 +10,7 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
 ## Table of Contents
 - [Installation](#installation)
   - [Other dependencies](#other-dependencies)
+  - [Code organisation](#code-organisation)
 - [Run Shape2SAS](#run-shape2sas)
   - [Available subunits (table)](#subunits)
   - [Output files](#output-files)
@@ -46,7 +47,7 @@ To install Shape2SAS do the following:
 
 * Install Python3 (you need python3.8 or newer)
 * Install necessary python packages (see other dependencies).
-* Download `shape2sas.py`, `shape2sas_helpfunctions.py` and the `subunits` and `structure_factors` folders - these should be in the same location on your computer.
+* Download the `.py` files and the `subunits`, `structure_factors` and `sesans` folders - these should be in the same location on your computer. See [code organisation](#code-organisation).
 
 #### Other dependencies
 
@@ -61,7 +62,7 @@ Versions numpy==1.26, matplotlib==3.8, scipy==1.12, and fast_histogram==0.12 hav
 
 ## Run Shape2SAS
 
-Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (`shape2sas_helpfunctions.py` and the folders `subunits` and `structure_factors` should be in the same folder):
+Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (the other modules and the folders `subunits`, `structure_factors` and `sesans` should be in the same folder):
 
 ```
 cd <PATH-TO-DIRECTORY>
@@ -86,6 +87,24 @@ the second line opens the output plot, and the 2D representation of the sphere (
 * `G_<model_name>.dat`, `G_sim_<model_name>.dat`: theoretical and simulated SESANS data (if opted for)
 * `shape2sas.log`: log file, same as the terminal output
   
+[Back to Table of contents](#table-of-contents)
+
+### Code organisation
+Each module does one thing, so that a change stays local:
+
+| File / folder   | Contains |
+|-----------------|----------|
+| `shape2sas.py` | the command line interface, i.e. what runs when you call Shape2SAS |
+| `models.py` | building a point model: placing, rotating and overlap-checking the subunits |
+| `subunits/` | one file per subunit, each defining its volume, its points and its overlap check |
+| `theoretical_scattering.py` | pair distances, p(r), the form factor P(q) and the intensity I(q) |
+| `structure_factors/` | one file per structure factor, plus the decoupling approximation |
+| `simulated_scattering.py` | adding realistic noise to the theoretical intensity |
+| `sesans/` | the projected correlation function G(delta), and its simulation and output |
+| `plots.py` | the plots and the pdb file used for 3D visualisation |
+| `shape2sas_helpfunctions.py` | general helpers only - no calculations |
+| `compare.py`, `mixture.py` | separate scripts for comparing and mixing finished models |
+
 [Back to Table of contents](#table-of-contents)
 
 ### Subunits

@@ -5,7 +5,30 @@ import argparse
 from sys import argv
 import numpy as np
 import shutil
-from shape2sas_helpfunctions import *
+from shape2sas_helpfunctions import (
+    check_3Dinput,
+    check_input,
+    float_list,
+    get_header_footer,
+    getStructureFactorClass,
+    printt,
+    separate_string,
+    str2bool,
+)
+from models import getPointDistribution, save_points
+from theoretical_scattering import (
+    calc_Iq_func,
+    calc_Pq_func,
+    calc_pr_func,
+    calc_S_func,
+    save_I_func,
+    save_pr_func,
+)
+from structure_factors.structure_factors_helpfunctions import save_S_func
+from simulated_scattering import save_Isim_func, simulate_data_func
+from plots import generate_pdb, plot_2D, plot_fit, plot_results
+from sesans import calc_G_sesans, plot_sesans, save_sesans, simulate_sesans
+
 
 # current version
 version = 2.7

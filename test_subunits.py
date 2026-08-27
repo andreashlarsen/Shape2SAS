@@ -22,7 +22,7 @@ These check the invariants that the point sampling relies on:
 import numpy as np
 
 import subunits
-from shape2sas_helpfunctions import (
+from models import (
     getPointDistribution,
     rotate_and_translate,
     undo_rotate_and_translate,
