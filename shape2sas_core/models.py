@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import os
 
-import subunits
-from shape2sas_helpfunctions import build_alias_registry, lookup_alias, printt
+from shape2sas_core import subunits
+from shape2sas_core.helpfunctions import build_alias_registry, lookup_alias, printt
 
 @dataclass
 class ModelPointDistribution:

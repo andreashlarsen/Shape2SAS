@@ -3,8 +3,8 @@ import re
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from theoretical_scattering import save_I_func, save_pr_func
-from simulated_scattering import save_Isim_func, simulate_data_func
+from shape2sas_core.theoretical_scattering import save_I_func, save_pr_func
+from shape2sas_core.simulated_scattering import save_Isim_func, simulate_data_func
 
 if __name__ == "__main__":
 

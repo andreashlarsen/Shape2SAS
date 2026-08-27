@@ -19,10 +19,16 @@ These check the invariants that the point sampling relies on:
      unrecognised one is an error rather than a silent S(q) = 1
 """
 
+import os
+import sys
+
 import numpy as np
 
-import subunits
-from models import (
+# this file lives in tests/, so put the repository root on the path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from shape2sas_core import subunits
+from shape2sas_core.models import (
     getPointDistribution,
     rotate_and_translate,
     undo_rotate_and_translate,
@@ -131,7 +137,7 @@ def test_structure_factor_with_several_subunits():
     different numbers of points; averaging over that ragged list directly
     raises a ValueError in numpy.
     """
-    from structure_factors.structure_factors_helpfunctions import calc_A00
+    from shape2sas_core.structure_factors.structure_factors_helpfunctions import calc_A00
 
     np.random.seed(3)
     distribution = getPointDistribution(
@@ -149,7 +155,7 @@ def test_structure_factor_names_resolve():
     An unrecognised name used to fall through to S(q) = 1 without any warning,
     so a typo silently removed the structure factor.
     """
-    from shape2sas_helpfunctions import getStructureFactorClass
+    from shape2sas_core.helpfunctions import getStructureFactorClass
 
     documented = {
         "hardsphere": "HardSphere", "hs": "HardSphere",
@@ -171,7 +177,7 @@ def test_structure_factor_names_resolve():
 
 def test_structure_factor_parameter_counts():
     """a structure factor given the wrong number of parameters must complain"""
-    import structure_factors
+    from shape2sas_core import structure_factors
 
     for name in ("HardSphere", "Aggregation"):
         cls = getattr(structure_factors, name)

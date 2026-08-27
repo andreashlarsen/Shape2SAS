@@ -3,7 +3,7 @@
 Only non-specific helpers belong here. The calculations themselves live in
 their own modules: models.py, theoretical_scattering.py,
 simulated_scattering.py, plots.py, and the subunits, structure_factors and
-sesans packages.
+sesans subpackages.
 """
 
 import argparse
@@ -13,7 +13,7 @@ import warnings
 
 import numpy as np
 
-import structure_factors
+from shape2sas_core import structure_factors
 
 def normalise_alias(name):
     """normalise a name so that 'Hollow sphere', 'hollow_sphere' and

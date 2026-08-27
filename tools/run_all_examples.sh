@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# run every example in the README, from the repository root
+cd "$(dirname "$0")/.." || exit 1
+
 README="README.md"
 TMP_SCRIPT="run_extracted_examples.sh"
 

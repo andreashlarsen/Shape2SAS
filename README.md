@@ -47,7 +47,7 @@ To install Shape2SAS do the following:
 
 * Install Python3 (you need python3.8 or newer)
 * Install necessary python packages (see other dependencies).
-* Download the `.py` files and the `subunits`, `structure_factors` and `sesans` folders - these should be in the same location on your computer. See [code organisation](#code-organisation).
+* Download the repository (or clone it). Keep `shape2sas.py` and the `shape2sas_core` folder together - the entry point looks for the package next to itself. See [code organisation](#code-organisation).
 
 #### Other dependencies
 
@@ -62,7 +62,7 @@ Versions numpy==1.26, matplotlib==3.8, scipy==1.12, and fast_histogram==0.12 hav
 
 ## Run Shape2SAS
 
-Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (the other modules and the folders `subunits`, `structure_factors` and `sesans` should be in the same folder):
+Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (the `shape2sas_core` folder should be in the same folder):
 
 ```
 cd <PATH-TO-DIRECTORY>
@@ -95,15 +95,22 @@ Each module does one thing, so that a change stays local:
 | File / folder   | Contains |
 |-----------------|----------|
 | `shape2sas.py` | the command line interface, i.e. what runs when you call Shape2SAS |
-| `models.py` | building a point model: placing, rotating and overlap-checking the subunits |
-| `subunits/` | one file per subunit, each defining its volume, its points and its overlap check |
-| `theoretical_scattering.py` | pair distances, p(r), the form factor P(q) and the intensity I(q) |
-| `structure_factors/` | one file per structure factor, plus the decoupling approximation |
-| `simulated_scattering.py` | adding realistic noise to the theoretical intensity |
-| `sesans/` | the projected correlation function G(delta), and its simulation and output |
-| `plots.py` | the plots and the pdb file used for 3D visualisation |
-| `shape2sas_helpfunctions.py` | general helpers only - no calculations |
-| `compare.py`, `mixture.py` | separate scripts for comparing and mixing finished models |
+| `compare.py`, `mixture.py` | separate entry points for comparing and mixing finished models |
+| `shape2sas_core/models.py` | building a point model: placing, rotating and overlap-checking the subunits |
+| `shape2sas_core/subunits/` | one file per subunit, each defining its volume, its points and its overlap check |
+| `shape2sas_core/theoretical_scattering.py` | pair distances, p(r), the form factor P(q) and the intensity I(q) |
+| `shape2sas_core/structure_factors/` | one file per structure factor, plus the decoupling approximation |
+| `shape2sas_core/simulated_scattering.py` | adding realistic noise to the theoretical intensity |
+| `shape2sas_core/sesans/` | the projected correlation function G(delta), and its simulation and output |
+| `shape2sas_core/plots.py` | the plots and the pdb file used for 3D visualisation |
+| `shape2sas_core/helpfunctions.py` | general helpers only - no calculations |
+| `tests/` | run with `python tests/test_subunits.py` |
+| `tools/` | scripts for running all the examples or all the subunits at once |
+
+Everything importable lives in `shape2sas_core`, so the root holds only the
+entry points. Shape2SAS writes its output into the directory it is run from
+and into one directory per model; all of that is covered by `.gitignore`, so
+`git clean -Xfd` removes it and nothing else.
 
 [Back to Table of contents](#table-of-contents)
 
@@ -132,7 +139,7 @@ The following subunits are currently available:
 <sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
 <sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)   
 
-For developers: new subunits can be added to the `subunits` folder, following the format of the other subunits (see `subunits/Template.txt`), then `shape2sas` will automatically detect them, including all names listed in the class's `aliases`. 
+For developers: new subunits can be added to the `shape2sas_core/subunits` folder, following the format of the other subunits (see `shape2sas_core/subunits/Template.txt`), then `shape2sas` will automatically detect them, including all names listed in the class's `aliases`. 
 
 [Back to Table of contents](#table-of-contents)
 
@@ -219,7 +226,7 @@ The following structure factors are implemented
 <sup>*</sup> provided with flag `--S_par` (or `-Sp`) - input order is important.   
 <sup>**</sup> names are not case-sensitive, and spaces, underscores and hyphens are ignored, so for example Hardsphere or hard_sphere or hard-sphere or HaRd SpHeRe all give the same structure factor. An unrecognised name is an error - it is not silently treated as no structure factor.
 
-For developers: new structure factors can be added to the `structure_factors` folder, following the format of the other structure factors (see `structure_factors/Template.txt`), then `shape2sas` will automatically detect them, including all names listed in the class's `aliases`.
+For developers: new structure factors can be added to the `shape2sas_core/structure_factors` folder, following the format of the other structure factors (see `shape2sas_core/structure_factors/Template.txt`), then `shape2sas` will automatically detect them, including all names listed in the class's `aliases`.
  
 [Back to Table of contents](#table-of-contents)
 
