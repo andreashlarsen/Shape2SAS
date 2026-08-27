@@ -49,7 +49,7 @@ To install Shape2SAS do the following:
 * Download the repository by clicking the green "<> Code" button and "Download ZIP". 
   Extract the ZIP file where you want Shape2SAS to be installed. 
 * Install the dependencies listed in `tools/dependencies.txt` by running the command: 
-  `pip install -r tools/dependencies.txt`.
+  `python -m pip install -r tools/dependencies.txt`.
 
 [Back to Table of contents](#table-of-contents)
 
