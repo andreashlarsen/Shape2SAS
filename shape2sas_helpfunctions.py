@@ -227,6 +227,64 @@ def calc_pr_func(point_distribution,prpoints=100,polydispersity=0):
 
     return r, pr, pr_norm, dmax
 
+def calc_pr_ausaxs_func(point_distribution, prpoints=100):
+    """
+    calculate p(r) using the pairwise-distance histogram evaluated by the
+    AUSAXS backend (pyausaxs), instead of the O(N^2) Python/numpy loop used
+    by calc_pr_func (calc_all_dist_func/calc_all_contrasts_func). 
+
+    Does not support polydispersity averaging (see calc_hr_func); callers
+    should use calc_pr_func instead when polydispersity > 0.
+
+    raises ImportError/RuntimeError if pyausaxs is not installed or fails,
+    so callers should catch and fall back to calc_pr_func.
+    """
+    from ausaxs_debye import distance_histogram
+    x = np.concatenate(point_distribution.x)
+    y = np.concatenate(point_distribution.y)
+    z = np.concatenate(point_distribution.z)
+    sld = np.concatenate(point_distribution.sld)
+
+    printt('        calculating distance histogram (AUSAXS backend)...')
+    r_fine, pr_fine = distance_histogram(x, y, z, sld)
+
+    ## rebin AUSAXS's native (fine) histogram into prpoints bins, matching
+    ## the resolution and r-range convention of generate_histogram_func
+    ratio_rmax_dmax = 1.05
+    dmax = r_fine[-1]
+    r_max = dmax * ratio_rmax_dmax
+    printt(f"           dmax: {dmax:.3e} A")
+    h, bin_edges = np.histogram(r_fine, bins=prpoints, weights=pr_fine, range=(0, r_max))
+    r = (bin_edges[:-1] + bin_edges[1:]) * 0.5
+    pr = h
+
+    ## normalize so pr_max = 1
+    pr_norm = pr / np.amax(pr)
+
+    ## calculate Rg
+    Rg = calc_Rg_func(r, pr_norm)
+    printt(f"           Rg  : {Rg:.3e} A")
+
+    #returned N values after generating
+    pr = pr / len(point_distribution.x)**2 #NOTE: N_total**2
+
+    return r, pr, pr_norm, dmax
+
+def calc_pr_best_func(point_distribution, prpoints=100, polydispersity=0, use_ausaxs=True):
+    """
+    calculate p(r), preferring the AUSAXS backend (pyausaxs) when available.
+
+    AUSAXS does not support the polydispersity averaging used here (see
+    calc_hr_func), so the default method (calc_pr_func) is used whenever
+    polydispersity > 0, or if pyausaxs is not installed / fails.
+    """
+    if use_ausaxs and polydispersity == 0.0:
+        try:
+            return calc_pr_ausaxs_func(point_distribution, prpoints=prpoints)
+        except Exception as e:
+            printt(f"        AUSAXS backend unavailable ({e}); using default p(r) calculation.")
+    return calc_pr_func(point_distribution, prpoints=prpoints, polydispersity=polydispersity)
+
 def calc_Pq_func(q, r, pr, conc, volume_total):
     """
     calculate form factor, P(q), and forward scattering, I(0), using pair distribution, p(r) 
@@ -245,7 +303,7 @@ def calc_Pq_func(q, r, pr, conc, volume_total):
         I0 = abs(I0)
     Pq /= I0
 
-    # make I0 scale with volume fraction (concentration) and 
+    # make I0 scale with volume fraction (concentration) and
     # volume squared and scale so default values gives I(0) of approx unity
     I0 *= conc * volume_total * 1E-4
     return I0, Pq
