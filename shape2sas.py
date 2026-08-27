@@ -172,14 +172,9 @@ if __name__ == "__main__":
         ### define q (and if sesans is opted for, also define the spin echo length, delta)
         if args.sesans:
             # make extended q-range for sesans
-            aliasses_aggr = ['aggregation','aggr','aggregate','frac2d']
-            if stype in aliasses_aggr:
-                Reff,Naggr,fracs_aggr = S_par
-                qmin = 0.001 * np.pi/(2*Reff)
-                deltamax = 3*Reff
-            else:
-                qmin = 0.001 * np.pi/dmax
-                deltamax = 3 * dmax
+            # the structure factor decides the length scale: an aggregate is
+            # larger than the particle it is built from
+            qmin, deltamax = getStructureFactorClass(stype).getSesansRange(S_par, dmax)
             qmax = 1e4 * qmin
             qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)

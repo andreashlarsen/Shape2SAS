@@ -9,7 +9,35 @@ import warnings
 import os
 from dataclasses import dataclass
 #from subunits import Sphere,Cylinder
+import subunits
 from subunits import *
+import structure_factors
+
+def normalise_alias(name):
+    """normalise a name so that 'Hollow sphere', 'hollow_sphere' and
+    'hollowsphere' all refer to the same thing"""
+    return name.lower().replace("_", "").replace(" ", "").replace("-", "")
+
+def build_alias_registry(package):
+    """map every alias of every class in a package to that class"""
+    registry = {}
+    for _, cls in inspect.getmembers(package, inspect.isclass):
+        for alias in getattr(cls, "aliases", []):
+            registry[normalise_alias(alias)] = cls
+    return registry
+
+def lookup_alias(registry, name, what):
+    """look up a class by any of its aliases, or list the valid names"""
+    try:
+        return registry[normalise_alias(name)]
+    except KeyError:
+        available = sorted(set(cls.aliases[0] for cls in registry.values()))
+        printt("\nERROR: unknown " + what + " '" + str(name) + "'. Available " + what + "s: " + ", ".join(available) + "\n")
+        exit()
+
+def getStructureFactorClass(stype):
+    """look up a structure factor class by any of its aliases"""
+    return lookup_alias(build_alias_registry(structure_factors), stype, "structure factor")
 
 def printt(s): 
     """ print and write to log file"""
@@ -265,180 +293,12 @@ def calc_Iq_func(q, Pq, S_eff, sigma_r):
 
     return I
     
-def calc_com_dist_func(point_distribution):
-    """ 
-    calc contrast-weighted com distance
-
-    the coordinates are stored per subunit, so they are concatenated first:
-    the subunits generally contain different numbers of points, and numpy
-    cannot average over such a ragged list of arrays
-    """
-    x = np.concatenate(point_distribution.x)
-    y = np.concatenate(point_distribution.y)
-    z = np.concatenate(point_distribution.z)
-    w = np.abs(np.concatenate(point_distribution.sld))
-
-    if np.sum(w) == 0:
-        w = np.ones(len(x))
-
-    x_com, y_com, z_com = np.average(x, weights=w), np.average(y, weights=w), np.average(z, weights=w)
-    dx, dy, dz = x - x_com, y - y_com, z - z_com
-    com_dist = np.sqrt(dx**2 + dy**2 + dz**2)
-
-    return com_dist
-
-def calc_A00_func(q,point_distribution):
-    """
-    calc zeroth order sph harm, for decoupling approximation
-    """
-    d = calc_com_dist_func(point_distribution).astype(np.float32, copy=False)
-    M = len(q)
-    A00 = np.zeros(M)
-    sld = np.concatenate(point_distribution.sld).astype(np.float32, copy=False)
-    for i in range(M):
-        qr = q[i] * d
-        A00[i] = np.sum(sld * sinc(qr))
-    A00 = A00 / A00[0] # normalise, A00[0] = 1
-
-    return A00
-
-def decoupling_approx_func(q,point_distribution, Pq, S):
-    """
-    modify structure factor with the decoupling approximation
-    for combining structure factors with non-spherical (or polydisperse) particles
-
-    see, for example, Larsen et al 2020: https://doi.org/10.1107/S1600576720006500
-    and refs therein
-
-    input
-    q
-    x,y,z,p    : coordinates and contrasts
-    Pq         : form factor
-    S          : structure factor
-
-    output
-    S_eff      : effective structure factor, after applying decoupl. approx
-    """
-    A00 = calc_A00_func(q,point_distribution)
-    const = 1e-3 # add constant in nominator and denominator, for stability (numerical errors for small values dampened)
-    Beta = (A00**2 + const) / (Pq + const)
-    S_eff = 1 + Beta * (S - 1)
-    return S_eff
-
-def calc_S_HS_func(q,conc,R_HS):
-    """
-    Calculate the hard-sphere structure factor using the Percus-Yevick approximation.
-    Implements the stable version with Taylor expansion for small A = 2*R*q.
-    adapted directly from the sasview code
-    """
-
-    if conc <= 0.0:
-        return np.ones(len(q))
-
-    vf = conc
-    R = R_HS
-    X = np.abs(2.0 * R * q)  # same as A in your earlier code
-
-    # Precompute constants
-    denom = (1.0 - vf)
-    if denom < 1e-12:  # avoid division by zero
-        return np.ones_like(q)
-
-    Xinv = 1.0 / denom
-    D = Xinv * Xinv
-    A = (1.0 + 2.0 * vf) * D
-    A *= A
-    B = (1.0 + 0.5 * vf) * D
-    B *= B
-    B *= -6.0 * vf
-    G = 0.5 * vf * A
-
-    # Cutoffs
-    cutoff_tiny = 5e-6
-    cutoff_series = 0.05  # corresponds to CUTOFFHS in C code
-
-    S_HS = np.empty_like(q)
-
-    for i, x in enumerate(X):
-        if x < cutoff_tiny:
-            # limit q -> 0
-            S_HS[i] = 1.0 / A
-        elif x < cutoff_series:
-            # Taylor series expansion
-            x2 = x * x
-            # Equivalent to the FF expression in the C code
-            FF = (8.0 * A + 6.0 * B + 4.0 * G
-                + (-0.8 * A - B / 1.5 - 0.5 * G
-                    + (A / 35.0 + 0.0125 * B + 0.02 * G) * x2) * x2)
-            S_HS[i] = 1.0 / (1.0 + vf * FF)
-        else:
-            # Normal expression
-            x2 = x * x
-            x4 = x2 * x2
-            s, c = np.sin(x), np.cos(x)
-            # FF expression refactored from the C code
-            FF = ((G * ((4.0 * x2 - 24.0) * x * s
-                        - (x4 - 12.0 * x2 + 24.0) * c
-                        + 24.0) / x2
-                + B * (2.0 * x * s - (x2 - 2.0) * c - 2.0)) / x
-                + A * (s - x * c)) / x
-            S_HS[i] = 1.0 / (1.0 + 24.0 * vf * FF / x2)
-
-    return S_HS
-
-def calc_S_aggr_func(q,Reff,Naggr):
-    """
-    calculates fractal aggregate structure factor with dimensionality 2
-
-    S_{2,D=2} in Larsen et al 2020, https://doi.org/10.1107/S1600576720006500
-
-    input 
-    q      :
-    Naggr  : number of particles per aggregate
-    Reff   : effective radius of one particle 
-
-    output
-    S_aggr :
-    """
-    qR = q * Reff
-    S_aggr = 1 + (Naggr - 1)/(1 + qR**2 * Naggr / 3)
-    return S_aggr
-
-def structure_eff(self, Pq):
-    """Return effective structure factor for aggregation"""
-
-    S = self.calc_S_aggr()
-    S_eff = self.decoupling_approx(Pq, S)
-    S_eff = (1 - self.fracs_aggr) + self.fracs_aggr * S_eff
-    return S_eff
-
-def check_Spar(stype,S_par,n):
-    if len(S_par) != n:
-            if n == 1:
-                printt("\nERROR: structure factor " + stype + " needs " + str(n) + " parameter (provided after --S_par or -Sp), but " + str(len(S_par)) + ' parameters were given: ' + str(S_par) + '\n')
-            else:
-                printt("\nERROR: structure factor " + stype + " needs " + str(n) + " parameters (provided after --S_par or -Sp), but " + str(len(S_par)) + ' parameters were given: ' + str(S_par) + '\n')
-            exit()
-
 def calc_S_func(q,point_distribution,stype,S_par,Pq):
-    aliasses_HS = ['hardsphere','hs','hard-sphere']
-    aliasses_aggr = ['aggregation','aggr','aggregate','frac2d']
+    """calculate the effective structure factor S_eff(q)
 
-    if stype in aliasses_HS:
-        check_Spar(stype,S_par,2)
-        conc,R_HS = S_par
-        S = calc_S_HS_func(q,conc,R_HS)
-        S_eff = decoupling_approx_func(q,point_distribution,Pq, S)
-    elif stype in aliasses_aggr:
-        check_Spar(stype,S_par,3)
-        Reff,Naggr,fracs_aggr = S_par
-        S = calc_S_aggr_func(q,Reff,Naggr)
-        S_eff = decoupling_approx_func(q,point_distribution,Pq, S)
-        S_eff = (1 - fracs_aggr) + fracs_aggr * S_eff
-    else:
-        S_eff = np.ones_like(q)
-    
-    return S_eff
+    the structure factors themselves live in the structure_factors folder
+    """
+    return getStructureFactorClass(stype)(S_par).structure_eff(q,point_distribution,Pq)
 
 def simulate_data_func(q,I,I0,exposure):
     """
@@ -632,24 +492,12 @@ class GenerateAllPoints:
 
     def setAvailableSubunits(self):
         """Dynamically build dictionary of aliases -> subunit classes"""
-        current_module = sys.modules[__name__]
-        classes = inspect.getmembers(current_module, inspect.isclass)
-        self.subunitClasses = {}
-        for _, cls in classes:
-            if hasattr(cls, "aliases"):
-                for alias in cls.aliases:
-                    self.subunitClasses[alias.lower().replace("_", "").replace(" ", "")] = cls
+        self.subunitClasses = build_alias_registry(subunits)
 
     def getSubunitClass(self, name):
         """Look up a subunit class by any of its aliases, ignoring case,
-        spaces and underscores"""
-        key = name.lower().replace("_", "").replace(" ", "")
-        try:
-            return self.subunitClasses[key]
-        except KeyError:
-            available = sorted(set(cls.aliases[0] for cls in self.subunitClasses.values()))
-            printt("\nERROR: unknown subunit '" + str(name) + "'. Available subunits: " + ", ".join(available) + "\n")
-            exit()
+        spaces, underscores and hyphens"""
+        return lookup_alias(self.subunitClasses, name, "subunit")
 
     @staticmethod
     def AppendingPoints(x_new, y_new, z_new,sld_new, x_add, y_add, z_add, sld_add):

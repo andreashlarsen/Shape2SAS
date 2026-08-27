@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """
-Self-consistency tests for the subunits and for the rotation machinery.
+Self-consistency tests for the subunits, the structure factors and the
+rotation machinery.
 
 Run with:  python test_subunits.py
 
@@ -14,6 +15,8 @@ These check the invariants that the point sampling relies on:
      for arbitrary combinations of the three Euler angles
   4. a subunit that is completely buried inside another one is completely
      removed by the overlap exclusion
+  5. every structure factor name given in the README resolves, and an
+     unrecognised one is an error rather than a silent S(q) = 1
 """
 
 import numpy as np
@@ -128,7 +131,7 @@ def test_structure_factor_with_several_subunits():
     different numbers of points; averaging over that ragged list directly
     raises a ValueError in numpy.
     """
-    from shape2sas_helpfunctions import calc_A00_func
+    from structure_factors.structure_factors_helpfunctions import calc_A00
 
     np.random.seed(3)
     distribution = getPointDistribution(
@@ -136,8 +139,47 @@ def test_structure_factor_with_several_subunits():
         [[0, 0, 0], [60, 0, 0]], [[0, 0, 0], [0, 0, 0]], True, 2000)
     assert len(distribution.x[0]) != len(distribution.x[1]), \
         "test needs subunits with different point counts"
-    A00 = calc_A00_func(np.linspace(0.001, 0.5, 20), distribution)
+    A00 = calc_A00(np.linspace(0.001, 0.5, 20), distribution)
     assert np.all(np.isfinite(A00))
+
+
+def test_structure_factor_names_resolve():
+    """every name documented in the README must resolve to a class
+
+    An unrecognised name used to fall through to S(q) = 1 without any warning,
+    so a typo silently removed the structure factor.
+    """
+    from shape2sas_helpfunctions import getStructureFactorClass
+
+    documented = {
+        "hardsphere": "HardSphere", "hs": "HardSphere",
+        "hard-sphere": "HardSphere", "hard_sphere": "HardSphere",
+        "aggregation": "Aggregation", "aggr": "Aggregation",
+        "frac2d": "Aggregation", "aggregate": "Aggregation",
+        "None": "NoStructure", "no": "NoStructure", "unity": "NoStructure",
+    }
+    for name, expected in documented.items():
+        got = getStructureFactorClass(name).__name__
+        assert got == expected, "%s resolved to %s, expected %s" % (name, got, expected)
+
+    try:
+        getStructureFactorClass("hardsphre")
+    except SystemExit:
+        return
+    raise AssertionError("an unknown structure factor name was accepted")
+
+
+def test_structure_factor_parameter_counts():
+    """a structure factor given the wrong number of parameters must complain"""
+    import structure_factors
+
+    for name in ("HardSphere", "Aggregation"):
+        cls = getattr(structure_factors, name)
+        try:
+            cls([1.0])
+        except SystemExit:
+            continue
+        raise AssertionError("%s accepted the wrong number of parameters" % name)
 
 
 if __name__ == "__main__":

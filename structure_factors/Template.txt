@@ -1,0 +1,51 @@
+Template for writing a new structure factor class.
+
+Save as structure_factors/<Name>.py - the structure_factors package imports it
+automatically.
+
+`aliases` is the list of names the user can type after --S. They are matched
+case-insensitively and ignoring spaces, underscores and hyphens, so "hard
+sphere", "Hard_Sphere" and "hardsphere" all resolve to the same class. The
+first alias is the canonical name and is the one used in error messages.
+
+`par_names` names the values the user gives after --S_par, in order. They are
+only used for checking the input and for error messages.
+
+import numpy as np
+from .structure_factors_helpfunctions import check_Spar, decoupling_approx, default_sesans_range
+
+class <NAME OF STRUCTURE FACTOR HERE>:
+    """<ONE LINE DESCRIPTION HERE>"""
+    aliases = ["<CANONICAL NAME>", "<OTHER ACCEPTED NAMES>"]
+    par_names = ["<PARAMETER NAME>", "<PARAMETER NAME>"]
+
+    def __init__(self, S_par):
+        check_Spar(self.aliases[0], S_par, self.par_names)
+        self.<PARAMETER NAME>, self.<PARAMETER NAME> = S_par
+
+    def calc_S(self, q):
+        """Returns the structure factor S(q)"""
+
+        <WRITE STRUCTURE FACTOR CALCULATION HERE>
+
+        return S
+
+    def structure_eff(self, q, point_distribution, Pq):
+        """Returns the effective structure factor S_eff(q)
+
+        The decoupling approximation corrects S(q) for particles that are not
+        spherical (or that are polydisperse). Skip it only if the structure
+        factor already accounts for that.
+        """
+        S = self.calc_S(q)
+        return decoupling_approx(q, point_distribution, Pq, S)
+
+    @staticmethod
+    def getSesansRange(S_par, dmax):
+        """Returns (qmin, deltamax) for a SESANS calculation.
+
+        Override this only if the structure factor introduces a length scale
+        larger than the particle itself (as aggregation does); otherwise the
+        default, set by dmax, is the right choice.
+        """
+        return default_sesans_range(dmax)

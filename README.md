@@ -46,7 +46,7 @@ To install Shape2SAS do the following:
 
 * Install Python3 (you need python3.8 or newer)
 * Install necessary python packages (see other dependencies).
-* Download `shape2sas.py`, `shape2sas_helpfunctions.py` and the `subunits` folder - these should be in the same location on your computer.
+* Download `shape2sas.py`, `shape2sas_helpfunctions.py` and the `subunits` and `structure_factors` folders - these should be in the same location on your computer.
 
 #### Other dependencies
 
@@ -61,7 +61,7 @@ Versions numpy==1.26, matplotlib==3.8, scipy==1.12, and fast_histogram==0.12 hav
 
 ## Run Shape2SAS
 
-Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (`shape2sas_helpfunctions.py` and the folder `subunits` should be in the same folder):
+Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (`shape2sas_helpfunctions.py` and the folders `subunits` and `structure_factors` should be in the same folder):
 
 ```
 cd <PATH-TO-DIRECTORY>
@@ -195,10 +195,12 @@ The following structure factors are implemented
 |------------------|----------------|--------------------------------|----------------------------|
 | `hardsphere` | volume fraction, hard-sphere radius | `hs` | Hard-sphere structure factor |
 | `aggregation` | aggregate effective radius, particles per aggregate, fraction of particles in aggregates | `aggr`, `frac2d` | Two-dimensional fractal aggregate |
-| `None` |  | `no`, `unity` | No structure factor (default) |
+| `None` |  | `no`, `unity`, `no_structure` | No structure factor (default) |
 
 <sup>*</sup> provided with flag `--S_par` (or `-Sp`) - input order is important.   
-<sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.
+<sup>**</sup> names are not case-sensitive, and spaces, underscores and hyphens are ignored, so for example Hardsphere or hard_sphere or hard-sphere or HaRd SpHeRe all give the same structure factor. An unrecognised name is an error - it is not silently treated as no structure factor.
+
+For developers: new structure factors can be added to the `structure_factors` folder, following the format of the other structure factors (see `structure_factors/Template.txt`), then `shape2sas` will automatically detect them, including all names listed in the class's `aliases`.
  
 [Back to Table of contents](#table-of-contents)
 
