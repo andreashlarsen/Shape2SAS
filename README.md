@@ -190,7 +190,7 @@ The following structure factors are implemented
 | `None` |  | `no`, `unity`, `no_structure` | No structure factor (default) |
 
 <sup>*</sup> provided with flag `--S_par` (or `-Sp`) - input order is important.   
-<sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.
+<sup>**</sup> structure factor names are also not case-sensitive.
 
 [Back to Table of contents](#table-of-contents)
 
