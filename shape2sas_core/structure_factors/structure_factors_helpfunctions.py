@@ -1,19 +1,7 @@
 import os
 
 import numpy as np
-
-def printt(s): 
-    """ print and write to log file"""
-    print(s)
-    with open('shape2sas.log','a') as f:
-        f.write('%s\n' %s)
-
-def sinc(x):
-    """
-    function for calculating sinc = sin(x)/x
-    numpy.sinc is defined as sinc(x) = sin(pi*x)/(pi*x)
-    """
-    return np.sinc(x / np.pi)
+from shape2sas_core.helpfunctions import printt, sinc, calc_com_dist
 
 def check_Spar(name,S_par,par_names):
     """check if the number of input parameters for the structure factor is correct, else return error message"""
@@ -24,28 +12,6 @@ def check_Spar(name,S_par,par_names):
         were = ' was ' if len_par == 1 else ' were '
         printt("\nERROR: structure factor " + name + " needs " + str(n) + par + "(provided after --S_par or -Sp): " + ", ".join(par_names) + ", but " + str(len_par) + were + "given: " + str(list(S_par)) + "\n")
         exit()
-
-def calc_com_dist(point_distribution):
-    """ 
-    calc contrast-weighted com distance
-
-    the coordinates are stored per subunit, so they are concatenated first:
-    the subunits generally contain different numbers of points, and numpy
-    cannot average over such a ragged list of arrays
-    """
-    x = np.concatenate(point_distribution.x)
-    y = np.concatenate(point_distribution.y)
-    z = np.concatenate(point_distribution.z)
-    w = np.abs(np.concatenate(point_distribution.sld))
-
-    if np.sum(w) == 0:
-        w = np.ones(len(x))
-
-    x_com, y_com, z_com = np.average(x, weights=w), np.average(y, weights=w), np.average(z, weights=w)
-    dx, dy, dz = x - x_com, y - y_com, z - z_com
-    com_dist = np.sqrt(dx**2 + dy**2 + dz**2)
-
-    return com_dist
 
 def calc_A00(q,point_distribution):
     """
@@ -84,12 +50,6 @@ def decoupling_approx(q,point_distribution,Pq,S):
     Beta = (A00**2 + const) / (Pq + const)
     S_eff = 1 + Beta * (S - 1)
     return S_eff
-
-def default_sesans_range(dmax):
-    """default spin echo length range, set by the size of the particle itself"""
-    qmin = 0.001 * np.pi / dmax
-    deltamax = 3 * dmax
-    return qmin, deltamax
 
 def save_S_func(q, S, model_filename):
     """Save structure factor to file"""

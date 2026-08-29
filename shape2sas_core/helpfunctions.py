@@ -13,8 +13,6 @@ import warnings
 
 import numpy as np
 
-from shape2sas_core import structure_factors
-
 def normalise_alias(name):
     """normalise a name so that 'Hollow sphere', 'hollow_sphere' and
     'hollowsphere' all refer to the same thing"""
@@ -39,6 +37,7 @@ def lookup_alias(registry, name, what):
 
 def getStructureFactorClass(stype):
     """look up a structure factor class by any of its aliases"""
+    from shape2sas_core import structure_factors
     return lookup_alias(build_alias_registry(structure_factors), stype, "structure factor")
 
 def printt(s): 
@@ -158,3 +157,24 @@ def check_input(input: float, default: float, name: str, i: int):
 
     return inputted
 
+def calc_com_dist(point_distribution):
+    """ 
+    calc contrast-weighted com distance
+
+    the coordinates are stored per subunit, so they are concatenated first:
+    the subunits generally contain different numbers of points, and numpy
+    cannot average over such a ragged list of arrays
+    """
+    x = np.concatenate(point_distribution.x)
+    y = np.concatenate(point_distribution.y)
+    z = np.concatenate(point_distribution.z)
+    w = np.abs(np.concatenate(point_distribution.sld))
+
+    if np.sum(w) == 0:
+        w = np.ones(len(x))
+
+    x_com, y_com, z_com = np.average(x, weights=w), np.average(y, weights=w), np.average(z, weights=w)
+    dx, dy, dz = x - x_com, y - y_com, z - z_com
+    com_dist = np.sqrt(dx**2 + dy**2 + dz**2)
+
+    return com_dist
