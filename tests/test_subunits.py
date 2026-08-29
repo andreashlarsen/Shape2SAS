@@ -2,21 +2,6 @@
 """
 Self-consistency tests for the subunits, the structure factors and the
 rotation machinery.
-
-Run with:  python test_subunits.py
-
-These check the invariants that the point sampling relies on:
-
-  1. every point returned by getPointDistribution() lies inside the body that
-     checkOverlap() describes - the two must describe the SAME shape
-  2. the number of points returned is close to the number requested, i.e.
-     getVolume() and the sampling box agree
-  3. rotating a set of points and then undoing the rotation is the identity,
-     for arbitrary combinations of the three Euler angles
-  4. a subunit that is completely buried inside another one is completely
-     removed by the overlap exclusion
-  5. every structure factor name given in the README resolves, and an
-     unrecognised one is an error rather than a silent S(q) = 1
 """
 
 import os
@@ -95,11 +80,7 @@ def test_missing_dimensions_are_rejected():
 
 
 def test_rotation_round_trip():
-    """undo_rotate_and_translate() must invert rotate_and_translate()
-
-    NOTE: this is what breaks if the inverse rotation is done by negating the
-    three Euler angles - that is only correct when at most one is non-zero.
-    """
+    """undo_rotate_and_translate() must invert rotate_and_translate()"""
     rng = np.random.default_rng(1)
     pts = rng.uniform(-50, 50, (3, 2000))
     for rotation in ROTATIONS:
@@ -131,12 +112,7 @@ def test_buried_subunit_is_fully_excluded():
 
 
 def test_structure_factor_with_several_subunits():
-    """the decoupling approximation must cope with subunits of different sizes
-
-    The coordinates are stored per subunit, so the subunits generally hold
-    different numbers of points; averaging over that ragged list directly
-    raises a ValueError in numpy.
-    """
+    """the decoupling approximation must cope with subunits of different sizes"""
     from shape2sas_core.structure_factors.structure_factors_helpfunctions import calc_A00
 
     np.random.seed(3)
@@ -150,11 +126,7 @@ def test_structure_factor_with_several_subunits():
 
 
 def test_structure_factor_names_resolve():
-    """every name documented in the README must resolve to a class
-
-    An unrecognised name used to fall through to S(q) = 1 without any warning,
-    so a typo silently removed the structure factor.
-    """
+    """every name documented in the README must resolve to a class"""
     from shape2sas_core.helpfunctions import getStructureFactorClass
 
     documented = {
@@ -186,17 +158,3 @@ def test_structure_factor_parameter_counts():
         except SystemExit:
             continue
         raise AssertionError("%s accepted the wrong number of parameters" % name)
-
-
-if __name__ == "__main__":
-    tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
-    failed = 0
-    for test in tests:
-        try:
-            test()
-            print("PASS  %s" % test.__name__)
-        except AssertionError as e:
-            failed += 1
-            print("FAIL  %s\n      %s" % (test.__name__, e))
-    print("\n%d/%d tests passed" % (len(tests) - failed, len(tests)))
-    raise SystemExit(1 if failed else 0)
