@@ -120,15 +120,16 @@ def generate_histogram_func(dist, prpoints, contrast, r_max):
 
     return r, h
     
-def calc_hr_func(dist, prpoints, contrast, polydispersity):
+def calc_hr_func(dist, prpoints, contrast, polydispersity, prebinned=False):
     """
     calculate h(r)
-    h(r) is the contrast-weighted histogram of distances, including self-terms (dist = 0)
+    h(r) is the contrast-weighted histogram of distances
 
     input: 
-    dist      : all pairwise distances
-    contrast  : all pair-wise contrast products
+    dist      : pair distances
+    contrast  : contrast weight of each distance
     polydispersity: relative polydispersity, float
+    prebinned : dist/contrast are already a histogram, on a grid finer than prpoints
 
     output:
     hr        : pair distance distribution function 
@@ -142,13 +143,17 @@ def calc_hr_func(dist, prpoints, contrast, polydispersity):
     ratio_rmax_dmax = 1.05
 
     lognormal = False
-    ## calc h(r) with/without polydispersity
     if polydispersity > 0.0:
         if lognormal:
             dmax = np.amax(dist)*np.exp(3* polydispersity)
         else:
             dmax = np.amax(dist) * (1 + 3 * polydispersity)
-        r_max = dmax * ratio_rmax_dmax
+    else:
+        dmax = np.amax(dist)
+    r_max = dmax * ratio_rmax_dmax
+
+    ## calc h(r) with/without polydispersity
+    if polydispersity > 0.0:
         r, hr_1 = generate_histogram_func(dist, prpoints, contrast, r_max)
         N_poly_integral = 25 # should be uneven to include 1 in factor_range (precalculated)
         hr  = np.zeros_like(hr_1, dtype=np.float32)
@@ -175,9 +180,12 @@ def calc_hr_func(dist, prpoints, contrast, polydispersity):
                 hr += dhr * norm_range[i]
         norm = np.sum(norm_range)
         hr /= norm
+    elif prebinned:
+        ## dist/contrast are already a histogram on a finer grid than prpoints would
+        ## give, and its bin width is comparable to r_max/prpoints. re-binning it here
+        ## would alias (bins catching one source bin vs two), so keep it as it is
+        r, hr = dist, contrast
     else:
-        dmax = np.amax(dist)
-        r_max = dmax * ratio_rmax_dmax
         r, hr = generate_histogram_func(dist, prpoints, contrast, r_max)
 
     return r, hr, dmax
@@ -192,27 +200,59 @@ def calc_Rg_func(r, pr):
 
     return Rg
     
-def calc_pr_func(point_distribution,prpoints=100,polydispersity=0):
+def calc_pair_distances_func(point_distribution, use_ausaxs=True):
     """
-    calculate p(r)
-    p(r) is the contrast-weighted histogram of distances, without the self-terms (dist = 0)
+    calculate the contrast-weighted pair distances of a point distribution
 
-    input: 
-    dist      : all pairwise distances
-    contrast  : all pair-wise contrast products
-    polydispersity: boolian, True or False
+    input:
+    point_distribution : points and their scattering length densities
+    use_ausaxs         : try the AUSAXS backend first, and fall back to the
+                         default method if pyausaxs is not installed or fails
 
     output:
-    pr        : pair distance distribution function
+    dist      : pair distances
+    contrast  : contrast weight of each distance
+    prebinned : whether dist/contrast are already a histogram (AUSAXS) rather than
+                individual pairs (default)
     """
+    if use_ausaxs:
+        try:
+            from ausaxs_debye import distance_histogram
+            printt('        calculating distance histogram (AUSAXS backend)...')
+            r, hr = distance_histogram(np.concatenate(point_distribution.x),
+                                       np.concatenate(point_distribution.y),
+                                       np.concatenate(point_distribution.z),
+                                       np.concatenate(point_distribution.sld))
+            return r, hr, True
+        except Exception as e:
+            printt(f"        AUSAXS backend unavailable ({e}); using default distance calculation.")
+
     printt('        calculating distances...')
     dist = calc_all_dist_func(point_distribution)
     printt('        calculating contrasts...')
     contrast = calc_all_contrasts_func(point_distribution)
 
+    return dist, contrast, False
+
+def calc_pr_func(point_distribution,prpoints=100,polydispersity=0,use_ausaxs=True):
+    """
+    calculate p(r)
+    p(r) is the contrast-weighted histogram of distances, without the self-terms (dist = 0)
+
+    input: 
+    point_distribution : points and their scattering length densities
+    prpoints           : number of bins in p(r)
+    polydispersity     : relative polydispersity, float
+    use_ausaxs         : use the AUSAXS backend for the pair distances, if available
+
+    output:
+    pr        : pair distance distribution function
+    """
+    dist, contrast, prebinned = calc_pair_distances_func(point_distribution, use_ausaxs=use_ausaxs)
+
     ## calculate pr
     printt('        calculating p(r)...')
-    r, pr, dmax = calc_hr_func(dist, prpoints, contrast, polydispersity)
+    r, pr, dmax = calc_hr_func(dist, prpoints, contrast, polydispersity, prebinned=prebinned)
     printt(f"           dmax: {dmax:.3e} A")
 
     ## normalize so pr_max = 1
@@ -223,7 +263,7 @@ def calc_pr_func(point_distribution,prpoints=100,polydispersity=0):
     printt(f"           Rg  : {Rg:.3e} A")
 
     #returned N values after generating
-    pr /= len(point_distribution.x)**2 #NOTE: N_total**2
+    pr = pr / len(point_distribution.x)**2 #NOTE: N_total**2
 
     return r, pr, pr_norm, dmax
 
@@ -245,7 +285,7 @@ def calc_Pq_func(q, r, pr, conc, volume_total):
         I0 = abs(I0)
     Pq /= I0
 
-    # make I0 scale with volume fraction (concentration) and 
+    # make I0 scale with volume fraction (concentration) and
     # volume squared and scale so default values gives I(0) of approx unity
     I0 *= conc * volume_total * 1E-4
     return I0, Pq

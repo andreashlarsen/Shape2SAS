@@ -56,6 +56,8 @@ if __name__ == "__main__":
                         help='volume fraction concentration.')
     parser.add_argument('-exclude', '--exclude_overlap', type=str2bool, nargs='+', action='extend',
                         help='bool to exclude overlap.')
+    parser.add_argument('-noausaxs', '--disable_ausaxs', action='store_true', default=False,
+                        help='include flag (no input) to disable the AUSAXS backend (pyausaxs) for the pair distance calculation, and always use the default method.')
 
     # optional structure factor related inputs
     parser.add_argument('-S', '--S', type=str, nargs='+', action='extend',
@@ -161,7 +163,8 @@ if __name__ == "__main__":
         ### calculate p(r)
         printt("\n    Calculating pair distance distribution, p(r)...")
         polydispersity = check_input(args.polydispersity, 0.0, "polydispersity", i)
-        r, pr, pr_norm, dmax = calc_pr_func(point_distribution,prpoints=args.prpoints, polydispersity=polydispersity)
+        r, pr, pr_norm, dmax = calc_pr_func(point_distribution, prpoints=args.prpoints,
+                                            polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
         save_pr_func(r,pr_norm,model_filename)
         r_list.append(r)
         pr_norm_list.append(pr_norm)
