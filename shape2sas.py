@@ -5,7 +5,30 @@ import argparse
 from sys import argv
 import numpy as np
 import shutil
-from shape2sas_helpfunctions import *
+from shape2sas_core.helpfunctions import (
+    check_3Dinput,
+    check_input,
+    float_list,
+    get_header_footer,
+    getStructureFactorClass,
+    printt,
+    separate_string,
+    str2bool,
+)
+from shape2sas_core.models import getPointDistribution, save_points
+from shape2sas_core.theoretical_scattering import (
+    calc_Iq_func,
+    calc_Pq_func,
+    calc_pr_func,
+    calc_S_func,
+    save_I_func,
+    save_pr_func,
+)
+from shape2sas_core.structure_factors.structure_factors_helpfunctions import save_S_func
+from shape2sas_core.simulated_scattering import save_Isim_func, simulate_data_func
+from shape2sas_core.plots import generate_pdb, plot_2D, plot_fit, plot_results
+from shape2sas_core.sesans import calc_G_sesans, plot_sesans, save_sesans, simulate_sesans
+
 
 # current version
 version = 2.7
@@ -50,6 +73,8 @@ if __name__ == "__main__":
                          help='displacement for each subunits in each model.')
     parser.add_argument('-rot', '--rotation', type=float_list, nargs='+', action='append',
                          help='rotation for each subunits in each model.')
+    parser.add_argument('-rotp', '--rotation_points', type=float_list, nargs='+', action='append',
+                         help='point to rotate around, for each subunit in each model (default: the subunit centre).')
     parser.add_argument('-sigmar', '--sigma_r', type=float, nargs='+', action='extend',
                         help='interface roughness for each model.')
     parser.add_argument('-c', '--conc', type=float, nargs='+', action='extend',
@@ -137,11 +162,12 @@ if __name__ == "__main__":
         sld = check_3Dinput(args.sld, [1.0], "SLD", N_subunits, i)
         com = check_3Dinput(args.com, [[0, 0, 0]], "COM", N_subunits, i)
         rotation = check_3Dinput(args.rotation, [[0, 0, 0]], "rotation", N_subunits, i)
+        rotation_points = check_3Dinput(args.rotation_points, [[0, 0, 0]], "rotation points", N_subunits, i)
         exclude_overlap = check_input(args.exclude_overlap, True, "exclude_overlap", i)
 
         ### make point cloud
         printt(f"    Generating points for Model: " + model_name)        
-        point_distribution = getPointDistribution(args.subunit[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints)
+        point_distribution = getPointDistribution(args.subunit[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints,rotation_points)
         save_points(point_distribution, model_filename)
         x_list.append(np.concatenate(point_distribution.x))
         y_list.append(np.concatenate(point_distribution.y))
@@ -169,14 +195,9 @@ if __name__ == "__main__":
         ### define q (and if sesans is opted for, also define the spin echo length, delta)
         if args.sesans:
             # make extended q-range for sesans
-            aliasses_aggr = ['aggregation','aggr','aggregate','frac2d']
-            if stype in aliasses_aggr:
-                Reff,Naggr,fracs_aggr = S_par
-                qmin = 0.001 * np.pi/(2*Reff)
-                deltamax = 3*Reff
-            else:
-                qmin = 0.001 * np.pi/dmax
-                deltamax = 3 * dmax
+            # the structure factor decides the length scale: an aggregate is
+            # larger than the particle it is built from
+            qmin, deltamax = getStructureFactorClass(stype).getSesansRange(S_par, dmax)
             qmax = 1e4 * qmin
             qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)

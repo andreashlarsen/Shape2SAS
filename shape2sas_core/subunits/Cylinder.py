@@ -2,7 +2,7 @@ import numpy as np
 from .subunits_helpfunctions import check_dimension
 
 class Cylinder:
-    aliases = ["cylinder","disc","rod","cyl"]
+    aliases = ["cylinder","rod","cyl"]
 
     def __init__(self, dimensions):
         check_dimension(self.aliases[0],dimensions,2)     

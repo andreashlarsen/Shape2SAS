@@ -46,22 +46,16 @@ To install Shape2SAS do the following:
 
 * Install Python3 (you need python3.8 or newer)
 * Install necessary python packages (see other dependencies).
-* Download `shape2sas.py`, `shape2sas_helpfunctions.py` and the `subunits` folder - these should be in the same location on your computer.
-
-#### Other dependencies
-
-Shape2sas use the following python packages, which can be downloaded via pip install:
-* numpy
-* matplotlib
-* scipy
-* fast_histogram     
-Versions numpy==1.26, matplotlib==3.8, scipy==1.12, and fast_histogram==0.12 have been tested, but other versions may work as well.
+* Download the repository by clicking the green "<> Code" button and "Download ZIP". 
+  Extract the ZIP file where you want Shape2SAS to be installed. 
+* Install the dependencies listed in `tools/dependencies.txt` by running the command: 
+  `python -m pip install -r tools/dependencies.txt`.
 
 [Back to Table of contents](#table-of-contents)
 
 ## Run Shape2SAS
 
-Open a terminal (Linux) or a command prompt (Windows). Navigate to the directory containing `shape2sas.py` (`shape2sas_helpfunctions.py` and the folder `subunits` should be in the same folder):
+Open a terminal (Linux) or a command prompt (Windows). Navigate to the extracted directory containing `shape2sas.py`:
 
 ```
 cd <PATH-TO-DIRECTORY>
@@ -95,22 +89,23 @@ The following subunits are currently available:
 |------------------|----------------|--------------------------------|----------------------------|
 | `sphere` | radius  | `ball`, `sph` | Sphere
 | `hollow_sphere` | outer radius, inner radius  | `shell` | Hollow sphere |
-| `ellipsoid` | axis1, axis2, axis3  | -- | Tri-axial ellipsoid |
+| `ellipsoid` | axis1, axis2, axis3  | `ellips` | Tri-axial ellipsoid |
+| `ellipsoid_shell` | axis1, axis2, axis3, thickness  | `ellips_shell` | Shell of a tri-axial ellipsoid |
 | `cylinder` | radius, length  | `rod`, `cyl` | Cylinder |
+| `disc` | radius1, radius2, length  | `disk`, `elliptical_disc` | Elliptical disc, i.e. a short elliptical cylinder. |
+| `circular_disc` | radius, length  | `round_disc` | Circular disc, i.e. a short cylinder. |
 | `ring` | outer radius, inner radius, length  | `hollow_cylinder`, `hollow_disc`, `cylinder_ring`, `disc_ring` | Hollow cylinder | 
 | `elliptical_cylinder` | radius1, radius2, length  | `elliptical_rod` | Cylinder | 
 | `cube` | side length | `dice` | Cube |
 | `hollow_cube` | outer side length, inner side length  | -- | Hollow cube (cavity is also a cube) |
-| `cuboid` | side length 1, side length 2, side length 3, | `cuboid`, `brick` | cuboid, i.e. not same side lengths |
+| `cuboid` | side length 1, side length 2, side length 3 | `brick` | cuboid, i.e. not same side lengths |
 | `torus` | overall radius, cross-sectional radius  | `toroid`, `doughnut` | Torus, i.e a doughnut shape | 
 | `hyperboloid` | smallest radius, curvature, half of the height  | `hourglass`, `cooling_tower`| Hyperboloid, i.e. an filled hourglass shape | 
 | `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>***</sup> | 
 
 <sup>*</sup> input order is important.   
 <sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
-<sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)
-
-For developers: new subunits can be added to the `subunits`folder, following the format of the other subunits, then `shape2sas` will automatically detect them. 
+<sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)   
 
 [Back to Table of contents](#table-of-contents)
 
@@ -192,11 +187,11 @@ The following structure factors are implemented
 |------------------|----------------|--------------------------------|----------------------------|
 | `hardsphere` | volume fraction, hard-sphere radius | `hs` | Hard-sphere structure factor |
 | `aggregation` | aggregate effective radius, particles per aggregate, fraction of particles in aggregates | `aggr`, `frac2d` | Two-dimensional fractal aggregate |
-| `None` |  | `no`, `unity` | No structure factor (default) |
+| `None` |  | `no`, `unity`, `no_structure` | No structure factor (default) |
 
 <sup>*</sup> provided with flag `--S_par` (or `-Sp`) - input order is important.   
-<sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.
- 
+<sup>**</sup> structure factor names are also not case-sensitive.
+
 [Back to Table of contents](#table-of-contents)
 
 ### Example 4: Several models
@@ -310,6 +305,11 @@ A model of a "V" is formed with two 100-Å long cylinders with radius of 20 Å, 
 python shape2sas.py --subunit "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "45, 0, 0" "-45, 0, 0" --com "0, -50, 0" "0, 0, 0" --model_name cylinders_rotated
 open cylinders_rotated/plot_cylinders_rotated.png cylinders_rotated/points_cylinders_rotated.png
 ```
+By default each subunit is rotated around its own centre. Use `--rotation_points` (or `-rotp`) to rotate around another point instead, given in the subunit's own frame. For example, to swing the second cylinder around one of its ends rather than its middle:
+```
+python shape2sas.py --subunit "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "0, 0, 0" "0, 90, 0" --rotation_points "0, 0, 0" "0, 0, 50" --model_name cylinders_hinged
+```
+The rotation is applied before the `--com` translation, so the two can be combined freely.
 ##### Known bug for COM/Rotation input, and solution/work-around
 If the COM translation x-coordinate is negative, you (may) get an error (e.g., `--com "-50, 0, 0" "0, 0, 0"` or `--com "0, 0, 0" "-50, 0, 0"`). This can be circumvented by adding a space before the minus sign (e.g., `--com " -50, 0, 0" "0, 0, 0"`). Quotation marks are needed in this workaround.
 
