@@ -31,7 +31,7 @@ while IFS= read -r line; do
 
     # If we are inside a code block, capture python/open commands
     if [[ $inside_code_block -eq 1 ]]; then
-        if [[ "$line" =~ ^python|^open ]]; then
+        if [[ "$line" =~ ^shape2sas|^python|^open ]]; then
             echo "echo Running: $line" >> $TMP_SCRIPT
             echo "$line" >> $TMP_SCRIPT
             echo "" >> $TMP_SCRIPT

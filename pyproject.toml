@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shape2sas"
+version = "0.0.1"
+description = "Simulate small-angle scattering data and pair distance distributions from user-defined shapes."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  { name = "Andreas Haahr Larsen" },
+]
+maintainers = [
+  { name = "Andreas Haahr Larsen" },
+  { name = "Kristian Lytje" },
+]
+license = "GPL-3.0-or-later"
+dependencies = [
+  "numpy>=1.20",
+  "matplotlib>=3.5",
+  "scipy>=1.7",
+  "fast-histogram>=0.11",
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Topic :: Scientific/Engineering :: Chemistry",
+]
+keywords = ["SAXS", "SANS", "SESANS", "small-angle scattering", "simulation"]
+
+[project.urls]
+Homepage = "https://github.com/andreashlarsen/Shape2SAS"
+Repository = "https://github.com/andreashlarsen/Shape2SAS"
+"Web application" = "https://sastools.org/Shape2SAS/Shape2SAS.html"
+Publication = "https://doi.org/10.1107/S1600576723005848"
+
+[project.scripts]
+shape2sas = "shape2sas.cli:main"
+shape2sas-compare = "shape2sas.compare:main"
+shape2sas-mixture = "shape2sas.mixture:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["shape2sas*"]

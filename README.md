@@ -4,7 +4,7 @@
 Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes. The models are build from geometrical subunits, e.g., a dumbbell constructed from a cylinder and two translated spheres. The shape is filled with points and the scattering is calculated by a Debye sum.
 
 <p align="center" id="dumbbell">
-  <img src="examples/dumbbell_shape2SASGuide.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/dumbbell_shape2SASGuide.png" style="width: 100%;" />
 </p>
 
 ## Table of Contents
@@ -129,7 +129,7 @@ python shape2sas.py --subunit cylinder --dimension "50 300" --model_name cylinde
 open cylinder/plot_cylinder.png cylinder/points_cylinder.png
 ```
 <p align="center" id="example1">
-  <img src="examples/cylinder_plot.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/cylinder_plot.png" style="width: 100%;" />
 </p>
 
  *Example 1: Shape2SAS simulation showing the "side" and "bottom" of the cylinder model and simulated SAXS with noise.*
@@ -153,7 +153,7 @@ python shape2sas.py --subunit "sphere, sphere, cylinder" --dimension 25 25 "10 1
 open my_dumbbell/plot_my_dumbbell.png my_dumbbell/points_my_dumbbell.png
 ```
 <p align="center" id="example2">
-  <img src="examples/dumbbell_plot.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/dumbbell_plot.png" style="width: 100%;" />
 </p>
 
  *Example 2: Dumbbell model and simulated SAXS data.*
@@ -173,7 +173,7 @@ python shape2sas.py --subunit ellipsoid --dimension "50, 60, 50" --S aggregation
 open ellipsoid_aggr/plot_ellipsoid_aggr.png ellipsoid_aggr/points_ellipsoid_aggr.png
 ```
 <p align="center" id="example3">
-  <img src="examples/ellipsoid_HS_aggr.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/ellipsoid_HS_aggr.png" style="width: 100%;" />
 </p>
 
  *Example 3: Ellipsoids with a hard-sphere structure factor (left) or with aggregation (right).*
@@ -227,7 +227,7 @@ python shape2sas.py --subunit sphere --dimension 80 --model_name sph80
 python compare.py -m sph20,sph50,sph80
 ```
 <p align="center" id="example4">
-  <img src="examples/sizes.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/sizes.png" style="width: 100%;" />
 </p>
 
  *Example 4: Scattering from spheres of increasing size.*
@@ -265,7 +265,7 @@ python shape2sas.py --subunit sphere --dimension 40 --model_name sphere
 python compare.py -m sphere,sphere_pd
 ```
 <p align="center" id="example5">
-  <img src="examples/polydispersity.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/polydispersity.png" style="width: 100%;" />
 </p>
 
  *Example 5: Scattering from monodisperse versus polydisperse spheres. Polydispersity is also reflected in the $p(r)$*
@@ -292,7 +292,7 @@ python shape2sas.py --subunit sphere,sphere --dimension 30 45 --sld -2 1 --exclu
 python compare.py -m core_shell_1,core_shell_2,core_shell_3 -p
 ```
 <p align="center" id="example6">
-  <img src="examples/core-shell.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/core-shell.png" style="width: 100%;" />
 </p>
 
  *Example 7: Spherical core-shell particles with core ΔSLD of -1 and shell ΔSLD of 1, simulated in three different ways*
@@ -314,7 +314,7 @@ The rotation is applied before the `--com` translation, so the two can be combin
 If the COM translation x-coordinate is negative, you (may) get an error (e.g., `--com "-50, 0, 0" "0, 0, 0"` or `--com "0, 0, 0" "-50, 0, 0"`). This can be circumvented by adding a space before the minus sign (e.g., `--com " -50, 0, 0" "0, 0, 0"`). Quotation marks are needed in this workaround.
 
 <p align="center" id="example6">
-  <img src="examples/Rotated_cylinders.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/Rotated_cylinders.png" style="width: 100%;" />
 </p>
 
  *Example 7: Simulated SAXS for two cylinders rotated around the x-axis with $\alpha \pm 45\degree$.*
@@ -331,8 +331,8 @@ python compare.py --model_names ellipsoids500,ellipsoids5000,ellipsoids50000 --n
 ```
 Computation time depends on hardware, but increases with the number of points. However, the accuracy also increases, as the number of points increases, and the simulated curve is accurate up to a higher value of q. 
 <p align="center" id="example7">
-  <img src="examples/Npoints_points.png" style="width: 100%;" />
-  <img src="examples/Npoints_data.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/Npoints_points.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/Npoints_data.png" style="width: 100%;" />
 </p>
 
  *Example 8: Ellipsoids simulated with 500, 5000 or 50,000 points per model*
@@ -357,7 +357,7 @@ python shape2sas.py --sesans --subunit sphere,sphere --dimension 250 250 --com 0
 python compare.py -m two_spheres,sphere --sesans
 ```
 <p align="center" id="example7">
-  <img src="examples/sesans_HS.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/sesans_HS.png" style="width: 100%;" />
 </p>
 
  *Example 9: SESANS spheres with or without hard-sphere interaction*
@@ -412,7 +412,7 @@ The point is of course to compare with actual measured data.
 *Automatic fitting is not available (yet) - only data comparison and 'manual' fitting.*
 
 <p align="center" id="example7">
-  <img src="examples/fit.png" style="width: 100%;" />
+  <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/fit.png" style="width: 100%;" />
 </p>
 
 [Back to Table of contents](#table-of-contents)
@@ -480,6 +480,7 @@ Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Sh
 * Andreas Haahr Larsen: main developer 
 * Thomas Bukholt Hansen: batch script mode, including class structure and documentation
 * Lassi Tiihonen: SESANS add-on
+* Kristian Lytje: pypi packaging
 
 [Back to Table of contents](#table-of-contents)
 

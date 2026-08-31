@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from shape2sas_core.helpfunctions import printt, sinc, calc_com_dist
+from ..helpfunctions import printt, sinc, calc_com_dist
 
 def check_Spar(name,S_par,par_names):
     """check if the number of input parameters for the structure factor is correct, else return error message"""

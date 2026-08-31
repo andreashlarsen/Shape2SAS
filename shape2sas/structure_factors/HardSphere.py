@@ -1,6 +1,6 @@
 import numpy as np 
 from .structure_factors_helpfunctions import check_Spar, decoupling_approx
-from shape2sas_core.sesans.sesans_helpfunctions import default_sesans_range
+from ..sesans.sesans_helpfunctions import default_sesans_range
 
 class HardSphere:
     """Hard-sphere structure factor, Percus-Yevick approximation"""
