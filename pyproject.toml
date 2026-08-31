@@ -15,11 +15,7 @@ maintainers = [
   { name = "Andreas Haahr Larsen" },
   { name = "Kristian Lytje" },
 ]
-# TODO: no LICENSE file exists in the repository yet. Andreas Haahr Larsen holds
-# the copyright, so the licence is his call. Add a LICENSE file and set
-#   license = "<SPDX-id>"
-# here before the first upload to PyPI - PyPI accepts a distribution without it,
-# but users have no terms to rely on until it is set.
+license = "GPL-3.0-or-later"
 dependencies = [
   "numpy>=1.20",
   "matplotlib>=3.5",
