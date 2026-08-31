@@ -480,6 +480,7 @@ Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Sh
 * Andreas Haahr Larsen: main developer 
 * Thomas Bukholt Hansen: batch script mode, including class structure and documentation
 * Lassi Tiihonen: SESANS add-on
+* Kristian Lytje: pypi packaging
 
 [Back to Table of contents](#table-of-contents)
 
