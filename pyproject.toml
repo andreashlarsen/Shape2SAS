@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shape2sas"
-version = "2.7.0"
+version = "0.0.1"
 description = "Simulate small-angle scattering data and pair distance distributions from user-defined shapes."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -13,6 +13,7 @@ authors = [
 ]
 maintainers = [
   { name = "Andreas Haahr Larsen" },
+  { name = "Kristian Lytje" },
 ]
 # TODO: no LICENSE file exists in the repository yet. Andreas Haahr Larsen holds
 # the copyright, so the licence is his call. Add a LICENSE file and set
@@ -48,8 +49,3 @@ shape2sas-mixture = "shape2sas.mixture:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["shape2sas*"]
-
-[tool.setuptools.package-data]
-# the templates users copy when writing their own subunits / structure factors
-"shape2sas.subunits" = ["Template.txt"]
-"shape2sas.structure_factors" = ["Template.txt"]
