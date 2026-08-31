@@ -1,5 +1,5 @@
 import numpy as np 
-from shape2sas_core.sesans.sesans_helpfunctions import default_sesans_range
+from ..sesans.sesans_helpfunctions import default_sesans_range
 
 class NoStructure:
     """No structure factor, i.e. S(q) = 1: dilute, non-interacting particles"""

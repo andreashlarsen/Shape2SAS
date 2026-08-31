@@ -12,8 +12,8 @@ import numpy as np
 # this file lives in tests/, so put the repository root on the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from shape2sas_core import subunits
-from shape2sas_core.models import (
+from shape2sas import subunits
+from shape2sas.models import (
     getPointDistribution,
     rotate_and_translate,
     undo_rotate_and_translate,
@@ -113,7 +113,7 @@ def test_buried_subunit_is_fully_excluded():
 
 def test_structure_factor_with_several_subunits():
     """the decoupling approximation must cope with subunits of different sizes"""
-    from shape2sas_core.structure_factors.structure_factors_helpfunctions import calc_A00
+    from shape2sas.structure_factors.structure_factors_helpfunctions import calc_A00
 
     np.random.seed(3)
     distribution = getPointDistribution(
@@ -127,7 +127,7 @@ def test_structure_factor_with_several_subunits():
 
 def test_structure_factor_names_resolve():
     """every name documented in the README must resolve to a class"""
-    from shape2sas_core.helpfunctions import getStructureFactorClass
+    from shape2sas.helpfunctions import getStructureFactorClass
 
     documented = {
         "hardsphere": "HardSphere", "hs": "HardSphere",
@@ -149,7 +149,7 @@ def test_structure_factor_names_resolve():
 
 def test_structure_factor_parameter_counts():
     """a structure factor given the wrong number of parameters must complain"""
-    from shape2sas_core import structure_factors
+    from shape2sas import structure_factors
 
     for name in ("HardSphere", "Aggregation"):
         cls = getattr(structure_factors, name)
