@@ -98,6 +98,7 @@ def calc_hr_func(dist, prpoints, contrast, polydispersity, prebinned=False):
     ## make r range in h(r) histogram slightly larger than dmax
     ratio_rmax_dmax = 1.05
 
+    ## determine dmax, the maximum distance to include in the histogram
     lognormal = False
     if polydispersity > 0.0:
         if lognormal:
