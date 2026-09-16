@@ -13,6 +13,7 @@ def _configure():
     if _configured:
         return
     import pyausaxs as ausaxs
+    # required to use equidistant bins & make smearing work correctly
     ausaxs.settings.histogram(weighted_bins=False)
     _configured = True
 
