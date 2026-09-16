@@ -190,8 +190,7 @@ def main(argv=None):
         ### calculate p(r)
         printt("\n    Calculating pair distance distribution, p(r)...")
         polydispersity = check_input(args.polydispersity, 0.0, "polydispersity", i)
-        r, pr, pr_norm, dmax = calc_pr_func(point_distribution, prpoints=args.prpoints,
-                                            polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
+        r, pr, pr_norm, dmax = calc_pr_func(point_distribution, prpoints=args.prpoints, polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
         save_pr_func(r,pr_norm,model_filename)
         r_list.append(r)
         pr_norm_list.append(pr_norm)

@@ -136,10 +136,7 @@ def calc_hr_func(dist, prpoints, contrast, polydispersity, prebinned=False):
                 hr += dhr * norm_range[i]
         norm = np.sum(norm_range)
         hr /= norm
-    elif prebinned:
-        ## dist/contrast are already a histogram on a finer grid than prpoints would
-        ## give, and its bin width is comparable to r_max/prpoints. re-binning it here
-        ## would alias (bins catching one source bin vs two), so keep it as it is
+    elif prebinned: # dist and contrast are already binned into a fine histogram, so just return them as-is
         r, hr = dist, contrast
     else:
         r, hr = generate_histogram_func(dist, prpoints, contrast, r_max)
@@ -219,7 +216,7 @@ def calc_pr_func(point_distribution,prpoints=100,polydispersity=0,use_ausaxs=Tru
     printt(f"           Rg  : {Rg:.3e} A")
 
     #returned N values after generating
-    pr = pr / len(point_distribution.x)**2 #NOTE: N_total**2
+    pr /= len(point_distribution.x)**2 #NOTE: N_total**2
 
     return r, pr, pr_norm, dmax
 
@@ -241,7 +238,7 @@ def calc_Pq_func(q, r, pr, conc, volume_total):
         I0 = abs(I0)
     Pq /= I0
 
-    # make I0 scale with volume fraction (concentration) and
+    # make I0 scale with volume fraction (concentration) and 
     # volume squared and scale so default values gives I(0) of approx unity
     I0 *= conc * volume_total * 1E-4
     return I0, Pq
