@@ -113,6 +113,21 @@ The following subunits are currently available:
 
 [Back to Table of contents](#table-of-contents)
 
+### Run in developer mode (withou pip install)
+
+downloading repository, `cd` to the folder where the shape2sas package folder is and run with `python -m shape2sas.cli <inputs>` instead of just `shape2sas <inputs>`. 
+
+for example, for a sphere (Example 1 below): 
+```
+python -m shape2sas.cli -s sph -d 30 -m sph30_dev
+open sph30_dev/plot_sph30_dev.png sph30_dev/points_sph30_dev.png
+```
+the compare and mixture scripts can likewise be run with: 
+```
+python -m shape2sas.compare <inputs>
+python -m shape2sas.mixture <inputs>
+```
+
 ## Examples
 A list of all options can be found below all the examples.   
 

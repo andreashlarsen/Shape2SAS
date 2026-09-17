@@ -109,13 +109,13 @@ def main(argv=None):
     else: 
         print('\n\nERROR: unknown normalization argument: ' + args.normalization + '. Should be "max" or "I0" or "none".\n\n')
         exit()
-    save_pr_func(r,pr_mix,folder)
+    save_pr_func(r_mix,pr_mix,folder)
     
     I_mix /= w_sum
     I0_mix /= w_sum
     save_I_func(q,I_mix,folder)
 
-    ax[0].plot(r,pr_mix,color='black',label='mixture')
+    ax[0].plot(r_mix,pr_mix,color='black',label='mixture')
     ax[1].plot(q,I_mix,color='black',label='mixture')
 
     #### Simulate I(q) 
@@ -167,7 +167,7 @@ def main(argv=None):
             ax[0].set_title('theoretical SESANS, no noise')
             ax[0].legend(frameon=False)
         
-            Gsim_filename = model + '/Gsim_' + model + '.ses'
+            Gsim_filename = model + '/lnP_' + model + '.ses'
             d,Gsim,sigmaG = np.genfromtxt(Gsim_filename,skip_header=2,unpack=True)
             if args.scale: 
                 ax[1].errorbar(d,Gsim*scale_factor,yerr=sigmaG*scale_factor,linestyle='none',marker='.', color=colors[i],label=r'$I_\mathrm{sim}(q)$, %s, scaled by %1.0e' % (model,scale_factor),zorder=1/zo)

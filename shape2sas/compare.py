@@ -1,8 +1,8 @@
 import argparse
 import re
+import os
 import numpy as np
 import matplotlib.pyplot as plt
-
 
 def main(argv=None):
     """Entry point for the ``shape2sas-compare`` command."""
@@ -40,6 +40,10 @@ def main(argv=None):
     zo=1
     all_model_names = ''
     for i,model in enumerate(models):
+        # check that model folder exist:
+        if not os.path.isdir(model):
+            print('\n\nERROR: model folder \"' + model + '\" does not exist.\n\n')
+            exit()
         pr_filename = model + '/pr_' + model + '.dat'
         r,pr = np.genfromtxt(pr_filename,skip_header=1,unpack=True)
         if args.normalization in ['I0','Forward_Scattering','I0','I(0)','integral']:
@@ -193,8 +197,8 @@ def main(argv=None):
             ax[0].set_title('theoretical SESANS, no noise')
             ax[0].legend(frameon=False)
         
-            Gsim_filename = model + '/Gsim_' + model + '.ses'
-            d,Gsim,sigmaG = np.genfromtxt(Gsim_filename,skip_header=2,unpack=True)
+            Gsim_filename = model + '/lnP_' + model + '.ses'
+            d,Gsim,sigmaG = np.genfromtxt(Gsim_filename,skip_header=15,usecols=[0,1,2],unpack=True)
             if args.scale: 
                 ax[1].errorbar(d,Gsim*scale_factor,yerr=sigmaG*scale_factor,linestyle='none',marker='.', color=colors[i],label=r'$I_\mathrm{sim}(q)$, %s, scaled by %1.0e' % (model,scale_factor),zorder=1/zo)
                 scale_factor *= 0.1

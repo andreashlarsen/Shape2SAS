@@ -227,7 +227,7 @@ def main(argv=None):
         I_list.append(I)
         if args.sesans:
             # calculated theoretical SESANS
-            G = calc_G_sesans(q,delta,I)
+            G = calc_G_sesans(q,delta,I,I0)
             delta_list.append(delta)
             G_list.append(G)
 
