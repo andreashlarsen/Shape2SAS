@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shape2sas"
-version = "2.8.0"
+version = "2.8.1"
 description = "Simulate small-angle scattering data and pair distance distributions from user-defined shapes."
 readme = "README.md"
 requires-python = ">=3.9"
