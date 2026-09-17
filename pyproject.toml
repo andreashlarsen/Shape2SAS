@@ -31,6 +31,14 @@ classifiers = [
 ]
 keywords = ["SAXS", "SANS", "SESANS", "small-angle scattering", "simulation"]
 
+[project.optional-dependencies]
+ausaxs = [
+  "pyausaxs>=1.3.0"
+]
+all = [
+  "shape2sas[ausaxs]"
+]
+
 [project.urls]
 Homepage = "https://github.com/andreashlarsen/Shape2SAS"
 Repository = "https://github.com/andreashlarsen/Shape2SAS"
