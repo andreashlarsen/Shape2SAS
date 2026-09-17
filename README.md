@@ -42,9 +42,12 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
 
 ## Installation
 
-To install Shape2SAS do the following:
+Install Python3 (you need python3.8 or newer) and pip, then install Shape2SAS by: 
+```
+pip install shape2sas
+```
 
-* Install Python3 (you need python3.8 or newer)
+### developer version (beta)
 * Install necessary python packages (see other dependencies).
 * Download the repository by clicking the green "<> Code" button and "Download ZIP". 
   Extract the ZIP file where you want Shape2SAS to be installed. 
