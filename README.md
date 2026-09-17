@@ -1,7 +1,8 @@
 ## Shape2SAS
  *version 2.8*
 
-Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes. The models are build from geometrical subunits, e.g., a dumbbell constructed from a cylinder and two translated spheres. The shape is filled with points and the scattering is calculated by a Debye sum.
+Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes. The models are build from geometrical subunits, e.g., a dumbbell constructed from a cylinder and two translated spheres. The shape is filled with points and the scattering is calculated by a Debye sum.     
+Shape2SAS can also generate simulated SESANS data if opted for.
 
 <p align="center" id="dumbbell">
   <img src="https://raw.githubusercontent.com/andreashlarsen/Shape2SAS/media/dumbbell_shape2SASGuide.png" style="width: 100%;" />
@@ -44,15 +45,12 @@ Shape2SAS simulates small-angle x-ray scattering (SAXS) from user-defined shapes
 
 Install Python3 (you need python3.8 or newer) and pip, then install Shape2SAS by: 
 ```
+pip install shape2sas[all]
+```
+Shape2SAS use the program [AUSAXS](https://github.com/AUSAXS/AUSAXS), but can also run without. If the above causes problems, install without AUSAXS
+```
 pip install shape2sas
 ```
-
-### developer version (beta)
-* Install necessary python packages (see other dependencies).
-* Download the repository by clicking the green "<> Code" button and "Download ZIP". 
-  Extract the ZIP file where you want Shape2SAS to be installed. 
-* Install the dependencies listed in `tools/dependencies.txt` by running the command: 
-  `python -m pip install -r tools/dependencies.txt`.
 
 [Back to Table of contents](#table-of-contents)
 
@@ -62,12 +60,11 @@ Shape2sas runs via a terminal (Linux) or a command prompt (Windows). At least tw
 ```
 shape2sas --subunit sphere --dimension 50
 ```
-or 
-You may also use the shorter input: 
+or
 ```
 shape2sas -s sphere -d 50
 ```
-and the results can be opened with 
+The results can be opened with 
 ```
 open Model_0/plot_Model_0.png Model_0/points_Model_0.png
 ```
@@ -76,15 +73,16 @@ which is the output plot of SAXS data, and the 2D representation of the sphere (
 [Back to Table of contents](#table-of-contents)
 
 ### Output files
+* `plot.png`: plot of p(r), theoretical data and simualated SAS data
+*  all the folder in the folder `<model_name>`:
 * `Iq_<model_name>.dat`, `Isim_<model_name>.dat`: theoretical and simulated SAS data
 * `pr_<model_name>.dat`: pair distribution
 * `Sq_<model_name>.dat`: structure factor (just unity if no structure factor is opted for).
-* `plot.png`: plot of p(r), theoretical data and simualated SAS data
 * `points_<model_name>.png`: point cloud, 2D projection
 * `<model_name>.pdb`: points cloud in 3D, Proten data bank format, can be opened in PyMOL, [Mol* 3D viewer](https://www.rcsb.org/3d-view), etc.
-* `sesans.png`: plot of sesans data (if opted for)
-* `G_<model_name>.dat`, `G_sim_<model_name>.dat`: theoretical and simulated SESANS data (if opted for)
 * `shape2sas.log`: log file, same as the terminal output
+* `sesans.png`: plot of sesans data (if opted for)
+* `G_<model_name>.dat`, `lnP_<model_name>.dat`: theoretical and simulated SESANS data (if opted for)
   
 [Back to Table of contents](#table-of-contents)
 
@@ -114,16 +112,6 @@ The following subunits are currently available:
 <sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)   
 
 [Back to Table of contents](#table-of-contents)
-
-### Developer mode
-Navigate to the extracted directory containing `shape2sas.py`:
-```
-cd <PATH-TO-DIRECTORY>
-```
-run with 
-```
-python shape2sas.py --subunit sphere --dimension 50
-```
 
 ## Examples
 A list of all options can be found below all the examples.   
@@ -163,7 +151,7 @@ If you use quotation marks for input with several values, for example --subunit,
 shape2sas --subunit "sphere, sphere, cylinder" --dimension "25" "25" "10, 100" --com "0, 0, -50" "0, 0, 50" "0, 0, 0" --model_name "my dumbbell"
 open my_dumbbell/plot_my_dumbbell.png my_dumbbell/points_my_dumbbell.png
 ```
-and, as mentioned in Example 1, you may omit commas if you use quotation marks:
+as mentioned in Example 1, you can also omit commas if you use quotation marks:
 ```
 shape2sas --subunit "sphere, sphere, cylinder" --dimension 25 25 "10 100" --com "0 0 -50" "0 0 50" "0 0 0" --model_name "my dumbbell"
 open my_dumbbell/plot_my_dumbbell.png my_dumbbell/points_my_dumbbell.png
@@ -326,6 +314,7 @@ By default each subunit is rotated around its own centre. Use `--rotation_points
 shape2sas --subunit "cylinder, cylinder" --dimension "20, 100" "20, 100" --rotation "0, 0, 0" "0, 90, 0" --rotation_points "0, 0, 0" "0, 0, 50" --model_name cylinders_hinged
 ```
 The rotation is applied before the `--com` translation, so the two can be combined freely.
+
 ##### Known bug for COM/Rotation input, and solution/work-around
 If the COM translation x-coordinate is negative, you (may) get an error (e.g., `--com "-50, 0, 0" "0, 0, 0"` or `--com "0, 0, 0" "-50, 0, 0"`). This can be circumvented by adding a space before the minus sign (e.g., `--com " -50, 0, 0" "0, 0, 0"`). Quotation marks are needed in this workaround.
 
@@ -338,7 +327,7 @@ If the COM translation x-coordinate is negative, you (may) get an error (e.g., `
 [Back to Table of contents](#table-of-contents)
 
 ### Example 8: Number of points - accuracy vs runtime
-The data are simulated using a finite number of points ro represent the structures. Default is 5000 per model. This is a balance between accuracy and speed. As --Npoints is a global parameter, it cannot be selected separately for each model, therefore, three separate runs must be done:
+The data are simulated using a finite number of points ro represent the structures. Default is 8000 per model. This is a balance between accuracy and speed. As --Npoints is a global parameter, it cannot be selected separately for each model, therefore, three separate runs must be done:
 ```
 shape2sas --subunit ellipsoid --dimension 40,40,60 --model_name ellipsoids500 --Npoints 500
 shape2sas --subunit ellipsoid --dimension 40,40,60 --model_name ellipsoids5000 --Npoints 5000
@@ -424,7 +413,7 @@ then use this as the experimental data to compare with spheres of varying sizes:
 shape2sas -s sph -d 80 -m sph80 -s sph -d 20 -m sph20 -s sph -d 35 -m sph35 -dat sph40/Isim_sph40.dat
 open fit.png
 ```
-The point is of course to compare with actual measured data. 
+The point is of course to compare with actual measured data.
 *Automatic fitting is not available (yet) - only data comparison and 'manual' fitting.*
 
 <p align="center" id="example7">
@@ -482,7 +471,7 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 [Back to Table of contents](#table-of-contents)
 
 ## GUI
-you can run Shape2SAS as a webapp or through SasView, see [sastools.org/shape2sas](https://sastools.org/Shape2SAS/Shape2SAS.html) (newest features may not be available in the GUI). 
+you can run Shape2SAS as a webapp or through SasView, see [sastools.org/shape2sas](https://sastools.org/Shape2SAS/Shape2SAS.html) (newest features may not be available in these versions). 
 
 [Back to Table of contents](#table-of-contents)
 
@@ -494,9 +483,9 @@ Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Sh
 
 #### Contributors
 * Andreas Haahr Larsen: main developer 
-* Thomas Bukholt Hansen: batch script mode, including class structure and documentation
+* Thomas Bukholt Hansen: batch script mode, class structure, documentation
 * Lassi Tiihonen: SESANS add-on
-* Kristian Lytje: pypi packaging, AUSAXS inclusion, code clean-up
+* Kristian Lytje: pypi packaging, AUSAXS inclusion, streamlining, automatic tests
 
 [Back to Table of contents](#table-of-contents)
 
@@ -504,8 +493,3 @@ Larsen, A. H., Brookes, E., Pedersen, M. C. & Kirkensgaard, J. J. K. (2023). *Sh
 Generally, the local Shape2SAS version has been built such that the repetition of the same flag from model dependent parameters will start a new model. Therefore, the different subunits associated with single model should all be written after the "--subunit" flag as well as their dimensions, displacement, polydispersity and so forth for their respective flag. The order of the subunits written in the "--subunit" flag for the model is important, as other parameters that are associated with each subunit in model should follow the same order. Likewise, when giving dimensions to a subunit, this should follow the order specified in the table of subunits.
 
 [Back to Table of contents](#table-of-contents)
-
-
-
-
-
