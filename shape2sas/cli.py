@@ -19,12 +19,10 @@ from .helpfunctions import (
 )
 from .models import getPointDistribution, save_points
 from .theoretical_scattering import (
+    PairDistanceDistribution,
     calc_Iq_func,
-    calc_Pq_func,
-    calc_pr_func,
     calc_S_func,
     save_I_func,
-    save_pr_func,
 )
 from .structure_factors.structure_factors_helpfunctions import save_S_func
 from .simulated_scattering import save_Isim_func, simulate_data_func
@@ -190,17 +188,17 @@ def main(argv=None):
         ### calculate p(r)
         printt("\n    Calculating pair distance distribution, p(r)...")
         polydispersity = check_input(args.polydispersity, 0.0, "polydispersity", i)
-        r, pr, pr_norm, dmax = calc_pr_func(point_distribution, prpoints=args.prpoints, polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
-        save_pr_func(r,pr_norm,model_filename)
-        r_list.append(r)
-        pr_norm_list.append(pr_norm)
+        pdd = PairDistanceDistribution(point_distribution, prpoints=args.prpoints, polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
+        pdd.save(model_filename)
+        r_list.append(pdd.r)
+        pr_norm_list.append(pdd.pr)
 
         ### define q (and if sesans is opted for, also define the spin echo length, delta)
         if args.sesans:
             # make extended q-range for sesans
             # the structure factor decides the length scale: an aggregate is
             # larger than the particle it is built from
-            qmin, deltamax = getStructureFactorClass(stype).getSesansRange(S_par, dmax)
+            qmin, deltamax = getStructureFactorClass(stype).getSesansRange(S_par, pdd.dmax)
             qmax = 1e4 * qmin
             qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)
@@ -214,7 +212,7 @@ def main(argv=None):
         printt("\n    Calculating intensity, I(q)...")
 
         ### calculate form factor and forward scattering I0
-        I0, Pq = calc_Pq_func(q, r, pr_norm, conc, point_distribution.volume_total)
+        I0, Pq = pdd.calc_Pq(q, conc)
 
         ### calculate structure factor
         S = calc_S_func(q,point_distribution, stype, S_par, Pq)
