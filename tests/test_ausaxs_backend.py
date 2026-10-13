@@ -15,7 +15,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from shape2sas.models import getPointDistribution
-from shape2sas.theoretical_scattering import calc_Pq_func, calc_pr_func
+from shape2sas.theoretical_scattering import PairDistanceDistribution
 
 Q = np.linspace(0.001, 0.5, 400)
 
@@ -42,13 +42,12 @@ def sphere(Npoints=4000, radius=40., seed=0):
 
 
 def pr(point_distribution, prpoints=100, polydispersity=0.0, use_ausaxs=False):
-    return quiet(calc_pr_func, point_distribution, prpoints=prpoints,
+    return quiet(PairDistanceDistribution, point_distribution, prpoints=prpoints,
                  polydispersity=polydispersity, use_ausaxs=use_ausaxs)
 
 
 def Pq(point_distribution, **kwargs):
-    r, p, _, _ = pr(point_distribution, **kwargs)
-    return calc_Pq_func(Q, r, p, 0.001, point_distribution.volume_total)[1]
+    return pr(point_distribution, **kwargs).calc_Pq(Q, 0.001)[1]
 
 
 def max_rel_deviation(a, b):
@@ -57,10 +56,6 @@ def max_rel_deviation(a, b):
     """
     significant = np.abs(b) > 1e-3
     return np.max(np.abs(a[significant] - b[significant]) / np.abs(b[significant]))
-
-
-def Rg(r, pr_norm):
-    return np.sqrt(abs(np.sum(pr_norm * r**2) / np.sum(pr_norm)) / 2)
 
 
 # ---------------------------------------------------------------------------
@@ -95,7 +90,7 @@ def test_histogram_is_the_unordered_pair_sum():
 def test_histogram_grid_is_uniform_from_zero():
     """
     the returned r values must be a regular grid starting at 0, since
-    calc_hr_func() hands them straight to the caller as the p(r)
+    PairDistanceDistribution keeps them as the full-resolution h(r) and merges neighbouring bins for p(r)
     """
     pytest.importorskip("pyausaxs")
     from shape2sas.ausaxs_debye import distance_histogram
@@ -124,18 +119,18 @@ def test_dmax_rg_and_i0_match_default():
     bin_width = ausaxs_bin_width()
     p = sphere()
 
-    r_d, pr_d, prn_d, dmax_d = pr(p, use_ausaxs=False)
-    r_a, pr_a, prn_a, dmax_a = pr(p, use_ausaxs=True)
+    default = pr(p, use_ausaxs=False)
+    ausaxs = pr(p, use_ausaxs=True)
 
-    assert abs(dmax_a - dmax_d) <= 2 * bin_width, (
-        "dmax differs by more than a bin: %.4f vs %.4f" % (dmax_a, dmax_d))
+    assert abs(ausaxs.dmax - default.dmax) <= 2 * bin_width, (
+        "dmax differs by more than a bin: %.4f vs %.4f" % (ausaxs.dmax, default.dmax))
 
-    rg_d, rg_a = Rg(r_d, prn_d), Rg(r_a, prn_a)
+    rg_d, rg_a = default.Rg, ausaxs.Rg
     assert abs(rg_a - rg_d) <= 0.005 * rg_d, (
         "Rg differs by %.3f%%: %.4f vs %.4f"
         % (100 * abs(rg_a - rg_d) / rg_d, rg_a, rg_d))
 
-    i0_d, i0_a = np.sum(pr_d), np.sum(pr_a)
+    i0_d, i0_a = default.calc_Pq(Q, 0.02)[0], ausaxs.calc_Pq(Q, 0.02)[0]
     assert abs(i0_a - i0_d) <= 0.005 * abs(i0_d), (
         "I(0) differs by %.3f%%: %.6e vs %.6e"
         % (100 * abs(i0_a - i0_d) / abs(i0_d), i0_a, i0_d))
@@ -167,15 +162,15 @@ def test_polydisperse_moments_match_default():
     bin_width = ausaxs_bin_width()
     p = sphere()
 
-    r_d, pr_d, prn_d, dmax_d = pr(p, polydispersity=0.1, use_ausaxs=False)
-    r_a, pr_a, prn_a, dmax_a = pr(p, polydispersity=0.1, use_ausaxs=True)
+    default = pr(p, polydispersity=0.1, use_ausaxs=False)
+    ausaxs = pr(p, polydispersity=0.1, use_ausaxs=True)
 
-    assert np.allclose(np.diff(r_a), bin_width), (
+    assert np.allclose(np.diff(ausaxs.r_hist), bin_width), (
         "the polydisperse AUSAXS path must smear on the native grid")
-    assert abs(dmax_a - dmax_d) <= 4 * bin_width, (
-        "dmax differs: %.4f vs %.4f" % (dmax_a, dmax_d))
+    assert abs(ausaxs.dmax - default.dmax) <= 4 * bin_width, (
+        "dmax differs: %.4f vs %.4f" % (ausaxs.dmax, default.dmax))
 
-    rg_d, rg_a = Rg(r_d, prn_d), Rg(r_a, prn_a)
+    rg_d, rg_a = default.Rg, ausaxs.Rg
     assert abs(rg_a - rg_d) <= 0.005 * rg_d, (
         "Rg differs by %.3f%%" % (100 * abs(rg_a - rg_d) / rg_d))
 
@@ -196,3 +191,45 @@ def test_polydisperse_form_factor_matches_default():
     assert err_a <= err_d, (
         "AUSAXS P(q) (%.2f%%) is worse than the default path (%.2f%%)"
         % (100 * err_a, 100 * err_d))
+
+
+# ---------------------------------------------------------------------------
+# p(r) presentation and forward scattering
+# ---------------------------------------------------------------------------
+
+def test_pr_has_roughly_prpoints_bins():
+    """the fine AUSAXS histogram is merged for presentation, so -Np is respected on either backend"""
+    pytest.importorskip("pyausaxs")
+    p = sphere()
+
+    for prpoints in (50, 100):
+        default = pr(p, prpoints=prpoints, use_ausaxs=False)
+        ausaxs = pr(p, prpoints=prpoints, use_ausaxs=True)
+        assert len(default.r) == prpoints
+        assert abs(len(ausaxs.r) - prpoints) <= 0.25 * prpoints, (
+            "AUSAXS p(r) has %d bins, requested %d" % (len(ausaxs.r), prpoints))
+        assert np.amax(ausaxs.pr) == 1.0
+        assert len(ausaxs.r_hist) > len(ausaxs.r), "P(q) must be calculated from the full-resolution histogram"
+
+
+def test_i0_is_independent_of_binning():
+    """I(0) is a property of the particle, so it must not change with prpoints"""
+    p = sphere()
+    i0 = [pr(p, prpoints=prpoints).calc_Pq(Q, 0.02)[0] for prpoints in (50, 100, 400)]
+    assert np.allclose(i0, i0[0], rtol=1e-5), "I(0) depends on prpoints: %s" % i0
+
+
+def test_i0_of_homogeneous_particle():
+    """
+    for a homogeneous particle every pair has contrast product sld^2, so the Monte Carlo
+    estimate of the mean squared contrast is exact and I(0) = conc * V * sld^2 * 1E-4
+    """
+    sld, conc = 2.0, 0.02
+    np.random.seed(0)
+    p = quiet(getPointDistribution, ["Sphere"], [sld], [[40.]],
+              [[0, 0, 0]], [[0, 0, 0]], True, 2000, None)
+
+    I0, Pq0 = pr(p).calc_Pq(np.array([0.0]), conc)
+    expected = conc * p.volume_total * sld**2 * 1E-4
+    assert abs(I0 - expected) <= 1e-5 * expected, "I(0) = %.6e, expected %.6e" % (I0, expected)
+    assert abs(Pq0[0] - 1.0) <= 1e-6, "P(0) = %.6f, expected 1" % Pq0[0]
