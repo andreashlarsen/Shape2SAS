@@ -191,8 +191,8 @@ def calc_pair_distances_func(point_distribution, use_ausaxs=True):
                 np.concatenate(point_distribution.sld)
             )
             return r, hr, True
-        except ImportError as e:
-            printt(f"        AUSAXS backend unavailable ({e}); using default distance calculation.")
+        except Exception as e:
+            printt(f"        AUSAXS backend unavailable ({type(e).__name__}: {e}); using default distance calculation.")
 
     printt('        calculating distances...')
     dist = calc_all_dist_func(point_distribution)

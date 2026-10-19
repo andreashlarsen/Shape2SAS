@@ -30,7 +30,7 @@ def distance_histogram(x: np.ndarray, y: np.ndarray, z: np.ndarray, w: np.ndarra
     r : bin distances (regular grid, AUSAXS's native bin width), trimmed to the last nonzero bin
     h : histogram, weighted by the contrast product of each pair
 
-    raises ImportError if pyausaxs is not installed, or RuntimeError if the AUSAXS backend fails to evaluate the calculation.
+    raises various errors depending on whether pyAUSAXS is installed and working correctly.
     """
     import pyausaxs as ausaxs
     _configure()
