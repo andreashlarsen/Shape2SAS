@@ -15,6 +15,8 @@ def _configure():
     import pyausaxs as ausaxs
     # required to use equidistant bins & make smearing work correctly
     ausaxs.settings.histogram(weighted_bins=False)
+    # the weights are already contrasts, so AUSAXS must not subtract an excluded volume on top
+    ausaxs.settings.exv("none")
     _configured = True
 
 
