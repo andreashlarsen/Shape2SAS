@@ -131,7 +131,7 @@ def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name
         ax[2].set_xscale('log')
     ax[2].set_yscale('log')
     ax[2].set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
-    ax[2].set_ylabel(r'$I(q)$ [a.u.]')
+    ax[2].set_ylabel(r'$I(q)$ [cm$^{-1}$]')
     ax[2].set_title('simulated scattering, with noise')
     ax[2].legend(frameon=True)
 
