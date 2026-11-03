@@ -42,12 +42,6 @@ def getStructureFactorClass(stype):
     from . import structure_factors
     return lookup_alias(build_alias_registry(structure_factors), stype, "structure factor")
 
-def printt(s): 
-    """ print and write to log file"""
-    print(s)
-    with open('shape2sas.log','a') as f:
-        f.write('%s\n' %s)
-
 def sinc(x):
     """
     function for calculating sinc = sin(x)/x

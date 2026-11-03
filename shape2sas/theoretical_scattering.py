@@ -1,12 +1,15 @@
 """Theoretical scattering: pair distances, p(r), the form factor P(q)
 and the resulting intensity I(q)."""
 
+import logging
 import os
 
 import numpy as np
 from fast_histogram import histogram1d #histogram1d from fast_histogram is faster than np.histogram (https://pypi.org/project/fast-histogram/) 
 
-from .helpfunctions import getStructureFactorClass, printt, sinc
+from .helpfunctions import getStructureFactorClass, sinc
+
+logger = logging.getLogger(__name__)
 
 class PairDistanceDistribution:
     """
@@ -243,7 +246,7 @@ class PairDistanceDistribution:
         if use_ausaxs:
             try:
                 from .ausaxs_debye import distance_histogram
-                printt('        calculating distance histogram (AUSAXS backend)...')
+                logger.info('        calculating distance histogram (AUSAXS backend)...')
                 r, hr = distance_histogram(
                     np.concatenate(point_distribution.x),
                     np.concatenate(point_distribution.y),
@@ -251,12 +254,14 @@ class PairDistanceDistribution:
                     np.concatenate(point_distribution.sld)
                 )
                 return r, hr, True
+            except ImportError as e:
+                logger.info(f"        AUSAXS backend not installed ({e}); using default distance calculation.")
             except Exception as e:
-                printt(f"        AUSAXS backend unavailable ({type(e).__name__}: {e}); using default distance calculation.")
+                logger.warning(f"        AUSAXS backend failed ({type(e).__name__}: {e}); using default distance calculation.")
 
-        printt('        calculating distances...')
+        logger.info('        calculating distances...')
         dist = self.calc_all_dist(point_distribution)
-        printt('        calculating contrasts...')
+        logger.info('        calculating contrasts...')
         contrast = self.calc_all_contrasts(point_distribution)
 
         return dist, contrast, False
@@ -268,15 +273,15 @@ class PairDistanceDistribution:
 
         dist, contrast, prebinned = self.calc_pair_distances(use_ausaxs)
 
-        printt('        calculating p(r)...')
+        logger.info('        calculating p(r)...')
         self.r_hist, self.hr, self.dmax, r_max = self.calc_hr(dist, contrast, prebinned)
-        printt(f"           dmax: {self.dmax:.3e} A")
+        logger.info(f"           dmax: {self.dmax:.3e} A")
 
         r, pr = self.merge_bins(self.r_hist, self.hr, r_max, prpoints)
         self.r, self.pr = r, pr / np.amax(pr)
 
         self.Rg = self.calc_Rg(self.r_hist, self.hr)
-        printt(f"           Rg  : {self.Rg:.3e} A")
+        logger.info(f"           Rg  : {self.Rg:.3e} A")
 
     def calc_Pq(self, q, conc):
         """

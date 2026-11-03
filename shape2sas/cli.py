@@ -2,6 +2,7 @@
 
 import time
 import argparse
+import logging
 import sys
 import numpy as np
 import shutil
@@ -14,7 +15,6 @@ from .helpfunctions import (
     get_header_footer,
     getStructureFactorClass,
     InputError,
-    printt,
     separate_string,
     str2bool,
 )
@@ -30,13 +30,29 @@ from .simulated_scattering import save_Isim_func, simulate_data_func
 from .plots import generate_pdb, plot_2D, plot_fit, plot_results
 from .sesans import calc_G_sesans, plot_sesans, save_sesans, simulate_sesans
 
+# named explicitly, so the messages also reach the handlers when run as python -m shape2sas.cli
+logger = logging.getLogger("shape2sas.cli")
+
+
+def log_to_terminal_and_file():
+    """send the progress messages of the CLI and the library to the console and to a new shape2sas.log"""
+    package_logger = logging.getLogger("shape2sas")
+    package_logger.setLevel(logging.INFO)
+    for handler in package_logger.handlers[:]:
+        package_logger.removeHandler(handler)
+        handler.close()
+    for handler in (logging.StreamHandler(sys.stdout), logging.FileHandler('shape2sas.log', mode='w')):
+        handler.setFormatter(logging.Formatter('%(message)s'))
+        package_logger.addHandler(handler)
+
 
 def main(argv=None):
     """Entry point for the ``shape2sas`` command."""
+    log_to_terminal_and_file()
     try:
         run(argv)
     except InputError as e:
-        printt("\nERROR: %s\n" % e)
+        logger.error("\nERROR: %s\n" % e)
         sys.exit(1)
 
 
@@ -47,20 +63,17 @@ def run(argv=None):
     ### start timing
     start_total = time.time()
 
-    ### remove any existing log file
-    open('shape2sas.log','w').close()
-
     ### welcome message
-    printt('#######################################################################################')
-    printt('RUNNING shape2sas version %s \n - for instructions type: shape2sas -h' % __version__)
+    logger.info('#######################################################################################')
+    logger.info('RUNNING shape2sas version %s \n - for instructions type: shape2sas -h' % __version__)
     command = "shape2sas"
     for aa in argv:
         if ' ' in aa:
             command += " \"%s\"" % aa
         else:
             command += " %s" % aa
-    printt('command used: %s' % command)
-    printt('#######################################################################################')
+    logger.info('command used: %s' % command)
+    logger.info('#######################################################################################')
 
     ### input values 
     parser = argparse.ArgumentParser(description='Shape2SaS - calculates small-angle scattering from a given shape defined by the user.')
@@ -146,9 +159,9 @@ def run(argv=None):
             raise argparse.ArgumentTypeError("Mismatch between number subunit types (%d) and dimensions lists (%d)." % (len(subunit),len(dimension)))    
     num_models = len(args.subunit)
     if num_models == 1:
-        printt(f"Simulating {num_models} model...")
+        logger.info(f"Simulating {num_models} model...")
     else: 
-        printt(f"Simulating {num_models} models...")
+        logger.info(f"Simulating {num_models} models...")
 
     # prepare lists (several models can be simulated simultaneously)
     r_list, pr_norm_list, I_list, I_sim_list, sigma_list, S_list = [], [], [], [], [], [] 
@@ -177,7 +190,7 @@ def run(argv=None):
         exclude_overlap = check_input(args.exclude_overlap, True, "exclude_overlap", i)
 
         ### make point cloud
-        printt(f"    Generating points for Model: " + model_name)        
+        logger.info(f"    Generating points for Model: " + model_name)        
         point_distribution = getPointDistribution(args.subunit[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints,rotation_points)
         save_points(point_distribution, model_filename)
         x_list.append(np.concatenate(point_distribution.x))
@@ -196,7 +209,7 @@ def run(argv=None):
             S_par = []
 
         ### calculate p(r)
-        printt("\n    Calculating pair distance distribution, p(r)...")
+        logger.info("\n    Calculating pair distance distribution, p(r)...")
         polydispersity = check_input(args.polydispersity, 0.0, "polydispersity", i)
         pdd = PairDistanceDistribution(point_distribution, prpoints=args.prpoints, polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
         pdd.save(model_filename)
@@ -219,7 +232,7 @@ def run(argv=None):
         else:
             q = np.linspace(args.qmin,args.qmax,args.qpoints)
 
-        printt("\n    Calculating intensity, I(q)...")
+        logger.info("\n    Calculating intensity, I(q)...")
 
         ### calculate form factor and forward scattering I0
         I0, Pq = pdd.calc_Pq(q, conc)
@@ -251,8 +264,8 @@ def run(argv=None):
             G_sim_list.append(G_sim)
             sigma_G_list.append(sigma_G)   
 
-    printt(" ")
-    printt("Generating plots")
+    logger.info(" ")
+    logger.info("Generating plots")
     colors = ['blue','red','green','orange','purple','cyan','magenta','black','grey','pink','forestgreen','gold','darkred','coral','peru','olive','springgreen','teal','skyblue','navy','lavender','blueviolet','deeppink']
 
     if args.high_res:
@@ -287,10 +300,10 @@ def run(argv=None):
         save_sesans(delta_list, G_list, G_sim_list, sigma_G_list, model_filename_list)
 
     time_total = time.time() - start_total
-    printt(" ")
-    printt("Simulation successfully completed.")
-    printt("    Total run time:      " + str(round(time_total, 1)) + " seconds.")
-    printt(" ")
+    logger.info(" ")
+    logger.info("Simulation successfully completed.")
+    logger.info("    Total run time:      " + str(round(time_total, 1)) + " seconds.")
+    logger.info(" ")
 
     # close log file and copy into model directories
     #f_out.close()

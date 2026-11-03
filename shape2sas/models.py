@@ -2,11 +2,15 @@
 
 from dataclasses import dataclass
 
-import numpy as np
+import logging
 import os
 
+import numpy as np
+
 from . import subunits
-from .helpfunctions import build_alias_registry, lookup_alias, printt
+from .helpfunctions import build_alias_registry, lookup_alias
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class ModelPointDistribution:
@@ -181,18 +185,18 @@ class GenerateAllPoints:
         for j in range(self.Number_of_subunits):
             srho = rho[j] * self.sld[j]
             N_remain.append(N[j] - N_exclude[j])
-            printt(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
-            printt(f"             Point density     : {rho[j]:.3e} (points per volume)")
-            printt(f"             Scattering density: {srho:.3e} (density times scattering length)")
+            logger.info(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
+            logger.info(f"             Point density     : {rho[j]:.3e} (points per volume)")
+            logger.info(f"             Scattering density: {srho:.3e} (density times scattering length)")
             if self.exclude_overlap:
-                printt(f"             Excluded points   : {N_exclude[j]} (overlap region)")
+                logger.info(f"             Excluded points   : {N_exclude[j]} (overlap region)")
             else:
-                printt(f"             Excluded points   : none - exclude overlap disabled")
-            printt(f"             Remaining points  : {N_remain[j]} (non-overlapping region)")
+                logger.info(f"             Excluded points   : none - exclude overlap disabled")
+            logger.info(f"             Remaining points  : {N_remain[j]} (non-overlapping region)")
         N_total = sum(N_remain)
-        printt(f"        Total points in model: {N_total}")
-        printt(f"        Total volume of model: {volume_total:.3e} A^3")
-        printt(" ")
+        logger.info(f"        Total points in model: {N_total}")
+        logger.info(f"        Total volume of model: {volume_total:.3e} A^3")
+        logger.info(" ")
 
         return x_new, y_new, z_new, sld_new, volume_total
 
