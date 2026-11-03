@@ -4,14 +4,13 @@ import os
 
 import numpy as np
 
-def simulate_data_func(q,I,I0,exposure):
+def simulate_data_func(q,I,exposure):
     """
     Simulate SAXS data using calculated scattering and empirical expression for sigma
     using Sedlak et al, 2017: (https://doi.org/10.1107/S1600576717003077)
 
     input
-    q,I      : calculated scattering, normalized
-    I0       : forward scattering
+    q,I      : calculated scattering, in absolute units
     exposure : exposure (in arbitrary units) - affects the noise level of data
 
     output
@@ -26,7 +25,7 @@ def simulate_data_func(q,I,I0,exposure):
     c = 0.85
 
     # convert from intensity units to counts
-    I_sed = exposure * I0 * I
+    I_sed = exposure * I
 
     # make N
     N = k * q # original expression from Sedlak2017 paper
@@ -54,8 +53,7 @@ def simulate_data_func(q,I,I0,exposure):
     sigma = sigma_sed / exposure
 
     ## simulate data using errors
-    mu = I0 * I
-    Isim = np.random.normal(mu, sigma)
+    Isim = np.random.normal(I, sigma)
 
     return Isim, sigma
 

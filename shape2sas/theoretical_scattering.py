@@ -10,7 +10,7 @@ from .helpfunctions import getStructureFactorClass, printt, sinc
 
 class PairDistanceDistribution:
     """
-    pair distance distribution function, p(r), of a point distribution, and the form factor, P(q), and forward scattering, I(0), derived from it
+    pair distance distribution function, p(r), of a point distribution, and the form factor, P(q), and forward scattering, P(0), derived from it
 
     the points are Monte Carlo samples of the scattering integral, so each is a point scatterer weighted by its contrast.
     the contrast-weighted histogram of pair distances, h(r), is kept at full resolution, since P(q) is most accurate when calculated from it.
@@ -278,23 +278,14 @@ class PairDistanceDistribution:
         self.Rg = self.calc_Rg(self.r_hist, self.hr)
         printt(f"           Rg  : {self.Rg:.3e} A")
 
-    def calc_Pq(self, q, conc):
+    def calc_Pq(self, q):
         """
-        calculate form factor, P(q), and forward scattering, I(0)
-
-        the points sample the particle volume, V, uniformly, so each represents a volume V/N and the scattering amplitude is
-            A(q) = (V/N) sum_i w_i exp(i q.r_i)
-        the self-terms (i = j) are a sampling artefact which vanishes as 1/N, so the mean squared contrast is estimated from the unordered pairs:
-            <w>^2 = 2 sum(h) / (N (N - 1))
-        which gives I(0) = conc * V * <w>^2 independently of the binning of h(r).
-        with contrast in units of 1e-6 A^-2, the factor 1E-4 converts A^-1 to cm^-1
+        calculate form factor, P(q), normalized so P(0) = 1
 
         input:
         q    : scattering vector
-        conc : volume fraction
 
         output:
-        I0   : forward scattering
         Pq   : form factor, normalized so P(0) = 1
         """
         ## calculate P(q) from the full-resolution h(r)
@@ -310,12 +301,27 @@ class PairDistanceDistribution:
         else:
             Pq /= abs(sum_hr)
 
-        ## calculate I(0); the estimate of <w>^2 can come out slightly negative when the net contrast is close to zero
+        return Pq
+
+    def calc_P0(self):
+        """
+        calculate forward scattering per unit volume fraction, P(0), so that I(q) = conc * P(0) * P(q) * S(q)
+
+        the points sample the particle volume, V, uniformly, so each represents a volume V/N and the scattering amplitude is
+            A(q) = (V/N) sum_i w_i exp(i q.r_i)
+        the self-terms (i = j) are a sampling artefact which vanishes as 1/N, so the mean squared contrast is estimated from the unordered pairs:
+            <w>^2 = 2 sum(h) / (N (N - 1))
+        which gives P(0) = V * <w>^2 independently of the binning of h(r).
+        with contrast in units of 1e-6 A^-2, the factor 1E-4 converts A^-1 to cm^-1
+
+        output:
+        P0   : forward scattering per unit volume fraction [cm^-1]
+        """
+        ## the estimate of <w>^2 can come out slightly negative when the net contrast is close to zero
+        sum_hr = np.sum(self.hr, dtype=np.float64)
         N = len(np.concatenate(self.point_distribution.x))
         contrast2 = max(0.0, 2 * sum_hr / (N * (N - 1)))
-        I0 = conc * self.point_distribution.volume_total * contrast2 * 1E-4
-
-        return I0, Pq
+        return self.point_distribution.volume_total * contrast2 * 1E-4
 
     def save(self, model_filename):
         """save p(r)"""

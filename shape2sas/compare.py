@@ -82,8 +82,8 @@ def main(argv=None):
         ax[1].set_xscale('log')
     ax[1].set_yscale('log')
     ax[1].set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
-    ax[1].set_ylabel(r'normalized $I(q)$')
-    ax[1].set_title('normalized scattering, no noise')
+    ax[1].set_ylabel(r'$I(q)$ [cm$^{-1}$]')
+    ax[1].set_title('theoretical scattering, no noise')
     ax[1].legend(frameon=False)
 
     if not args.xscale_lin:
