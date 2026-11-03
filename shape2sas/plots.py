@@ -140,7 +140,7 @@ def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name
     plt.savefig('plot.' + filetype)
     plt.close()
 
-def fit_scale_and_background(I, I_exp, sigma_exp):
+def linear_fit(I, I_exp, sigma_exp):
     """
     weighted least-squares fit of the model to the data, I_exp = scale * I + background
     returns scale and background
@@ -169,7 +169,7 @@ def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, 
         else:
             p = ax[i]
         p.errorbar(q,I_exp,yerr=sigma_exp,linestyle='none',marker='.', color='grey',zorder=0, label = data_filename) #label=r'$I_\mathrm{exp}(q)$')
-        scale, background = fit_scale_and_background(I, I_exp, sigma_exp)
+        scale, background = linear_fit(I, I_exp, sigma_exp)
         I_model = scale * I + background
         p.plot(q, I_model, zorder=1, color=color, label=r'%s' % model_name)
         p.set_ylabel(r'$I(q)$')
