@@ -74,7 +74,7 @@ def test_missing_dimensions_are_rejected():
         cls = getattr(subunits, name)
         try:
             cls(list(dimensions)[:-1] if len(dimensions) > 1 else [])
-        except SystemExit:
+        except ValueError:
             continue
         raise AssertionError("%s accepted too few dimensions" % name)
 
@@ -142,7 +142,7 @@ def test_structure_factor_names_resolve():
 
     try:
         getStructureFactorClass("hardsphre")
-    except SystemExit:
+    except ValueError:
         return
     raise AssertionError("an unknown structure factor name was accepted")
 
@@ -155,6 +155,6 @@ def test_structure_factor_parameter_counts():
         cls = getattr(structure_factors, name)
         try:
             cls([1.0])
-        except SystemExit:
+        except ValueError:
             continue
         raise AssertionError("%s accepted the wrong number of parameters" % name)

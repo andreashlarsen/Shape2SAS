@@ -13,6 +13,9 @@ import warnings
 
 import numpy as np
 
+class InputError(ValueError):
+    """invalid input, such as an unknown subunit or a wrong number of parameters"""
+
 def normalise_alias(name):
     """normalise a name so that 'Hollow sphere', 'hollow_sphere' and
     'hollowsphere' all refer to the same thing"""
@@ -32,8 +35,7 @@ def lookup_alias(registry, name, what):
         return registry[normalise_alias(name)]
     except KeyError:
         available = sorted(set(cls.aliases[0] for cls in registry.values()))
-        printt("\nERROR: unknown " + what + " '" + str(name) + "'. Available " + what + "s: " + ", ".join(available) + "\n")
-        exit()
+        raise InputError("unknown " + what + " '" + str(name) + "'. Available " + what + "s: " + ", ".join(available)) from None
 
 def getStructureFactorClass(stype):
     """look up a structure factor class by any of its aliases"""

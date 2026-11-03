@@ -13,6 +13,7 @@ from .helpfunctions import (
     float_list,
     get_header_footer,
     getStructureFactorClass,
+    InputError,
     printt,
     separate_string,
     str2bool,
@@ -32,6 +33,15 @@ from .sesans import calc_G_sesans, plot_sesans, save_sesans, simulate_sesans
 
 def main(argv=None):
     """Entry point for the ``shape2sas`` command."""
+    try:
+        run(argv)
+    except InputError as e:
+        printt("\nERROR: %s\n" % e)
+        sys.exit(1)
+
+
+def run(argv=None):
+    """run the simulations requested on the command line"""
     argv = sys.argv[1:] if argv is None else list(argv)
        
     ### start timing
