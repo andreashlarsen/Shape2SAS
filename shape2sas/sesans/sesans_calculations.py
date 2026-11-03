@@ -3,9 +3,9 @@
 import numpy as np
 from scipy.special import j0
 
-def calc_G_sesans(q,delta,I,I0):
+def calc_G_sesans(q,delta,I):
     """
-    Calculated projected correlation function for SESANS from Hankel Transform of I(q)
+    Calculated projected correlation function for SESANS from Hankel Transform of I(q), in absolute units
     """
 
     # Init empty G(delta)
@@ -14,7 +14,7 @@ def calc_G_sesans(q,delta,I,I0):
     # calculate G(delta) from I(q)
     for i, delta_i in enumerate(delta):
         dq_int = q[1] - q[0]
-        G[i] = 1 / 2 / np.pi * np.sum(dq_int * q * I * I0 * j0(delta_i * q))
+        G[i] = 1 / 2 / np.pi * np.sum(dq_int * q * I * j0(delta_i * q))
  
     return G
 

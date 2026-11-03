@@ -75,7 +75,7 @@ which is the output plot of SAXS data, and the 2D representation of the sphere (
 ### Output files
 * `plot.png`: plot of p(r), theoretical data and simualated SAS data
 *  all the folder in the folder `<model_name>`:
-* `Iq_<model_name>.dat`, `Isim_<model_name>.dat`: theoretical and simulated SAS data
+* `Iq_<model_name>.dat`, `Isim_<model_name>.dat`: theoretical and simulated SAS data, in absolute units (cm<sup>-1</sup>)
 * `pr_<model_name>.dat`: pair distribution
 * `Sq_<model_name>.dat`: structure factor (just unity if no structure factor is opted for).
 * `points_<model_name>.png`: point cloud, 2D projection

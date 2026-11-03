@@ -234,26 +234,27 @@ def run(argv=None):
 
         logger.info("\n    Calculating intensity, I(q)...")
 
-        ### calculate form factor and forward scattering I0
-        I0, Pq = pdd.calc_Pq(q, conc)
+        ### calculate form factor, normalized so P(0) = 1, and forward scattering I0
+        Pq = pdd.calc_Pq(q)
+        I0 = conc * pdd.calc_P0()
 
         ### calculate structure factor
         S = calc_S_func(q,point_distribution, stype, S_par, Pq)
         save_S_func(q,S,model_filename)
         S_list.append(S)
 
-        ### calculate theoretical SAS (and SESANS)
-        I = calc_Iq_func(q, Pq, S, sigma_r)
+        ### calculate theoretical SAS, in absolute units (and SESANS)
+        I = I0 * calc_Iq_func(q, Pq, S, sigma_r)
         save_I_func(q,I,model_filename)
         I_list.append(I)
         if args.sesans:
             # calculated theoretical SESANS
-            G = calc_G_sesans(q,delta,I,I0)
+            G = calc_G_sesans(q,delta,I)
             delta_list.append(delta)
             G_list.append(G)
 
         ### simulate SAXS (and SESANS)
-        I_sim,sigma = simulate_data_func(q,I,I0,args.exposure)
+        I_sim,sigma = simulate_data_func(q,I,args.exposure)
         save_Isim_func(q,I_sim,sigma,model_filename)
         I_sim_list.append(I_sim)
         sigma_list.append(sigma) 
