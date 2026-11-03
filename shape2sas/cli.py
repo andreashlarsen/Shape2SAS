@@ -18,15 +18,15 @@ from .helpfunctions import (
     separate_string,
     str2bool,
 )
-from .models import getPointDistribution, save_points
+from .models import ModelProfile, get_point_distribution, save_points
 from .theoretical_scattering import (
     PairDistanceDistribution,
-    calc_Iq_func,
-    calc_S_func,
+    get_theoretical_scattering,
     save_I_func,
+    uniform_q,
 )
 from .structure_factors.structure_factors_helpfunctions import save_S_func
-from .simulated_scattering import save_Isim_func, simulate_data_func
+from .simulated_scattering import save_Isim_func, simulate_scattering
 from .plots import generate_pdb, plot_2D, plot_fit, plot_results
 from .sesans import calc_G_sesans, plot_sesans, save_sesans, simulate_sesans
 
@@ -190,8 +190,10 @@ def run(argv=None):
         exclude_overlap = check_input(args.exclude_overlap, True, "exclude_overlap", i)
 
         ### make point cloud
-        logger.info(f"    Generating points for Model: " + model_name)        
-        point_distribution = getPointDistribution(args.subunit[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints,rotation_points)
+        logger.info(f"    Generating points for Model: " + model_name)
+        profile = ModelProfile(subunits=args.subunit[i], dimensions=args.dimension[i], sld=sld, com=com,
+                               rotation=rotation, rotation_points=rotation_points, exclude_overlap=exclude_overlap)
+        point_distribution = get_point_distribution(profile, args.Npoints)
         save_points(point_distribution, model_filename)
         x_list.append(np.concatenate(point_distribution.x))
         y_list.append(np.concatenate(point_distribution.y))
@@ -202,7 +204,6 @@ def run(argv=None):
         conc = check_input(args.conc, 0.02, "concentration", i)
         sigma_r = check_input(args.sigma_r, 0.0, "sigma_r", i)
         S_type = check_input(args.S, 'None', "Structure type", i)
-        stype = S_type.lower().replace("_", "").replace(" ", "")
         try:
             S_par = args.S_par[i][0]
         except:
@@ -221,7 +222,7 @@ def run(argv=None):
             # make extended q-range for sesans
             # the structure factor decides the length scale: an aggregate is
             # larger than the particle it is built from
-            qmin, deltamax = getStructureFactorClass(stype).getSesansRange(S_par, pdd.dmax)
+            qmin, deltamax = getStructureFactorClass(S_type).getSesansRange(S_par, pdd.dmax)
             qmax = 1e4 * qmin
             qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)
@@ -230,34 +231,27 @@ def run(argv=None):
             header,footer = get_header_footer(args.data) # replace with function
             q,I_exp,sigma_exp = np.genfromtxt(args.data,skip_header=header,skip_footer=footer,usecols=[0,1,2],unpack=True)
         else:
-            q = np.linspace(args.qmin,args.qmax,args.qpoints)
+            q = uniform_q(args.qmin,args.qmax,args.qpoints)
 
         logger.info("\n    Calculating intensity, I(q)...")
 
-        ### calculate form factor, normalized so P(0) = 1, and forward scattering I0
-        Pq = pdd.calc_Pq(q)
-        I0 = conc * pdd.calc_P0()
-
-        ### calculate structure factor
-        S = calc_S_func(q,point_distribution, stype, S_par, Pq)
-        save_S_func(q,S,model_filename)
-        S_list.append(S)
-
-        ### calculate theoretical SAS, in absolute units (and SESANS)
-        I = I0 * calc_Iq_func(q, Pq, S, sigma_r)
-        save_I_func(q,I,model_filename)
-        I_list.append(I)
+        ### calculate theoretical SAS, in absolute units, with its structure factor (and SESANS)
+        scattering = get_theoretical_scattering(pdd, q, S_type, S_par, conc, sigma_r)
+        save_S_func(q,scattering.S_eff,model_filename)
+        S_list.append(scattering.S_eff)
+        save_I_func(q,scattering.I,model_filename)
+        I_list.append(scattering.I)
         if args.sesans:
             # calculated theoretical SESANS
-            G = calc_G_sesans(q,delta,I)
+            G = calc_G_sesans(q,delta,scattering.I)
             delta_list.append(delta)
             G_list.append(G)
 
         ### simulate SAXS (and SESANS)
-        I_sim,sigma = simulate_data_func(q,I,args.exposure)
-        save_Isim_func(q,I_sim,sigma,model_filename)
-        I_sim_list.append(I_sim)
-        sigma_list.append(sigma) 
+        simulated = simulate_scattering(q,scattering.I,args.exposure)
+        save_Isim_func(q,simulated.I,simulated.sigma,model_filename)
+        I_sim_list.append(simulated.I)
+        sigma_list.append(simulated.sigma)
         if args.sesans:
             # simulate sesans data         
             G_sim,sigma_G = simulate_sesans(delta,G,args.sesans_error)
