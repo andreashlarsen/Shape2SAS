@@ -1,6 +1,7 @@
 """Building a point model: subunit placement, rotation and overlap exclusion."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
 
 import logging
 import os
@@ -8,7 +9,7 @@ import os
 import numpy as np
 
 from . import subunits
-from .helpfunctions import build_alias_registry, lookup_alias
+from .helpfunctions import InputError, build_alias_registry, lookup_alias
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,28 @@ class ModelPointDistribution:
     z: np.ndarray
     sld: np.ndarray #scattering length density for each point
     volume_total: float
+
+@dataclass
+class ModelProfile:
+    """
+    a particle built from subunits; the default is a sphere of radius 50 A at the origin
+
+    subunits        : subunit names, e.g. "sphere" or "cylinder" (any alias, ignoring case, spaces, underscores and hyphens)
+    dimensions      : dimensions of each subunit [A]
+    sld             : excess scattering length density (contrast) of each subunit [1e-6 A^-2], default 1
+    com             : displacement of each subunit [A], default (0, 0, 0)
+    rotation        : rotation of each subunit, as Euler angles (intrinsic ZYX) [degrees], default (0, 0, 0)
+    rotation_points : point to rotate each subunit around [A], default (0, 0, 0)
+    exclude_overlap : remove the points of a subunit that lie inside earlier subunits
+    """
+
+    subunits: list[str] = field(default_factory=lambda: ["sphere"])
+    dimensions: list[list[float]] = field(default_factory=lambda: [[50.0]])
+    sld: Optional[list[float]] = None
+    com: Optional[list[list[float]]] = None
+    rotation: Optional[list[list[float]]] = None
+    rotation_points: Optional[list[list[float]]] = None
+    exclude_overlap: bool = True
 
 def euler_rotation_matrix(alpha,beta,gamma):
     """
@@ -200,9 +223,30 @@ class GenerateAllPoints:
 
         return x_new, y_new, z_new, sld_new, volume_total
 
-def getPointDistribution(subunit_type,sld,dimensions,com,rotation,exclude_overlap,Npoints,rotation_points=None):
-    x_new, y_new, z_new, sld_new, volume_total = GenerateAllPoints(Npoints, com, subunit_type, dimensions, rotation, sld, exclude_overlap, rotation_points).onGeneratingAllPointsSeparately()
+def _per_subunit(values, default, name, n_subunits):
+    """one value per subunit, or the default for every subunit if no values are given"""
+    if values is None:
+        return [default] * n_subunits
+    if len(values) != n_subunits:
+        raise InputError("%d subunits, but %d values of %s were given" % (n_subunits, len(values), name))
+    return list(values)
+
+def get_point_distribution(profile: ModelProfile, Npoints: int = 3000) -> ModelPointDistribution:
+    """
+    fill the particle with roughly Npoints random points, split between the subunits by their volume
+
+    the points are kept per subunit, so point_distribution.x[i] holds the x coordinates of subunit i
+    raises ValueError on an unknown subunit, a wrong number of dimensions, or lists of different lengths
+    """
+    n = len(profile.subunits)
+    dimensions = _per_subunit(profile.dimensions, None, "dimensions", n)
+    sld = _per_subunit(profile.sld, 1.0, "sld", n)
+    com = _per_subunit(profile.com, [0.0, 0.0, 0.0], "com", n)
+    rotation = _per_subunit(profile.rotation, [0.0, 0.0, 0.0], "rotation", n)
+    rotation_points = _per_subunit(profile.rotation_points, [0.0, 0.0, 0.0], "rotation_points", n)
+    x_new, y_new, z_new, sld_new, volume_total = GenerateAllPoints(Npoints, com, profile.subunits, dimensions, rotation, sld, profile.exclude_overlap, rotation_points).onGeneratingAllPointsSeparately()
     return ModelPointDistribution(x=x_new, y=y_new, z=z_new, sld=sld_new, volume_total=volume_total)
+
 def save_points(point_distribution,model_filename):
     """save point cloud to a file"""
     os.makedirs(model_filename, exist_ok=True)  

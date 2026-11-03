@@ -1,24 +1,39 @@
 """Simulated experimental data: noise added to the theoretical intensity."""
 
 import os
+from dataclasses import dataclass
 
 import numpy as np
 
-def simulate_data_func(q,I,exposure):
+@dataclass
+class SimulatedScattering:
     """
-    Simulate SAXS data using calculated scattering and empirical expression for sigma
-    using Sedlak et al, 2017: (https://doi.org/10.1107/S1600576717003077)
+    simulated measurement of a theoretical intensity
+
+    q     : q values [1/A]
+    I     : simulated intensity, with noise [cm^-1]
+    sigma : uncertainty of I [cm^-1]
+    """
+
+    q: np.ndarray
+    I: np.ndarray
+    sigma: np.ndarray
+
+def simulate_scattering(q, I, exposure=500.0):
+    """
+    simulate measured data, with noise, from a theoretical intensity
+
+    the noise follows the empirical expression of Sedlak et al. 2017 (https://doi.org/10.1107/S1600576717003077)
 
     input
     q,I      : calculated scattering, in absolute units
-    exposure : exposure (in arbitrary units) - affects the noise level of data
+    exposure : exposure (in arbitrary units) - a longer exposure gives less noise
 
     output
-    sigma    : simulated noise
-    Isim     : simulated data
-
-    data is also written to a file
+    SimulatedScattering with the q values, the simulated intensity and its uncertainty
     """
+    q = np.asarray(q, dtype=float)
+    I = np.asarray(I, dtype=float)
 
     # set constants
     k = 4500
@@ -55,7 +70,7 @@ def simulate_data_func(q,I,exposure):
     ## simulate data using errors
     Isim = np.random.normal(I, sigma)
 
-    return Isim, sigma
+    return SimulatedScattering(q=q, I=Isim, sigma=sigma)
 
 def save_Isim_func(q, I_sim, sigma, model_filename):
     """Save theoretical intensity to file"""
