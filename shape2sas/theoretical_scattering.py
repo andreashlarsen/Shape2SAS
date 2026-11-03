@@ -12,7 +12,7 @@ class PairDistanceDistribution:
     """
     pair distance distribution function, p(r), of a point distribution, and the form factor, P(q), and forward scattering, I(0), derived from it
 
-    the points are Monte Carlo samples of the scattering integral, not volume elements: each is a point scatterer weighted by its contrast.
+    the points are Monte Carlo samples of the scattering integral, so each is a point scatterer weighted by its contrast.
     the contrast-weighted histogram of pair distances, h(r), is kept at full resolution, since P(q) is most accurate when calculated from it.
     the AUSAXS backend calculates h(r) on a fine grid, which is undersampled for presentation, so p(r) itself has neighbouring bins merged to roughly prpoints bins.
 
