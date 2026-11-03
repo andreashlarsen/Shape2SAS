@@ -105,7 +105,7 @@ class PairDistanceDistribution:
         """
         merge every N neighbouring bins of an equidistant histogram, h(r), so the merged histogram has roughly prpoints bins up to r_max
         the counts are summed rather than rebinned onto a new grid, since rebinning gives severe aliasing errors
-        a histogram which already has prpoints bins is returned as-is
+        a histogram which already has prpoints bins, or which has fewer than two bins (e.g. zero contrast), is returned as-is
 
         input
         r        : equidistant bin distances
@@ -117,6 +117,9 @@ class PairDistanceDistribution:
         r        : distances of merged bins
         h        : merged histogram
         """
+        if len(r) < 2:
+            return r, h
+
         bin_width = r[1] - r[0]
         n_merge = max(1, int(round(r_max / (bin_width * prpoints))))
         if n_merge == 1:
