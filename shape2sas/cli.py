@@ -122,7 +122,7 @@ def run(argv=None):
     parser.add_argument('-Np', '--prpoints', type=int, default=100, 
                         help='Number of points in the pair distance distribution function.')
     parser.add_argument('-N', '--Npoints', type=int, default=8000, 
-                        help='Number of simulated points per model.')
+                        help='Approximate number of points per model. Sets the density of the point cloud the model is cut out of.')
     parser.add_argument('-expo', '--exposure', type=float, default=500, 
                         help='Exposure time in arbitrary units.')
 
@@ -195,10 +195,10 @@ def run(argv=None):
                                rotation=rotation, rotation_points=rotation_points, exclude_overlap=exclude_overlap)
         point_distribution = get_point_distribution(profile, args.Npoints)
         save_points(point_distribution, model_filename)
-        x_list.append(np.concatenate(point_distribution.x))
-        y_list.append(np.concatenate(point_distribution.y))
-        z_list.append(np.concatenate(point_distribution.z))
-        sld_list.append(np.concatenate(point_distribution.sld))
+        x_list.append(point_distribution.x)
+        y_list.append(point_distribution.y)
+        z_list.append(point_distribution.z)
+        sld_list.append(point_distribution.sld)
 
         ### read concentration, interface roughness/fuzziness, structure factor and structure factor-related parameters for model i
         conc = check_input(args.conc, 0.02, "concentration", i)

@@ -13,9 +13,8 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from shape2sas import subunits
-from shape2sas.models import (
-    ModelProfile,
-    get_point_distribution,
+from shape2sas.models import ModelProfile, get_point_distribution
+from shape2sas.subunits.subunits_helpfunctions import (
     rotate_and_translate,
     undo_rotate_and_translate,
 )
@@ -39,33 +38,35 @@ CASES = {
     "Torus":              [50., 15.],
 }
 
-N = 40000
+N = 200000
 ROTATIONS = [(0, 0, 0), (30, 0, 0), (0, 40, 0), (0, 0, 50), (30, 40, 50), (11, -73, 145)]
 
 
 def test_subunits_are_self_consistent():
-    """getPointDistribution() and checkOverlap() must describe the same body"""
+    """getHalfWidths() and getVolume() must agree with the body that checkOverlap() describes"""
+    rng = np.random.default_rng(0)
     failures = []
     for name, dimensions in CASES.items():
         obj = getattr(subunits, name)(list(dimensions))
-        x, y, z = obj.getPointDistribution(N)
 
-        # checkOverlap returns the points OUTSIDE the subunit, so a subunit's
-        # own points should (almost) all be inside it. A handful may sit
-        # exactly on the surface, which the >= / != tests count as outside.
-        n_outside = len(obj.checkOverlap(x, y, z)[0])
-        tolerance = max(10, int(0.001 * len(x)))
-        if n_outside > tolerance:
-            failures.append("%s: %d of %d points fall outside its own body"
-                            % (name, n_outside, len(x)))
+        # sample a box larger than the one the subunit claims to fit in
+        half = np.asarray(obj.getHalfWidths(), dtype=float)
+        x, y, z = rng.uniform(-1.5 * half, 1.5 * half, (N, 3)).T
+        inside = np.ones(N, dtype=bool)
+        inside[obj.checkOverlap(x, y, z)] = False
 
-        # the sampling box and getVolume() must agree, otherwise the point
-        # density - and hence the scattering - is wrong
-        ratio = len(x) / N
-        if not 0.85 < ratio < 1.15:
-            failures.append("%s: got %d points, requested %d (ratio %.2f) - "
-                            "the sampling box does not match getVolume()"
-                            % (name, len(x), N, ratio))
+        # the cloud extends beyond the box, so the body must lie within it
+        beyond = inside & np.any(np.abs(np.vstack([x, y, z]).T) > half, axis=1)
+        if np.any(beyond):
+            failures.append("%s: %d points outside getHalfWidths() are inside the body"
+                            % (name, np.count_nonzero(beyond)))
+
+        # getVolume() sets the point density, so it must match the body
+        volume = np.count_nonzero(inside) / N * np.prod(3 * half)
+        ratio = volume / obj.getVolume()
+        if not 0.95 < ratio < 1.05:
+            failures.append("%s: the body has volume %.4g, but getVolume() gives %.4g (ratio %.3f)"
+                            % (name, volume, obj.getVolume(), ratio))
     assert not failures, "\n".join(failures)
 
 
@@ -95,32 +96,32 @@ def test_rotation_round_trip():
 
 
 def test_buried_subunit_is_fully_excluded():
-    """a subunit placed inside an identical one must be entirely excluded
+    """a subunit placed inside an identical one must add no points
 
-    An asymmetric subunit is used, because a symmetric one hides errors in the
-    inverse rotation.
+    Twice the points for twice the volume is the same density, so both models
+    are cut out of the same cloud. An asymmetric subunit is used, because a
+    symmetric one hides errors in the inverse rotation.
     """
     for rotation in ROTATIONS:
-        np.random.seed(2)
-        distribution = get_point_distribution(ModelProfile(
+        single = get_point_distribution(ModelProfile(
+            subunits=["ellipticalcylinder"], dimensions=[[40., 15., 90.]],
+            rotation=[list(rotation)]), 4000)
+        double = get_point_distribution(ModelProfile(
             subunits=["ellipticalcylinder", "ellipticalcylinder"],
             dimensions=[[40., 15., 90.], [40., 15., 90.]],
             rotation=[list(rotation), list(rotation)]), 8000)
-        survivors = len(distribution.x[1])
-        assert survivors == 0, ("rotation %s: %d points of the buried subunit "
-                                "were not excluded" % (rotation, survivors))
+        extra = len(double.x) - len(single.x)
+        assert extra == 0, ("rotation %s: the buried subunit added %d points"
+                            % (rotation, extra))
 
 
 def test_structure_factor_with_several_subunits():
     """the decoupling approximation must cope with subunits of different sizes"""
     from shape2sas.structure_factors.structure_factors_helpfunctions import calc_A00
 
-    np.random.seed(3)
     distribution = get_point_distribution(ModelProfile(
         subunits=["sphere", "sphere"], dimensions=[[50.], [30.]],
         com=[[0, 0, 0], [60, 0, 0]]), 2000)
-    assert len(distribution.x[0]) != len(distribution.x[1]), \
-        "test needs subunits with different point counts"
     A00 = calc_A00(np.linspace(0.001, 0.5, 20), distribution)
     assert np.all(np.isfinite(A00))
 
