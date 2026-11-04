@@ -103,6 +103,7 @@ The following subunits are currently available:
 | `cube` | side length | `dice` | Cube |
 | `hollow_cube` | outer side length, inner side length  | -- | Hollow cube (cavity is also a cube) |
 | `cuboid` | side length 1, side length 2, side length 3 | `brick` | cuboid, i.e. not same side lengths |
+| `octahedron` | edge length | `octa`, `bipyramid` | Regular octahedron, with vertices along the x, y and z axes |
 | `torus` | overall radius, cross-sectional radius  | `toroid`, `doughnut` | Torus, i.e a doughnut shape | 
 | `hyperboloid` | smallest radius, curvature, half of the height  | `hourglass`, `cooling_tower`| Hyperboloid, i.e. an filled hourglass shape | 
 | `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>***</sup> | 
