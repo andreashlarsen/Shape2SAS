@@ -19,7 +19,7 @@ def calc_A00(q,point_distribution):
     d = calc_com_dist(point_distribution).astype(np.float32, copy=False)
     M = len(q)
     A00 = np.zeros(M)
-    sld = np.concatenate(point_distribution.sld).astype(np.float32, copy=False)
+    sld = point_distribution.sld.astype(np.float32, copy=False)
     for i in range(M):
         qr = q[i] * d
         A00[i] = np.sum(sld * sinc(qr))

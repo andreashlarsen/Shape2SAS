@@ -39,7 +39,7 @@ class PairDistanceDistribution:
         Calculate unique pairwise distances between 3D points.
         Returns a 1D float32 array of length N*(N-1)/2.
         """
-        x_in,y_in,z_in = np.concatenate(point_distribution.x),np.concatenate(point_distribution.y),np.concatenate(point_distribution.z)
+        x_in,y_in,z_in = point_distribution.x,point_distribution.y,point_distribution.z
         x = np.array(x_in).astype(np.float32, copy=False)
         y = np.array(y_in).astype(np.float32, copy=False)
         z = np.array(z_in).astype(np.float32, copy=False)
@@ -65,7 +65,7 @@ class PairDistanceDistribution:
         matching calc_all_dist().
         """
 
-        sld_in = np.concatenate(point_distribution.sld)
+        sld_in = point_distribution.sld
         sld = np.array(sld_in).astype(np.float32, copy=False)
         N = len(sld)
 
@@ -249,10 +249,10 @@ class PairDistanceDistribution:
                 from .ausaxs_debye import distance_histogram
                 logger.info('        calculating distance histogram (AUSAXS backend)...')
                 r, hr = distance_histogram(
-                    np.concatenate(point_distribution.x),
-                    np.concatenate(point_distribution.y),
-                    np.concatenate(point_distribution.z),
-                    np.concatenate(point_distribution.sld)
+                    point_distribution.x,
+                    point_distribution.y,
+                    point_distribution.z,
+                    point_distribution.sld
                 )
                 return r, hr, True
             except ImportError as e:
@@ -325,7 +325,7 @@ class PairDistanceDistribution:
         """
         ## the estimate of <w>^2 can come out slightly negative when the net contrast is close to zero
         sum_hr = np.sum(self.hr, dtype=np.float64)
-        N = len(np.concatenate(self.point_distribution.x))
+        N = len(self.point_distribution.x)
         contrast2 = max(0.0, 2 * sum_hr / (N * (N - 1)))
         return self.point_distribution.volume_total * contrast2 * 1E-4
 
