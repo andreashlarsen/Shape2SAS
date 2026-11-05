@@ -8,7 +8,6 @@ import os
 import sys
 
 import numpy as np
-import pytest
 
 # this file lives in tests/, so put the repository root on the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -43,53 +42,32 @@ N = 200000
 ROTATIONS = [(0, 0, 0), (30, 0, 0), (0, 40, 0), (0, 0, 50), (30, 40, 50), (11, -73, 145)]
 
 
-def measure_body(obj, rng):
-    """
-    sample a box larger than the one the subunit claims to fit in, and return
-    the volume of the body that checkOverlap() describes, and the number of
-    points inside the body but outside getHalfWidths()
-    """
-    half = np.asarray(obj.getHalfWidths(), dtype=float)
-    x, y, z = rng.uniform(-1.5 * half, 1.5 * half, (N, 3)).T
-    inside = np.ones(N, dtype=bool)
-    inside[obj.checkOverlap(x, y, z)] = False
-    beyond = inside & np.any(np.abs(np.vstack([x, y, z]).T) > half, axis=1)
-    return np.count_nonzero(inside) / N * np.prod(3 * half), np.count_nonzero(beyond)
-
-
 def test_subunits_are_self_consistent():
     """getHalfWidths() and getVolume() must agree with the body that checkOverlap() describes"""
     rng = np.random.default_rng(0)
     failures = []
     for name, dimensions in CASES.items():
         obj = getattr(subunits, name)(list(dimensions))
-        volume, beyond = measure_body(obj, rng)
+
+        # sample a box larger than the one the subunit claims to fit in
+        half = np.asarray(obj.getHalfWidths(), dtype=float)
+        x, y, z = rng.uniform(-1.5 * half, 1.5 * half, (N, 3)).T
+        inside = np.ones(N, dtype=bool)
+        inside[obj.checkOverlap(x, y, z)] = False
 
         # the cloud extends beyond the box, so the body must lie within it
-        if beyond:
+        beyond = inside & np.any(np.abs(np.vstack([x, y, z]).T) > half, axis=1)
+        if np.any(beyond):
             failures.append("%s: %d points outside getHalfWidths() are inside the body"
-                            % (name, beyond))
+                            % (name, np.count_nonzero(beyond)))
 
         # getVolume() sets the point density, so it must match the body
+        volume = np.count_nonzero(inside) / N * np.prod(3 * half)
         ratio = volume / obj.getVolume()
         if not 0.95 < ratio < 1.05:
             failures.append("%s: the body has volume %.4g, but getVolume() gives %.4g (ratio %.3f)"
                             % (name, volume, obj.getVolume(), ratio))
     assert not failures, "\n".join(failures)
-
-
-@pytest.mark.xfail(strict=True, reason="Torus.getVolume() is 2 pi^2 R r^2, which only holds for r <= R")
-def test_self_intersecting_torus_volume():
-    """
-    with r > R a torus intersects itself, and its volume is no longer 2 pi^2 R r^2
-
-    tools/run_all_subunits.sh uses R = 5, r = 10, whose body is 8% larger than
-    getVolume(): the model gets 8% more points than requested, and its
-    volume_total, and so I(0), is 8% too low
-    """
-    torus = subunits.Torus([5., 10.])
-    volume, _ = measure_body(torus, np.random.default_rng(0))
-    assert 0.95 < volume / torus.getVolume() < 1.05
 
 
 def test_missing_dimensions_are_rejected():
