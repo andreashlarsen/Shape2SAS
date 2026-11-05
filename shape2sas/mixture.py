@@ -13,7 +13,7 @@ def main(argv=None):
     ### input arguments
     parser = argparse.ArgumentParser(description='Compare results from Shape2SAS')
     parser.add_argument('-m', '--model_names',help='Model names')
-    parser.add_argument('-f', '--fractions',help='relative fractions of populations',default=False)
+    parser.add_argument('-f', '--fractions',help='relative fractions of populations (all models calculated at the same concentration)',default=False)
 
     parser.add_argument('-lin', '--xscale_lin', action='store_true', default=False, help='include flag (no input) to make q scale linear instead of logarithmic.')
     parser.add_argument('-hres', '--high_res', action='store_true', default=False, help='include flag (no input) to output high resolution plot.')
@@ -42,14 +42,17 @@ def main(argv=None):
     scale_factor = 1
     zo=1
     all_model_names = ''
-    w_list,q_list,I_list,r_list,pr_list = [],[],[],[],[]
+    q_list,I_list,r_list,pr_list = [],[],[],[]
     dmax = 0
     for i,model in enumerate(models):
         pr_filename = model + '/pr_' + model + '.dat'
         r,pr = np.genfromtxt(pr_filename,skip_header=1,unpack=True)
+        # p(r) with unit integral, which is weighted by I(0) in the mixture
+        dr = r[4]-r[3]
+        prsum = np.sum(pr)
+        pr_list.append(pr / (prsum*dr))
         if args.normalization in ['I0','Forward_Scattering','I0','I(0)','integral']:
-            dr = r[4]-r[3]
-            pr /= pr.sum()*dr
+            pr /= prsum*dr
         elif args.normalization in ['max','Max','pr_max','prmax']:
             pr /= np.max(pr)
         elif args.normalization in ['none','no','None','No']:
@@ -73,11 +76,9 @@ def main(argv=None):
         if i > 0:
             all_model_names += '_'
         all_model_names += model
-        w_list.append(fractions[i] * np.sqrt(Isim[0]))
         q_list.append(q)
         I_list.append(I)
         r_list.append(r)
-        pr_list.append(pr)
 
         if np.max(r) > dmax:
             dmax = np.max(r)
@@ -90,12 +91,13 @@ def main(argv=None):
     folder = 'mixture_' + name
 
     r_mix = np.linspace(0,dmax,100)
-    pr_mix = np.zeros_like(r)
-    w_sum,I_mix,pr_mix = 0,0,0
-    for i,w in enumerate(w_list):
-        w_sum += w
-        I_mix +=  w * I_list[i]
-        pr_mix += w * np.interp(r_mix,r_list[i],pr_list[i],left=0,right=0)
+    I_mix,pr_mix = 0,0
+    # the particles do not interact, so the intensities add, weighted by the volume fractions
+    # (assuming all models were calculated at the same concentration)
+    # the integral of p(r) is proportional to I(0), which is approximated by I at the lowest q
+    for i,f in enumerate(fractions):
+        I_mix += f * I_list[i]
+        pr_mix += f * I_list[i][0] * np.interp(r_mix,r_list[i],pr_list[i],left=0,right=0)
         # obs: I may not be same lengths!!
     if args.normalization in ['I0','Forward_Scattering','I0','I(0)','integral']:
         dr = r_mix[4]-r_mix[3]
@@ -108,8 +110,6 @@ def main(argv=None):
         print('\n\nERROR: unknown normalization argument: ' + args.normalization + '. Should be "max" or "I0" or "none".\n\n')
         exit()
     save_pr_func(r_mix,pr_mix,folder)
-    
-    I_mix /= w_sum
     save_I_func(q,I_mix,folder)
 
     ax[0].plot(r_mix,pr_mix,color='black',label='mixture')
@@ -143,7 +143,7 @@ def main(argv=None):
         ax[2].set_xscale('log')
     ax[2].set_yscale('log')
     ax[2].set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
-    ax[2].set_ylabel(r'$I(q)$ [a.u.]')
+    ax[2].set_ylabel(r'$I(q)$ [cm$^{-1}$]')
     ax[2].set_title('simulated scattering, with noise')
     ax[2].legend(frameon=True)
 

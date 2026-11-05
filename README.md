@@ -403,7 +403,7 @@ for usage, see [Example 4](#example-4-several-models).
 | Option             | Short name  |   Arguments               | Description                | Default |
 |--------------------|-------------|---------------------------|----------------------------|---------|
 | `--model_name` | `-m`        | model names | names of models to compare | No default, mandatory input |
-| `--fraction` | `-f`| fractions | relative fraction of each model | No default, mandatory input |
+| `--fraction` | `-f`| fractions | relative fraction of each model (all models calculated at the same concentration) | No default, mandatory input |
 | `--name` | `-n`| a name      | prefix of output plot files | model names separated by underscore |
 | `--normalization` | `-norm`| max or I0 or none | normalization of p(r) with maximum value or I(0) = sum(pr*dr) or no normalization | max |
 | `--sesans` | `-ss`| no argument      | include SESANS data | False |

@@ -16,8 +16,16 @@ class PairDistanceDistribution:
     """
     pair distance distribution function, p(r), of a point distribution, and the form factor, P(q), and forward scattering, P(0), derived from it
 
-    the points are Monte Carlo samples of the scattering integral, so each is a point scatterer weighted by its contrast.
-    the contrast-weighted histogram of pair distances, h(r), is kept at full resolution, since P(q) is most accurate when calculated from it.
+    the scattering amplitude is the integral of the excess scattering length density over the particle volume, V,
+        A(q) = int_V Delta rho(r) exp(i q.r) dr
+    which is estimated by Monte Carlo integration over the N points sampled uniformly in V, with contrasts w_i:
+        A(q) ~ (V/N) sum_i w_i exp(i q.r_i)
+    V/N is the volume element of this estimate; the points are integration nodes, not scatterers with a form factor of their own.
+    the orientational average of |A(q)|^2 is a Debye sum over pairs of points, calculated from the contrast-weighted histogram of pair distances, h(r).
+    the squared sum contains self-terms (i = j), which vanish as 1/N for N -> infinity; leaving them out speeds up convergence,
+    so h(r) is summed over the unordered pairs i < j only.
+
+    h(r) is kept at full resolution, since P(q) is most accurate when calculated from it.
     the AUSAXS backend calculates h(r) on a fine grid, which is undersampled for presentation, so p(r) itself has neighbouring bins merged to roughly prpoints bins.
 
     input:
@@ -313,11 +321,9 @@ class PairDistanceDistribution:
         """
         calculate forward scattering per unit volume fraction, P(0), so that I(q) = conc * P(0) * P(q) * S(q)
 
-        the points sample the particle volume, V, uniformly, so each represents a volume V/N and the scattering amplitude is
-            A(q) = (V/N) sum_i w_i exp(i q.r_i)
-        the self-terms (i = j) are a sampling artefact which vanishes as 1/N, so the mean squared contrast is estimated from the unordered pairs:
+        P(0) = |A(0)|^2 / V = V * <w>^2 (see the class docstring), where the squared mean contrast is estimated from h(r), i.e. without the self-terms:
             <w>^2 = 2 sum(h) / (N (N - 1))
-        which gives P(0) = V * <w>^2 independently of the binning of h(r).
+        which is independent of the binning of h(r).
         with contrast in units of 1e-6 A^-2, the factor 1E-4 converts A^-1 to cm^-1
 
         output:

@@ -131,7 +131,7 @@ def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name
         ax[2].set_xscale('log')
     ax[2].set_yscale('log')
     ax[2].set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
-    ax[2].set_ylabel(r'$I(q)$ [a.u.]')
+    ax[2].set_ylabel(r'$I(q)$ [cm$^{-1}$]')
     ax[2].set_title('simulated scattering, with noise')
     ax[2].legend(frameon=True)
 
@@ -139,6 +139,17 @@ def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name
     plt.tight_layout()
     plt.savefig('plot.' + filetype)
     plt.close()
+
+def linear_fit(I, I_exp, sigma_exp):
+    """
+    weighted least-squares fit of the model to the data, I_exp = scale * I + background
+    returns scale and background
+    """
+
+    A = np.column_stack((I, np.ones_like(I))) / sigma_exp[:, None]
+    scale, background = np.linalg.lstsq(A, I_exp / sigma_exp, rcond=None)[0]
+
+    return scale, background
 
 def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, filetype, colors):
     """
@@ -151,10 +162,6 @@ def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, 
     width = N_models*4
     __, ax = plt.subplots(1,N_models,figsize=(width,4))
 
-    # estimate offset and scaling; the model is scaled to the data at the lowest q
-    background = np.mean(I_exp[-5:])
-    I0_exp = np.mean(I_exp[0:3])
-
     i = 0
     for (I, model_name,color) in zip (I_list, name_list, colors):
         if N_models == 1:
@@ -162,7 +169,8 @@ def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, 
         else:
             p = ax[i]
         p.errorbar(q,I_exp,yerr=sigma_exp,linestyle='none',marker='.', color='grey',zorder=0, label = data_filename) #label=r'$I_\mathrm{exp}(q)$')
-        I_model = I0_exp * I / I[0] + background
+        scale, background = linear_fit(I, I_exp, sigma_exp)
+        I_model = scale * I + background
         p.plot(q, I_model, zorder=1, color=color, label=r'%s' % model_name)
         p.set_ylabel(r'$I(q)$')
         i += 1
