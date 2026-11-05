@@ -4,7 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from .theoretical_scattering import save_I_func, save_pr_func
-from .simulated_scattering import save_Isim_func, simulate_scattering
+from .simulated_scattering import save_Isim_func, simulate_data_func
 
 
 def main(argv=None):
@@ -116,8 +116,7 @@ def main(argv=None):
     ax[1].plot(q,I_mix,color='black',label='mixture')
 
     #### Simulate I(q) 
-    simulated = simulate_scattering(q,I_mix,args.exposure)
-    Isim_mix,sigma_mix = simulated.I,simulated.sigma
+    Isim_mix,sigma_mix = simulate_data_func(q,I_mix,args.exposure)
     save_Isim_func(q,Isim_mix,sigma_mix,folder)
 
     if args.scale: 

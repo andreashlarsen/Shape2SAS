@@ -1,24 +1,21 @@
-"""Building a point model: painting the subunits onto a static cloud of points."""
+"""Building a point model: subunit placement, rotation and overlap exclusion."""
 
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
-import itertools
 import logging
 import os
 
 import numpy as np
 
 from . import subunits
-from .helpfunctions import InputError, build_alias_registry, lookup_alias
+from .helpfunctions import build_alias_registry, lookup_alias
 
 logger = logging.getLogger(__name__)
 
 @dataclass
 class ModelPointDistribution:
     """
-    Point distribution of a model: the points of the static cloud that lie in
-    the particle, each with the summed SLD of the subunits it lies in
+    Point distribution of a model
     """
 
     x: np.ndarray
@@ -27,63 +24,52 @@ class ModelPointDistribution:
     sld: np.ndarray #scattering length density for each point
     volume_total: float
 
-@dataclass
-class ModelProfile:
+def euler_rotation_matrix(alpha,beta,gamma):
     """
-    a particle built from subunits; the default is a sphere of radius 50 A at the origin
-
-    subunits        : subunit names, e.g. "sphere" or "cylinder" (any alias, ignoring case, spaces, underscores and hyphens)
-    dimensions      : dimensions of each subunit [A]
-    sld             : excess scattering length density (contrast) of each subunit [1e-6 A^-2], default 1
-    com             : displacement of each subunit [A], default (0, 0, 0)
-    rotation        : rotation of each subunit, as Euler angles (intrinsic ZYX) [degrees], default (0, 0, 0)
-    rotation_points : point to rotate each subunit around [A], default (0, 0, 0)
-    exclude_overlap : a subunit does not paint the points of earlier subunits; otherwise, the SLDs of overlapping subunits add up
+    Rotation matrix from Euler angles, intrinsic ZYX convention.
+    Input angles in radians.
     """
+    ca,cb,cg = np.cos(alpha),np.cos(beta),np.cos(gamma)
+    sa,sb,sg = np.sin(alpha),np.sin(beta),np.sin(gamma)
+    return np.array([
+        [cb*cg, sa*sb*cg - ca*sg, ca*sb*cg + sa*sg],
+        [cb*sg, sa*sb*sg + ca*cg, ca*sb*sg - sa*cg],
+        [-sb  , sa*cb           , ca*cb           ]
+    ])
 
-    subunits: list[str] = field(default_factory=lambda: ["sphere"])
-    dimensions: list[list[float]] = field(default_factory=lambda: [[50.0]])
-    sld: Optional[list[float]] = None
-    com: Optional[list[list[float]]] = None
-    rotation: Optional[list[list[float]]] = None
-    rotation_points: Optional[list[list[float]]] = None
-    exclude_overlap: bool = True
-
-# seed of the static point cloud that every model is cut out of
-CLOUD_SEED = 0
-
-# mean number of points in a cell of the static cloud
-POINTS_PER_CELL = 100
-
-def cell_size(density):
-    """edge length of the cells of the static cloud at the given point density"""
-    return (POINTS_PER_CELL / density) ** (1 / 3)
-
-def cells_in_box(lower, upper, density):
-    """indices of the cells of the static cloud that overlap the box [lower, upper]"""
-    L = cell_size(density)
-    lo = np.floor(np.asarray(lower, dtype=float) / L).astype(int)
-    hi = np.floor(np.asarray(upper, dtype=float) / L).astype(int)
-    return set(itertools.product(*(range(a, b + 1) for a, b in zip(lo, hi))))
-
-def static_cloud(cells, density, seed=CLOUD_SEED):
+def rotate_and_translate(x,y,z,rotation,rotation_point,com):
     """
-    points of the static cloud in the given cells
+    Rotate points around rotation_point, then translate them by com:
 
-    The cloud is uniformly random points at the given density. To make it static,
-    space is tiled into cubic cells, each filled by its own random generator,
-    seeded by the cell index. A point therefore depends only on its cell: for a
-    given density and seed, the cloud is the same no matter which model is cut
-    out of it.
+        v' = R * (v - rp) + rp + com
+
+    input angles in degrees
     """
-    L = cell_size(density)
-    points = []
-    for cell in sorted(cells):
-        # seeds must be non-negative, so wrap negative cell indices
-        rng = np.random.default_rng([seed, *(c % 2**64 for c in cell)])
-        n = rng.poisson(POINTS_PER_CELL)
-        points.append((cell + rng.random((n, 3))) * L)
-    return np.concatenate(points).T
+    R = euler_rotation_matrix(*np.radians(rotation))
+    rp = np.asarray(rotation_point,dtype=float)
+    T = np.asarray(com,dtype=float)
+    offset = rp + T - np.dot(R,rp)
+    out = np.dot(R,np.vstack([x,y,z])) + offset[:,np.newaxis]
+    return out[0],out[1],out[2]
+
+def undo_rotate_and_translate(x,y,z,rotation,rotation_point,com):
+    """
+    Inverse of rotate_and_translate(): bring points back into the frame of the
+    subunit, so that checkOverlap() can be applied to them.
+
+        v = R^T * (v' - com - rp) + rp
+
+    NOTE: the inverse rotation is the TRANSPOSE of R. It is *not* the same as
+    rotating by (-alpha,-beta,-gamma), which is only equivalent when at most
+    one of the three angles is non-zero.
+
+    input angles in degrees
+    """
+    R_inv = euler_rotation_matrix(*np.radians(rotation)).T
+    rp = np.asarray(rotation_point,dtype=float)
+    T = np.asarray(com,dtype=float)
+    out = np.dot(R_inv,np.vstack([x,y,z]) - (T+rp)[:,np.newaxis]) + rp[:,np.newaxis]
+    return out[0],out[1],out[2]
 
 class GenerateAllPoints:
     def __init__(self, Npoints, com, subunits, dimensions, rotation, sld, exclude_overlap, rotation_points=None):
@@ -109,87 +95,118 @@ class GenerateAllPoints:
         spaces, underscores and hyphens"""
         return lookup_alias(self.subunitClasses, name, "subunit")
 
-    def onGeneratingAllPoints(self):
-        """Paint the subunits onto the static cloud: every point of the cloud
-        takes the summed SLD of the subunits it lies in"""
-        subunit_objects = [
-            self.getSubunitClass(self.subunits[i])(self.dimensions[i], com=self.com[i], rotation=self.rotation[i],
-                                                   rotation_point=self.rotation_points[i], sld=self.sld[i])
-            for i in range(self.Number_of_subunits)
-        ]
-        volume = [subunit.getVolume() for subunit in subunit_objects]
-        sum_vol = sum(volume)
-        if sum_vol <= 0:
-            raise InputError("the model has no volume, so there are no points to scatter from")
+    @staticmethod
+    def AppendingPoints(x_new, y_new, z_new,sld_new, x_add, y_add, z_add, sld_add):
+        """append new points to vectors of point coordinates"""
+        
+        # add points to (x_new,y_new,z_new)
+        if isinstance(x_new, int):
+            # if these are the first points to append to (x_new,y_new,z_new)
+            x_new = x_add
+            y_new = y_add
+            z_new = z_add
+            sld_new = sld_add
+        else:
+            x_new = np.append(x_new, x_add)
+            y_new = np.append(y_new, y_add)
+            z_new = np.append(z_new, z_add)
+            sld_new = np.append(sld_new, sld_add)
 
-        # point density that gives about Npoints points in total
-        density = self.Npoints / sum_vol
+        return x_new, y_new, z_new, sld_new
 
-        # the part of the static cloud that covers the model
-        cells = set().union(*(cells_in_box(*subunit.getBoundingBox(), density) for subunit in subunit_objects))
-        x, y, z = static_cloud(cells, density)
+    @staticmethod
+    def onCheckOverlap(x, y, z, p, rotation, rotation_point, com, subunitClass, dimensions):
+        """
+        check for overlap with previous subunits. 
+        if overlap, the point is removed
+        """
+        # undo the rotation and translation of the subunit being checked against,
+        # so the points are expressed in that subunit's own frame
+        x_eff, y_eff, z_eff = undo_rotate_and_translate(x, y, z, rotation, rotation_point, com)
 
-        sld = np.zeros(len(x))
-        painted = np.zeros(len(x), dtype=bool)
-        volume_total = 0
-        for i, subunit in enumerate(subunit_objects):
-            inside = subunit.contains(x, y, z)
-            N_inside = np.count_nonzero(inside)
-            N_shared = np.count_nonzero(inside & painted)
+        # then check overlaps
+        idx = subunitClass(dimensions).checkOverlap(x_eff, y_eff, z_eff)
+        x_add, y_add, z_add, sld_add = x[idx], y[idx], z[idx], p[idx]
 
-            # with exclude_overlap, a subunit does not paint over earlier subunits
+        ## number of excluded points
+        N_x = len(x) - len(idx[0])
+        return x_add, y_add, z_add, sld_add, N_x
+
+    def onGeneratingAllPointsSeparately(self):
+        """Generating points for all subunits from each built model, but
+        save them separately in their own list"""
+        volume = []
+        sum_vol = 0
+
+        #Get volume of each subunit
+        for i in range(self.Number_of_subunits):
+            subunitClass = self.getSubunitClass(self.subunits[i])
+            v = subunitClass(self.dimensions[i]).getVolume()
+            volume.append(v)
+            sum_vol += v
+
+        N, rho, N_exclude = [], [], []
+        x_new, y_new, z_new, sld_new, volume_total = [], [], [], [], 0
+
+        for i in range(self.Number_of_subunits):
+            Npoints = int(self.Npoints * volume[i] / sum_vol)
+            
+            x_add, y_add, z_add = self.getSubunitClass(self.subunits[i])(self.dimensions[i]).getPointDistribution(Npoints)
+
+            # rotate and translate
+            x_add, y_add, z_add = rotate_and_translate(x_add, y_add, z_add, self.rotation[i], self.rotation_points[i], self.com[i])
+            
+            #Remaining points
+            N_subunit = len(x_add)
+            rho_subunit = N_subunit / volume[i]
+            sld_add = np.ones(N_subunit) * self.sld[i]
+
+            #Check for overlap with previous subunits
+            N_x_sum = 0
             if self.exclude_overlap:
-                inside &= ~painted
-            sld[inside] += subunit.sld
-            painted |= inside
+                for j in range(i): 
+                    x_add, y_add, z_add, sld_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, sld_add, self.rotation[j],
+                                                    self.rotation_points[j], self.com[j], self.getSubunitClass(self.subunits[j]), self.dimensions[j])
+                    N_x_sum += N_x
+    
+            N.append(N_subunit)
+            rho.append(rho_subunit)
+            N_exclude.append(N_x_sum)
+            fraction_left = (N_subunit-N_x_sum) / max(N_subunit, 1)
+            volume_total += volume[i] * fraction_left
 
-            # the volume of the model is the union of its subunits
-            volume_total += volume[i] * (N_inside - N_shared) / max(N_inside, 1)
-
-            #Show information about the subunit
-            logger.info(f"        {N_inside} points for subunit {i}: {self.subunits[i]}")
-            logger.info(f"             Point density     : {density:.3e} (points per volume)")
-            logger.info(f"             Scattering density: {density * subunit.sld:.3e} (density times scattering length)")
+            x_new.append(x_add)
+            y_new.append(y_add)
+            z_new.append(z_add)
+            sld_new.append(sld_add)
+        
+        #Show information about the model and its subunits
+        N_remain = []
+        for j in range(self.Number_of_subunits):
+            srho = rho[j] * self.sld[j]
+            N_remain.append(N[j] - N_exclude[j])
+            logger.info(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
+            logger.info(f"             Point density     : {rho[j]:.3e} (points per volume)")
+            logger.info(f"             Scattering density: {srho:.3e} (density times scattering length)")
             if self.exclude_overlap:
-                logger.info(f"             Excluded points   : {N_shared} (overlap with earlier subunits)")
+                logger.info(f"             Excluded points   : {N_exclude[j]} (overlap region)")
             else:
-                logger.info(f"             Shared points     : {N_shared} (overlap with earlier subunits, SLDs added)")
-
-        logger.info(f"        Total points in model: {np.count_nonzero(painted)}")
+                logger.info(f"             Excluded points   : none - exclude overlap disabled")
+            logger.info(f"             Remaining points  : {N_remain[j]} (non-overlapping region)")
+        N_total = sum(N_remain)
+        logger.info(f"        Total points in model: {N_total}")
         logger.info(f"        Total volume of model: {volume_total:.3e} A^3")
         logger.info(" ")
 
-        return x[painted], y[painted], z[painted], sld[painted], volume_total
+        return x_new, y_new, z_new, sld_new, volume_total
 
-def _per_subunit(values, default, name, n_subunits):
-    """one value per subunit, or the default for every subunit if no values are given"""
-    if values is None:
-        return [default] * n_subunits
-    if len(values) != n_subunits:
-        raise InputError("%d subunits, but %d values of %s were given" % (n_subunits, len(values), name))
-    return list(values)
-
-def get_point_distribution(profile: ModelProfile, Npoints: int = 3000) -> ModelPointDistribution:
-    """
-    cut the particle out of a static cloud of random points, at a density that gives about Npoints points in total
-
-    the cloud depends only on the density, so the same profile and Npoints always give the same points
-
-    raises ValueError on an unknown subunit, a wrong number of dimensions, or lists of different lengths
-    """
-    n = len(profile.subunits)
-    dimensions = _per_subunit(profile.dimensions, None, "dimensions", n)
-    sld = _per_subunit(profile.sld, 1.0, "sld", n)
-    com = _per_subunit(profile.com, [0.0, 0.0, 0.0], "com", n)
-    rotation = _per_subunit(profile.rotation, [0.0, 0.0, 0.0], "rotation", n)
-    rotation_points = _per_subunit(profile.rotation_points, [0.0, 0.0, 0.0], "rotation_points", n)
-    x_new, y_new, z_new, sld_new, volume_total = GenerateAllPoints(Npoints, com, profile.subunits, dimensions, rotation, sld, profile.exclude_overlap, rotation_points).onGeneratingAllPoints()
+def getPointDistribution(subunit_type,sld,dimensions,com,rotation,exclude_overlap,Npoints,rotation_points=None):
+    x_new, y_new, z_new, sld_new, volume_total = GenerateAllPoints(Npoints, com, subunit_type, dimensions, rotation, sld, exclude_overlap, rotation_points).onGeneratingAllPointsSeparately()
     return ModelPointDistribution(x=x_new, y=y_new, z=z_new, sld=sld_new, volume_total=volume_total)
-
 def save_points(point_distribution,model_filename):
     """save point cloud to a file"""
     os.makedirs(model_filename, exist_ok=True)  
-    x,y,z,sld = point_distribution.x, point_distribution.y, point_distribution.z, point_distribution.sld
+    x,y,z,sld = np.concatenate(point_distribution.x), np.concatenate(point_distribution.y), np.concatenate(point_distribution.z), np.concatenate(point_distribution.sld)
     with open('%s/points_%s.txt' % (model_filename,model_filename),'w') as f:
         f.write('# x y z sld\n')
         for xi,yi,zi,s in zip(x,y,z,sld):
