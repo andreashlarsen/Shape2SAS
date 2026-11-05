@@ -4,7 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from .theoretical_scattering import save_I_func, save_pr_func
-from .simulated_scattering import save_Isim_func, simulate_data_func
+from .simulated_scattering import save_Isim_func, simulate_scattering
 
 
 def main(argv=None):
@@ -42,7 +42,7 @@ def main(argv=None):
     scale_factor = 1
     zo=1
     all_model_names = ''
-    w_list,q_list,I_list,r_list,pr_list,I0_list = [],[],[],[],[],[]
+    w_list,q_list,I_list,r_list,pr_list = [],[],[],[],[]
     dmax = 0
     for i,model in enumerate(models):
         pr_filename = model + '/pr_' + model + '.dat'
@@ -78,7 +78,6 @@ def main(argv=None):
         I_list.append(I)
         r_list.append(r)
         pr_list.append(pr)
-        I0_list.append(Isim[0])
 
         if np.max(r) > dmax:
             dmax = np.max(r)
@@ -92,12 +91,11 @@ def main(argv=None):
 
     r_mix = np.linspace(0,dmax,100)
     pr_mix = np.zeros_like(r)
-    w_sum,I_mix,pr_mix,I0_mix = 0,0,0,0
+    w_sum,I_mix,pr_mix = 0,0,0
     for i,w in enumerate(w_list):
         w_sum += w
         I_mix +=  w * I_list[i]
         pr_mix += w * np.interp(r_mix,r_list[i],pr_list[i],left=0,right=0)
-        I0_mix += w * I0_list[i]
         # obs: I may not be same lengths!!
     if args.normalization in ['I0','Forward_Scattering','I0','I(0)','integral']:
         dr = r_mix[4]-r_mix[3]
@@ -112,14 +110,14 @@ def main(argv=None):
     save_pr_func(r_mix,pr_mix,folder)
     
     I_mix /= w_sum
-    I0_mix /= w_sum
     save_I_func(q,I_mix,folder)
 
     ax[0].plot(r_mix,pr_mix,color='black',label='mixture')
     ax[1].plot(q,I_mix,color='black',label='mixture')
 
     #### Simulate I(q) 
-    Isim_mix,sigma_mix = simulate_data_func(q,I_mix,I0_mix,args.exposure)
+    simulated = simulate_scattering(q,I_mix,args.exposure)
+    Isim_mix,sigma_mix = simulated.I,simulated.sigma
     save_Isim_func(q,Isim_mix,sigma_mix,folder)
 
     if args.scale: 
@@ -137,8 +135,8 @@ def main(argv=None):
         ax[1].set_xscale('log')
     ax[1].set_yscale('log')
     ax[1].set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
-    ax[1].set_ylabel(r'normalized $I(q)$')
-    ax[1].set_title('normalized scattering, no noise')
+    ax[1].set_ylabel(r'$I(q)$ [cm$^{-1}$]')
+    ax[1].set_title('theoretical scattering, no noise')
     ax[1].legend(frameon=False)
 
     if not args.xscale_lin:

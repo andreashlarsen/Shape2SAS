@@ -13,6 +13,9 @@ import warnings
 
 import numpy as np
 
+class InputError(ValueError):
+    """invalid input, such as an unknown subunit or a wrong number of parameters"""
+
 def normalise_alias(name):
     """normalise a name so that 'Hollow sphere', 'hollow_sphere' and
     'hollowsphere' all refer to the same thing"""
@@ -32,19 +35,12 @@ def lookup_alias(registry, name, what):
         return registry[normalise_alias(name)]
     except KeyError:
         available = sorted(set(cls.aliases[0] for cls in registry.values()))
-        printt("\nERROR: unknown " + what + " '" + str(name) + "'. Available " + what + "s: " + ", ".join(available) + "\n")
-        exit()
+        raise InputError("unknown " + what + " '" + str(name) + "'. Available " + what + "s: " + ", ".join(available)) from None
 
 def getStructureFactorClass(stype):
     """look up a structure factor class by any of its aliases"""
     from . import structure_factors
     return lookup_alias(build_alias_registry(structure_factors), stype, "structure factor")
-
-def printt(s): 
-    """ print and write to log file"""
-    print(s)
-    with open('shape2sas.log','a') as f:
-        f.write('%s\n' %s)
 
 def sinc(x):
     """
@@ -160,15 +156,9 @@ def check_input(input: float, default: float, name: str, i: int):
 def calc_com_dist(point_distribution):
     """ 
     calc contrast-weighted com distance
-
-    the coordinates are stored per subunit, so they are concatenated first:
-    the subunits generally contain different numbers of points, and numpy
-    cannot average over such a ragged list of arrays
     """
-    x = np.concatenate(point_distribution.x)
-    y = np.concatenate(point_distribution.y)
-    z = np.concatenate(point_distribution.z)
-    w = np.abs(np.concatenate(point_distribution.sld))
+    x, y, z = point_distribution.x, point_distribution.y, point_distribution.z
+    w = np.abs(point_distribution.sld)
 
     if np.sum(w) == 0:
         w = np.ones(len(x))

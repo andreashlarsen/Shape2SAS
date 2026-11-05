@@ -1,16 +1,20 @@
 """Theoretical scattering: pair distances, p(r), the form factor P(q)
 and the resulting intensity I(q)."""
 
+import logging
 import os
+from dataclasses import dataclass
 
 import numpy as np
 from fast_histogram import histogram1d #histogram1d from fast_histogram is faster than np.histogram (https://pypi.org/project/fast-histogram/) 
 
-from .helpfunctions import getStructureFactorClass, printt, sinc
+from .helpfunctions import getStructureFactorClass, sinc
+
+logger = logging.getLogger(__name__)
 
 class PairDistanceDistribution:
     """
-    pair distance distribution function, p(r), of a point distribution, and the form factor, P(q), and forward scattering, I(0), derived from it
+    pair distance distribution function, p(r), of a point distribution, and the form factor, P(q), and forward scattering, P(0), derived from it
 
     the points are Monte Carlo samples of the scattering integral, so each is a point scatterer weighted by its contrast.
     the contrast-weighted histogram of pair distances, h(r), is kept at full resolution, since P(q) is most accurate when calculated from it.
@@ -35,7 +39,7 @@ class PairDistanceDistribution:
         Calculate unique pairwise distances between 3D points.
         Returns a 1D float32 array of length N*(N-1)/2.
         """
-        x_in,y_in,z_in = np.concatenate(point_distribution.x),np.concatenate(point_distribution.y),np.concatenate(point_distribution.z)
+        x_in,y_in,z_in = point_distribution.x,point_distribution.y,point_distribution.z
         x = np.array(x_in).astype(np.float32, copy=False)
         y = np.array(y_in).astype(np.float32, copy=False)
         z = np.array(z_in).astype(np.float32, copy=False)
@@ -61,7 +65,7 @@ class PairDistanceDistribution:
         matching calc_all_dist().
         """
 
-        sld_in = np.concatenate(point_distribution.sld)
+        sld_in = point_distribution.sld
         sld = np.array(sld_in).astype(np.float32, copy=False)
         N = len(sld)
 
@@ -243,20 +247,22 @@ class PairDistanceDistribution:
         if use_ausaxs:
             try:
                 from .ausaxs_debye import distance_histogram
-                printt('        calculating distance histogram (AUSAXS backend)...')
+                logger.info('        calculating distance histogram (AUSAXS backend)...')
                 r, hr = distance_histogram(
-                    np.concatenate(point_distribution.x),
-                    np.concatenate(point_distribution.y),
-                    np.concatenate(point_distribution.z),
-                    np.concatenate(point_distribution.sld)
+                    point_distribution.x,
+                    point_distribution.y,
+                    point_distribution.z,
+                    point_distribution.sld
                 )
                 return r, hr, True
+            except ImportError as e:
+                logger.info(f"        AUSAXS backend not installed ({e}); using default distance calculation.")
             except Exception as e:
-                printt(f"        AUSAXS backend unavailable ({type(e).__name__}: {e}); using default distance calculation.")
+                logger.warning(f"        AUSAXS backend failed ({type(e).__name__}: {e}); using default distance calculation.")
 
-        printt('        calculating distances...')
+        logger.info('        calculating distances...')
         dist = self.calc_all_dist(point_distribution)
-        printt('        calculating contrasts...')
+        logger.info('        calculating contrasts...')
         contrast = self.calc_all_contrasts(point_distribution)
 
         return dist, contrast, False
@@ -268,33 +274,24 @@ class PairDistanceDistribution:
 
         dist, contrast, prebinned = self.calc_pair_distances(use_ausaxs)
 
-        printt('        calculating p(r)...')
+        logger.info('        calculating p(r)...')
         self.r_hist, self.hr, self.dmax, r_max = self.calc_hr(dist, contrast, prebinned)
-        printt(f"           dmax: {self.dmax:.3e} A")
+        logger.info(f"           dmax: {self.dmax:.3e} A")
 
         r, pr = self.merge_bins(self.r_hist, self.hr, r_max, prpoints)
         self.r, self.pr = r, pr / np.amax(pr)
 
         self.Rg = self.calc_Rg(self.r_hist, self.hr)
-        printt(f"           Rg  : {self.Rg:.3e} A")
+        logger.info(f"           Rg  : {self.Rg:.3e} A")
 
-    def calc_Pq(self, q, conc):
+    def calc_Pq(self, q):
         """
-        calculate form factor, P(q), and forward scattering, I(0)
-
-        the points sample the particle volume, V, uniformly, so each represents a volume V/N and the scattering amplitude is
-            A(q) = (V/N) sum_i w_i exp(i q.r_i)
-        the self-terms (i = j) are a sampling artefact which vanishes as 1/N, so the mean squared contrast is estimated from the unordered pairs:
-            <w>^2 = 2 sum(h) / (N (N - 1))
-        which gives I(0) = conc * V * <w>^2 independently of the binning of h(r).
-        with contrast in units of 1e-6 A^-2, the factor 1E-4 converts A^-1 to cm^-1
+        calculate form factor, P(q), normalized so P(0) = 1
 
         input:
         q    : scattering vector
-        conc : volume fraction
 
         output:
-        I0   : forward scattering
         Pq   : form factor, normalized so P(0) = 1
         """
         ## calculate P(q) from the full-resolution h(r)
@@ -310,12 +307,27 @@ class PairDistanceDistribution:
         else:
             Pq /= abs(sum_hr)
 
-        ## calculate I(0); the estimate of <w>^2 can come out slightly negative when the net contrast is close to zero
-        N = len(np.concatenate(self.point_distribution.x))
-        contrast2 = max(0.0, 2 * sum_hr / (N * (N - 1)))
-        I0 = conc * self.point_distribution.volume_total * contrast2 * 1E-4
+        return Pq
 
-        return I0, Pq
+    def calc_P0(self):
+        """
+        calculate forward scattering per unit volume fraction, P(0), so that I(q) = conc * P(0) * P(q) * S(q)
+
+        the points sample the particle volume, V, uniformly, so each represents a volume V/N and the scattering amplitude is
+            A(q) = (V/N) sum_i w_i exp(i q.r_i)
+        the self-terms (i = j) are a sampling artefact which vanishes as 1/N, so the mean squared contrast is estimated from the unordered pairs:
+            <w>^2 = 2 sum(h) / (N (N - 1))
+        which gives P(0) = V * <w>^2 independently of the binning of h(r).
+        with contrast in units of 1e-6 A^-2, the factor 1E-4 converts A^-1 to cm^-1
+
+        output:
+        P0   : forward scattering per unit volume fraction [cm^-1]
+        """
+        ## the estimate of <w>^2 can come out slightly negative when the net contrast is close to zero
+        sum_hr = np.sum(self.hr, dtype=np.float64)
+        N = len(self.point_distribution.x)
+        contrast2 = max(0.0, 2 * sum_hr / (N * (N - 1)))
+        return self.point_distribution.volume_total * contrast2 * 1E-4
 
     def save(self, model_filename):
         """save p(r)"""
@@ -342,6 +354,50 @@ def calc_S_func(q,point_distribution,stype,S_par,Pq):
     the structure factors themselves live in the structure_factors folder
     """
     return getStructureFactorClass(stype)(S_par).structure_eff(q,point_distribution,Pq)
+
+def uniform_q(qmin=0.001, qmax=0.5, qpoints=400):
+    """equidistant q values from qmin to qmax [1/A]"""
+    return np.linspace(qmin, qmax, qpoints)
+
+@dataclass
+class TheoreticalScattering:
+    """
+    the scattering of a model system, I(q) = conc * Pq * S_eff * exp(-(q sigma_r)^2 / 2)
+
+    q     : q values [1/A]
+    I     : intensity [cm^-1]
+    Pq    : form factor per unit volume fraction [cm^-1], so Pq[q -> 0] = V * contrast^2
+    S_eff : effective structure factor (decoupling approximation)
+    """
+
+    q: np.ndarray
+    I: np.ndarray
+    Pq: np.ndarray
+    S_eff: np.ndarray
+
+def get_theoretical_scattering(pdd, q, structure_factor="none", structure_factor_parameters=(), conc=0.02, sigma_r=0.0):
+    """
+    calculate the scattering, in absolute units, of particles with the pair distance distribution pdd
+
+    pdd                         : PairDistanceDistribution of the particle
+    q                           : q values [1/A]
+    structure_factor            : "none", "hardsphere" or "aggregation" (or any of their aliases)
+    structure_factor_parameters : parameters of the structure factor, see its par_names
+                                  (hardsphere: concentration, R_HS; aggregation: R_eff, N_aggr, fraction_aggregated)
+    conc                        : volume fraction of the particles
+    sigma_r                     : interface roughness [A]
+
+    raises ValueError on an unknown structure factor or a wrong number of its parameters
+    """
+    q = np.asarray(q, dtype=float)
+
+    # the decoupling approximation needs the form factor normalized so P(0) = 1
+    Pq_norm = pdd.calc_Pq(q)
+    S_eff = calc_S_func(q, pdd.point_distribution, structure_factor, structure_factor_parameters, Pq_norm)
+    P0 = pdd.calc_P0()
+    I = conc * P0 * calc_Iq_func(q, Pq_norm, S_eff, sigma_r)
+
+    return TheoreticalScattering(q=q, I=I, Pq=P0 * Pq_norm, S_eff=S_eff)
 
 def save_pr_func(r,pr,model_filename):
     """save pair distance distribution p(r)"""

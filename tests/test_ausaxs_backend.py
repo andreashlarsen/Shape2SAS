@@ -14,7 +14,7 @@ import pytest
 # this file lives in tests/, so put the repository root on the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from shape2sas.models import getPointDistribution
+from shape2sas.models import ModelProfile, get_point_distribution
 from shape2sas.theoretical_scattering import PairDistanceDistribution
 
 Q = np.linspace(0.001, 0.5, 400)
@@ -34,11 +34,9 @@ def quiet(func, *args, **kwargs):
         return func(*args, **kwargs)
 
 
-def sphere(Npoints=4000, radius=40., seed=0):
+def sphere(Npoints=4000, radius=40.):
     """one reproducible point distribution, shared by both backends"""
-    np.random.seed(seed)
-    return quiet(getPointDistribution, ["Sphere"], [1.0], [[radius]],
-                 [[0, 0, 0]], [[0, 0, 0]], True, Npoints, None)
+    return quiet(get_point_distribution, ModelProfile(subunits=["Sphere"], dimensions=[[radius]]), Npoints)
 
 
 def pr(point_distribution, prpoints=100, polydispersity=0.0, use_ausaxs=False):
@@ -47,7 +45,7 @@ def pr(point_distribution, prpoints=100, polydispersity=0.0, use_ausaxs=False):
 
 
 def Pq(point_distribution, **kwargs):
-    return pr(point_distribution, **kwargs).calc_Pq(Q, 0.001)[1]
+    return pr(point_distribution, **kwargs).calc_Pq(Q)
 
 
 def max_rel_deviation(a, b):
@@ -130,7 +128,7 @@ def test_dmax_rg_and_i0_match_default():
         "Rg differs by %.3f%%: %.4f vs %.4f"
         % (100 * abs(rg_a - rg_d) / rg_d, rg_a, rg_d))
 
-    i0_d, i0_a = default.calc_Pq(Q, 0.02)[0], ausaxs.calc_Pq(Q, 0.02)[0]
+    i0_d, i0_a = default.calc_P0(), ausaxs.calc_P0()
     assert abs(i0_a - i0_d) <= 0.005 * abs(i0_d), (
         "I(0) differs by %.3f%%: %.6e vs %.6e"
         % (100 * abs(i0_a - i0_d) / abs(i0_d), i0_a, i0_d))
@@ -215,7 +213,7 @@ def test_pr_has_roughly_prpoints_bins():
 def test_i0_is_independent_of_binning():
     """I(0) is a property of the particle, so it must not change with prpoints"""
     p = sphere()
-    i0 = [pr(p, prpoints=prpoints).calc_Pq(Q, 0.02)[0] for prpoints in (50, 100, 400)]
+    i0 = [pr(p, prpoints=prpoints).calc_P0() for prpoints in (50, 100, 400)]
     assert np.allclose(i0, i0[0], rtol=1e-5), "I(0) depends on prpoints: %s" % i0
 
 
@@ -225,11 +223,10 @@ def test_i0_of_homogeneous_particle():
     estimate of the mean squared contrast is exact and I(0) = conc * V * sld^2 * 1E-4
     """
     sld, conc = 2.0, 0.02
-    np.random.seed(0)
-    p = quiet(getPointDistribution, ["Sphere"], [sld], [[40.]],
-              [[0, 0, 0]], [[0, 0, 0]], True, 2000, None)
+    p = quiet(get_point_distribution, ModelProfile(subunits=["Sphere"], dimensions=[[40.]], sld=[sld]), 2000)
 
-    I0, Pq0 = pr(p).calc_Pq(np.array([0.0]), conc)
+    pdd = pr(p)
+    I0, Pq0 = conc * pdd.calc_P0(), pdd.calc_Pq(np.array([0.0]))
     expected = conc * p.volume_total * sld**2 * 1E-4
     assert abs(I0 - expected) <= 1e-5 * expected, "I(0) = %.6e, expected %.6e" % (I0, expected)
     assert abs(Pq0[0] - 1.0) <= 1e-6, "P(0) = %.6f, expected 1" % Pq0[0]

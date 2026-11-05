@@ -1,17 +1,16 @@
 import os
 
 import numpy as np
-from ..helpfunctions import printt, sinc, calc_com_dist
+from ..helpfunctions import InputError, sinc, calc_com_dist
 
 def check_Spar(name,S_par,par_names):
-    """check if the number of input parameters for the structure factor is correct, else return error message"""
+    """check if the number of input parameters for the structure factor is correct, else raise an InputError"""
     n = len(par_names)
     len_par = len(S_par)
     if len_par != n:
         par = ' parameter ' if n == 1 else ' parameters '
         were = ' was ' if len_par == 1 else ' were '
-        printt("\nERROR: structure factor " + name + " needs " + str(n) + par + "(provided after --S_par or -Sp): " + ", ".join(par_names) + ", but " + str(len_par) + were + "given: " + str(list(S_par)) + "\n")
-        exit()
+        raise InputError("structure factor " + name + " needs " + str(n) + par + "(provided after --S_par or -Sp): " + ", ".join(par_names) + ", but " + str(len_par) + were + "given: " + str(list(S_par)))
 
 def calc_A00(q,point_distribution):
     """
@@ -20,7 +19,7 @@ def calc_A00(q,point_distribution):
     d = calc_com_dist(point_distribution).astype(np.float32, copy=False)
     M = len(q)
     A00 = np.zeros(M)
-    sld = np.concatenate(point_distribution.sld).astype(np.float32, copy=False)
+    sld = point_distribution.sld.astype(np.float32, copy=False)
     for i in range(M):
         qr = q[i] * d
         A00[i] = np.sum(sld * sinc(qr))

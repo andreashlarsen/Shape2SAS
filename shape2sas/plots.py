@@ -106,11 +106,9 @@ def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name
 
         if S[0] != 1.0 or S[-1] != 1.0:
             ax[1].plot(q, S, linestyle='--', color=color, zorder=0, label=r'$S(q)$, %s' % model_name)
-            ax[1].plot(q, I,color=color, zorder=zo, label=r'$I(q)=P(q)S(q)$, %s' % model_name)
-            ax[1].set_ylabel(r'$I(q)=P(q)S(q)$')
+            ax[1].plot(q, I,color=color, zorder=zo, label=r'$I(q)=cP(q)S(q)$, %s' % model_name)
         else:
-            ax[1].plot(q, I, zorder=zo, color=color, label=r'$P(q)=I(q)/I(0)$, %s' % model_name)
-            ax[1].set_ylabel(r'$P(q)=I(q)/I(0)$')
+            ax[1].plot(q, I, zorder=zo, color=color, label=r'$I(q)=cP(q)$, %s' % model_name)
         zo += 1
 
     ## figure settings, p(r)
@@ -124,7 +122,8 @@ def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name
         ax[1].set_xscale('log')
     ax[1].set_yscale('log')
     ax[1].set_xlabel(r'$q$ [$\mathrm{\AA}^{-1}$]')
-    ax[1].set_title('normalized scattering, no noise')
+    ax[1].set_ylabel(r'$I(q)$ [cm$^{-1}$]')
+    ax[1].set_title('theoretical scattering, no noise')
     ax[1].legend(frameon=False)
 
     ## figure settings, simulated scattering
@@ -152,9 +151,9 @@ def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, 
     width = N_models*4
     __, ax = plt.subplots(1,N_models,figsize=(width,4))
 
-    # estimate offset and scaling
+    # estimate offset and scaling; the model is scaled to the data at the lowest q
     background = np.mean(I_exp[-5:])
-    I0 = np.mean(I_exp[0:3])
+    I0_exp = np.mean(I_exp[0:3])
 
     i = 0
     for (I, model_name,color) in zip (I_list, name_list, colors):
@@ -163,7 +162,7 @@ def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, 
         else:
             p = ax[i]
         p.errorbar(q,I_exp,yerr=sigma_exp,linestyle='none',marker='.', color='grey',zorder=0, label = data_filename) #label=r'$I_\mathrm{exp}(q)$')
-        I_model = I0 * I + background
+        I_model = I0_exp * I / I[0] + background
         p.plot(q, I_model, zorder=1, color=color, label=r'%s' % model_name)
         p.set_ylabel(r'$I(q)$')
         i += 1
