@@ -34,8 +34,9 @@ def quiet(func, *args, **kwargs):
         return func(*args, **kwargs)
 
 
-def sphere(Npoints=4000, radius=40.):
+def sphere(Npoints=4000, radius=40., seed=0):
     """one reproducible point distribution, shared by both backends"""
+    np.random.seed(seed)
     return quiet(get_point_distribution, ModelProfile(subunits=["Sphere"], dimensions=[[radius]]), Npoints)
 
 
@@ -223,6 +224,7 @@ def test_i0_of_homogeneous_particle():
     estimate of the mean squared contrast is exact and I(0) = conc * V * sld^2 * 1E-4
     """
     sld, conc = 2.0, 0.02
+    np.random.seed(0)
     p = quiet(get_point_distribution, ModelProfile(subunits=["Sphere"], dimensions=[[40.]], sld=[sld]), 2000)
 
     pdd = pr(p)

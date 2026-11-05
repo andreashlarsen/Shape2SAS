@@ -156,9 +156,15 @@ def check_input(input: float, default: float, name: str, i: int):
 def calc_com_dist(point_distribution):
     """ 
     calc contrast-weighted com distance
+
+    the coordinates are stored per subunit, so they are concatenated first:
+    the subunits generally contain different numbers of points, and numpy
+    cannot average over such a ragged list of arrays
     """
-    x, y, z = point_distribution.x, point_distribution.y, point_distribution.z
-    w = np.abs(point_distribution.sld)
+    x = np.concatenate(point_distribution.x)
+    y = np.concatenate(point_distribution.y)
+    z = np.concatenate(point_distribution.z)
+    w = np.abs(np.concatenate(point_distribution.sld))
 
     if np.sum(w) == 0:
         w = np.ones(len(x))

@@ -1,11 +1,10 @@
 import numpy as np 
-from .subunits_helpfunctions import Subunit, check_dimension
+from .subunits_helpfunctions import check_dimension
 
-class EllipticalCylinder(Subunit):
+class EllipticalCylinder:
     aliases = ["ellipticalcylinder","ellipticalcyl","ellipticalrod"]
 
-    def __init__(self, dimensions, **properties):
-        super().__init__(**properties)
+    def __init__(self, dimensions):
         check_dimension(self.aliases[0],dimensions,3)     
         self.a,self.b,self.l = dimensions
 
@@ -13,9 +12,23 @@ class EllipticalCylinder(Subunit):
         """Returns the volume of an elliptical cylinder"""
         return np.pi * self.a * self.b * self.l
 
-    def getHalfWidths(self):
-        """Returns the half-widths of the box around an elliptical cylinder"""
-        return self.a, self.b, self.l / 2
+    def getPointDistribution(self, Npoints):
+        """Returns the point distribution of an elliptical cylinder"""
+
+        Volume = self.getVolume()
+        Volume_max = 2 * self.a * 2 * self.b * self.l
+        Vratio = Volume_max / Volume
+
+        N = int(Vratio * Npoints)
+        x = np.random.uniform(-self.a, self.a, N)
+        y = np.random.uniform(-self.b, self.b, N)
+        z = np.random.uniform(-self.l / 2, self.l / 2, N)
+
+        d2 = x**2 / self.a**2 + y**2 / self.b**2
+        idx = np.where(d2 < 1)
+        x_add, y_add, z_add = x[idx], y[idx], z[idx]
+
+        return x_add, y_add, z_add 
 
     def checkOverlap(self, x_eff, y_eff, z_eff):
         """Check for points within a Elliptical cylinder"""

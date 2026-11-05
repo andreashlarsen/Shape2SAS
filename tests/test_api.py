@@ -19,7 +19,8 @@ import shape2sas as sts
 Q = sts.uniform_q(0.001, 0.5, 200)
 
 
-def sphere(radius=50., sld=1.0, Npoints=3000):
+def sphere(radius=50., sld=1.0, Npoints=3000, seed=0):
+    np.random.seed(seed)
     return sts.get_point_distribution(sts.ModelProfile(dimensions=[[radius]], sld=[sld]), Npoints)
 
 
@@ -84,9 +85,11 @@ def test_interface_roughness():
 
 def test_defaults_per_subunit():
     """sld, com, rotation and rotation points default to one value per subunit"""
+    np.random.seed(1)
     profile = sts.ModelProfile(subunits=["sphere", "cylinder"], dimensions=[[30.], [10., 80.]])
     points = sts.get_point_distribution(profile, 2000)
-    assert np.all(points.sld == 1.0)
+    assert len(points.x) == 2
+    assert all(np.all(s == 1.0) for s in points.sld)
 
 
 def test_invalid_input_raises_value_error():
