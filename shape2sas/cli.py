@@ -28,7 +28,8 @@ from .theoretical_scattering import (
 from .structure_factors.structure_factors_helpfunctions import save_S_func
 from .simulated_scattering import save_Isim_func, simulate_scattering
 from .plots import generate_pdb, plot_2D, plot_fit, plot_results
-from .sesans import calc_G_sesans, plot_sesans, save_sesans, simulate_sesans
+from .sesans import calc_G_sesans, simulate_sesans
+from .sesans.sesans_output import plot_sesans, save_sesans
 
 # named explicitly, so the messages also reach the handlers when run as python -m shape2sas.cli
 logger = logging.getLogger("shape2sas.cli")
