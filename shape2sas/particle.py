@@ -13,7 +13,7 @@ class Particle:
     a particle built from geometric subunits
 
     the particle is filled with random points, from which its pair distance distribution, p(r), and scattering are calculated.
-    the points and p(r) are calculated on first use, and kept until another subunit is added.
+    the points, p(r) and the form factor for the last q are calculated on first use, and kept until another subunit is added.
     create a particle with create_particle.
     """
 
@@ -26,6 +26,7 @@ class Particle:
         self._subunits = []
         self._point_distribution = None
         self._pdd = None
+        self._Pq = None
 
     def add_subunit(self, shape, dimensions, sld=1.0, com=(0, 0, 0), rotation=(0, 0, 0), rotation_point=(0, 0, 0)):
         """
@@ -49,6 +50,7 @@ class Particle:
         self._subunits.append(SubunitPlacement(shape, list(dimensions), float(sld), list(com), list(rotation), list(rotation_point)))
         self._point_distribution = None
         self._pdd = None
+        self._Pq = None
 
     def _points(self) -> ModelPointDistribution:
         if self._point_distribution is None:
@@ -61,6 +63,12 @@ class Particle:
         if self._pdd is None:
             self._pdd = PairDistanceDistribution(self._points(), self.prpoints, self.polydispersity, self.use_ausaxs)
         return self._pdd
+
+    def _form_factor(self, q):
+        """form factor normalized so P(0) = 1, kept for the last q, since the structure factor and the scattering both need it"""
+        if self._Pq is None or not np.array_equal(self._Pq[0], q):
+            self._Pq = (q.copy(), self._pair_distances().calc_Pq(q))
+        return self._Pq[1]
 
     def points(self):
         """the points filling the particle, as arrays x, y, z [A] and their sld [1e-6 A^-2]"""
@@ -99,7 +107,7 @@ class Particle:
         raises ValueError on an unknown structure factor or a wrong number of its parameters
         """
         q = np.asarray(q, dtype=float)
-        return self._structure_factor(q, self._pair_distances().calc_Pq(q), name, parameters)
+        return self._structure_factor(q, self._form_factor(q), name, parameters)
 
     def _structure_factor(self, q, Pq_norm, name, parameters):
         # the decoupling approximation needs the form factor normalized so P(0) = 1
@@ -119,10 +127,9 @@ class Particle:
         raises ValueError on an unknown structure factor or a wrong number of its parameters
         """
         q = np.asarray(q, dtype=float)
-        pdd = self._pair_distances()
-        Pq_norm = pdd.calc_Pq(q)
+        Pq_norm = self._form_factor(q)
         S_eff = self._structure_factor(q, Pq_norm, structure_factor, structure_factor_parameters)
-        return conc * pdd.calc_P0() * calc_Iq_func(q, Pq_norm, S_eff, sigma_r)
+        return conc * self._pair_distances().calc_P0() * calc_Iq_func(q, Pq_norm, S_eff, sigma_r)
 
 
 def create_particle(Npoints=3000, prpoints=100, polydispersity=0.0, exclude_overlap=True, use_ausaxs=True) -> Particle:
