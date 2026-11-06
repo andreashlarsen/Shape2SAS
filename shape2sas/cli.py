@@ -18,17 +18,14 @@ from .helpfunctions import (
     separate_string,
     str2bool,
 )
-from .models import getPointDistribution, save_points
-from .theoretical_scattering import (
-    PairDistanceDistribution,
-    calc_Iq_func,
-    calc_S_func,
-    save_I_func,
-)
+from .models import save_points
+from .particle import create_particle
+from .theoretical_scattering import save_I_func, save_pr_func, uniform_q
 from .structure_factors.structure_factors_helpfunctions import save_S_func
-from .simulated_scattering import save_Isim_func, simulate_data_func
+from .simulated_scattering import save_Isim_func, simulate_scattering
 from .plots import generate_pdb, plot_2D, plot_fit, plot_results
-from .sesans import calc_G_sesans, plot_sesans, save_sesans, simulate_sesans
+from .sesans import calc_G_sesans, simulate_sesans
+from .sesans.sesans_output import plot_sesans, save_sesans
 
 # named explicitly, so the messages also reach the handlers when run as python -m shape2sas.cli
 logger = logging.getLogger("shape2sas.cli")
@@ -188,21 +185,26 @@ def run(argv=None):
         rotation = check_3Dinput(args.rotation, [[0, 0, 0]], "rotation", N_subunits, i)
         rotation_points = check_3Dinput(args.rotation_points, [[0, 0, 0]], "rotation points", N_subunits, i)
         exclude_overlap = check_input(args.exclude_overlap, True, "exclude_overlap", i)
+        polydispersity = check_input(args.polydispersity, 0.0, "polydispersity", i)
 
         ### make point cloud
-        logger.info(f"    Generating points for Model: " + model_name)        
-        point_distribution = getPointDistribution(args.subunit[i],sld,args.dimension[i],com,rotation,exclude_overlap,args.Npoints,rotation_points)
-        save_points(point_distribution, model_filename)
-        x_list.append(np.concatenate(point_distribution.x))
-        y_list.append(np.concatenate(point_distribution.y))
-        z_list.append(np.concatenate(point_distribution.z))
-        sld_list.append(np.concatenate(point_distribution.sld))
+        logger.info(f"    Generating points for Model: " + model_name)
+        particle = create_particle(Npoints=args.Npoints, prpoints=args.prpoints, polydispersity=polydispersity,
+                                   exclude_overlap=exclude_overlap, use_ausaxs=not args.disable_ausaxs)
+        for j in range(N_subunits):
+            particle.add_subunit(args.subunit[i][j], args.dimension[i][j], sld=sld[j], com=com[j],
+                                 rotation=rotation[j], rotation_point=rotation_points[j])
+        x, y, z, sld_points = particle.points()
+        save_points(x, y, z, sld_points, model_filename)
+        x_list.append(x)
+        y_list.append(y)
+        z_list.append(z)
+        sld_list.append(sld_points)
 
         ### read concentration, interface roughness/fuzziness, structure factor and structure factor-related parameters for model i
         conc = check_input(args.conc, 0.02, "concentration", i)
         sigma_r = check_input(args.sigma_r, 0.0, "sigma_r", i)
         S_type = check_input(args.S, 'None', "Structure type", i)
-        stype = S_type.lower().replace("_", "").replace(" ", "")
         try:
             S_par = args.S_par[i][0]
         except:
@@ -210,18 +212,17 @@ def run(argv=None):
 
         ### calculate p(r)
         logger.info("\n    Calculating pair distance distribution, p(r)...")
-        polydispersity = check_input(args.polydispersity, 0.0, "polydispersity", i)
-        pdd = PairDistanceDistribution(point_distribution, prpoints=args.prpoints, polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
-        pdd.save(model_filename)
-        r_list.append(pdd.r)
-        pr_norm_list.append(pdd.pr)
+        r, pr = particle.pr()
+        save_pr_func(r, pr, model_filename)
+        r_list.append(r)
+        pr_norm_list.append(pr)
 
         ### define q (and if sesans is opted for, also define the spin echo length, delta)
         if args.sesans:
             # make extended q-range for sesans
             # the structure factor decides the length scale: an aggregate is
             # larger than the particle it is built from
-            qmin, deltamax = getStructureFactorClass(stype).getSesansRange(S_par, pdd.dmax)
+            qmin, deltamax = getStructureFactorClass(S_type).getSesansRange(S_par, particle.dmax)
             qmax = 1e4 * qmin
             qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)
@@ -230,21 +231,15 @@ def run(argv=None):
             header,footer = get_header_footer(args.data) # replace with function
             q,I_exp,sigma_exp = np.genfromtxt(args.data,skip_header=header,skip_footer=footer,usecols=[0,1,2],unpack=True)
         else:
-            q = np.linspace(args.qmin,args.qmax,args.qpoints)
+            q = uniform_q(args.qmin,args.qmax,args.qpoints)
 
         logger.info("\n    Calculating intensity, I(q)...")
 
-        ### calculate form factor, normalized so P(0) = 1, and forward scattering I0
-        Pq = pdd.calc_Pq(q)
-        I0 = conc * pdd.calc_P0()
-
-        ### calculate structure factor
-        S = calc_S_func(q,point_distribution, stype, S_par, Pq)
-        save_S_func(q,S,model_filename)
-        S_list.append(S)
-
-        ### calculate theoretical SAS, in absolute units (and SESANS)
-        I = I0 * calc_Iq_func(q, Pq, S, sigma_r)
+        ### calculate theoretical SAS, in absolute units, with its structure factor (and SESANS)
+        S_eff = particle.structure_factor(q, S_type, S_par)
+        save_S_func(q,S_eff,model_filename)
+        S_list.append(S_eff)
+        I = particle.scattering(q, conc, S_type, S_par, sigma_r)
         save_I_func(q,I,model_filename)
         I_list.append(I)
         if args.sesans:
@@ -254,10 +249,10 @@ def run(argv=None):
             G_list.append(G)
 
         ### simulate SAXS (and SESANS)
-        I_sim,sigma = simulate_data_func(q,I,args.exposure)
+        I_sim, sigma = simulate_scattering(q,I,args.exposure)
         save_Isim_func(q,I_sim,sigma,model_filename)
         I_sim_list.append(I_sim)
-        sigma_list.append(sigma) 
+        sigma_list.append(sigma)
         if args.sesans:
             # simulate sesans data         
             G_sim,sigma_G = simulate_sesans(delta,G,args.sesans_error)

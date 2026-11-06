@@ -14,7 +14,7 @@ import pytest
 # this file lives in tests/, so put the repository root on the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from shape2sas.models import getPointDistribution
+from shape2sas.particle import create_particle
 from shape2sas.theoretical_scattering import PairDistanceDistribution
 
 Q = np.linspace(0.001, 0.5, 400)
@@ -37,8 +37,9 @@ def quiet(func, *args, **kwargs):
 def sphere(Npoints=4000, radius=40., seed=0):
     """one reproducible point distribution, shared by both backends"""
     np.random.seed(seed)
-    return quiet(getPointDistribution, ["Sphere"], [1.0], [[radius]],
-                 [[0, 0, 0]], [[0, 0, 0]], True, Npoints, None)
+    particle = create_particle(Npoints=Npoints)
+    particle.add_subunit("Sphere", [radius])
+    return quiet(particle._points)
 
 
 def pr(point_distribution, prpoints=100, polydispersity=0.0, use_ausaxs=False):
@@ -226,8 +227,9 @@ def test_i0_of_homogeneous_particle():
     """
     sld, conc = 2.0, 0.02
     np.random.seed(0)
-    p = quiet(getPointDistribution, ["Sphere"], [sld], [[40.]],
-              [[0, 0, 0]], [[0, 0, 0]], True, 2000, None)
+    particle = create_particle(Npoints=2000)
+    particle.add_subunit("Sphere", [40.], sld=sld)
+    p = quiet(particle._points)
 
     pdd = pr(p)
     I0, Pq0 = conc * pdd.calc_P0(), pdd.calc_Pq(np.array([0.0]))

@@ -13,11 +13,8 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from shape2sas import subunits
-from shape2sas.models import (
-    getPointDistribution,
-    rotate_and_translate,
-    undo_rotate_and_translate,
-)
+from shape2sas.models import rotate_and_translate, undo_rotate_and_translate
+from shape2sas.particle import create_particle
 
 # one representative set of dimensions per subunit
 CASES = {
@@ -101,11 +98,10 @@ def test_buried_subunit_is_fully_excluded():
     """
     for rotation in ROTATIONS:
         np.random.seed(2)
-        distribution = getPointDistribution(
-            ["ellipticalcylinder", "ellipticalcylinder"], [1.0, 1.0],
-            [[40., 15., 90.], [40., 15., 90.]],
-            [[0, 0, 0], [0, 0, 0]], [list(rotation), list(rotation)],
-            True, 8000)
+        particle = create_particle(Npoints=8000)
+        for _ in range(2):
+            particle.add_subunit("ellipticalcylinder", [40., 15., 90.], rotation=list(rotation))
+        distribution = particle._points()
         survivors = len(distribution.x[1])
         assert survivors == 0, ("rotation %s: %d points of the buried subunit "
                                 "were not excluded" % (rotation, survivors))
@@ -116,9 +112,10 @@ def test_structure_factor_with_several_subunits():
     from shape2sas.structure_factors.structure_factors_helpfunctions import calc_A00
 
     np.random.seed(3)
-    distribution = getPointDistribution(
-        ["sphere", "sphere"], [1.0, 1.0], [[50.], [30.]],
-        [[0, 0, 0], [60, 0, 0]], [[0, 0, 0], [0, 0, 0]], True, 2000)
+    particle = create_particle(Npoints=2000)
+    particle.add_subunit("sphere", [50.])
+    particle.add_subunit("sphere", [30.], com=[60, 0, 0])
+    distribution = particle._points()
     assert len(distribution.x[0]) != len(distribution.x[1]), \
         "test needs subunits with different point counts"
     A00 = calc_A00(np.linspace(0.001, 0.5, 20), distribution)

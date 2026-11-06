@@ -24,6 +24,17 @@ class ModelPointDistribution:
     sld: np.ndarray #scattering length density for each point
     volume_total: float
 
+@dataclass
+class SubunitPlacement:
+    """a subunit of a particle, and where it is placed"""
+
+    shape: str
+    dimensions: list[float]
+    sld: float
+    com: list[float]
+    rotation: list[float]
+    rotation_point: list[float]
+
 def euler_rotation_matrix(alpha,beta,gamma):
     """
     Rotation matrix from Euler angles, intrinsic ZYX convention.
@@ -72,17 +83,15 @@ def undo_rotate_and_translate(x,y,z,rotation,rotation_point,com):
     return out[0],out[1],out[2]
 
 class GenerateAllPoints:
-    def __init__(self, Npoints, com, subunits, dimensions, rotation, sld, exclude_overlap, rotation_points=None):
+    def __init__(self, Npoints, placements, exclude_overlap):
         self.Npoints = Npoints
-        self.com = com
-        self.subunits = subunits
-        self.Number_of_subunits = len(subunits)
-        self.dimensions = dimensions
-        self.rotation = rotation
-        if rotation_points is None:
-            rotation_points = [[0,0,0]] * self.Number_of_subunits
-        self.rotation_points = rotation_points
-        self.sld = sld
+        self.subunits = [p.shape for p in placements]
+        self.Number_of_subunits = len(placements)
+        self.dimensions = [p.dimensions for p in placements]
+        self.sld = [p.sld for p in placements]
+        self.com = [p.com for p in placements]
+        self.rotation = [p.rotation for p in placements]
+        self.rotation_points = [p.rotation_point for p in placements]
         self.exclude_overlap = exclude_overlap
         self.setAvailableSubunits()
 
@@ -198,17 +207,12 @@ class GenerateAllPoints:
         logger.info(f"        Total volume of model: {volume_total:.3e} A^3")
         logger.info(" ")
 
-        return x_new, y_new, z_new, sld_new, volume_total
+        return ModelPointDistribution(x=x_new, y=y_new, z=z_new, sld=sld_new, volume_total=volume_total)
 
-def getPointDistribution(subunit_type,sld,dimensions,com,rotation,exclude_overlap,Npoints,rotation_points=None):
-    x_new, y_new, z_new, sld_new, volume_total = GenerateAllPoints(Npoints, com, subunit_type, dimensions, rotation, sld, exclude_overlap, rotation_points).onGeneratingAllPointsSeparately()
-    return ModelPointDistribution(x=x_new, y=y_new, z=z_new, sld=sld_new, volume_total=volume_total)
-def save_points(point_distribution,model_filename):
+def save_points(x, y, z, sld, model_filename):
     """save point cloud to a file"""
-    os.makedirs(model_filename, exist_ok=True)  
-    x,y,z,sld = np.concatenate(point_distribution.x), np.concatenate(point_distribution.y), np.concatenate(point_distribution.z), np.concatenate(point_distribution.sld)
+    os.makedirs(model_filename, exist_ok=True)
     with open('%s/points_%s.txt' % (model_filename,model_filename),'w') as f:
         f.write('# x y z sld\n')
         for xi,yi,zi,s in zip(x,y,z,sld):
             f.write('%f %f %f %f\n' % (xi,yi,zi,s))
-
