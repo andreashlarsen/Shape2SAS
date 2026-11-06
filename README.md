@@ -493,17 +493,17 @@ Shape2SAS can also be used from Python, e.g. in scripts or other programs:
 import shape2sas as sts
 
 # a dumbbell: two spheres, displaced along z
-profile = sts.ModelProfile(subunits=["sphere", "sphere"], dimensions=[[50], [50]],
-                           com=[[0, 0, -60], [0, 0, 60]])
-points = sts.get_point_distribution(profile, Npoints=5000)
-pdd = sts.PairDistanceDistribution(points, prpoints=100, polydispersity=0.0)
+particle = sts.create_particle(Npoints=5000, prpoints=100, polydispersity=0.0)
+particle.add_subunit("sphere", [50], com=[0, 0, -60])
+particle.add_subunit("sphere", [50], com=[0, 0, 60])
 
-scattering = sts.get_theoretical_scattering(pdd, sts.uniform_q(0.001, 0.5, 400), conc=0.02,
-                                            structure_factor="hardsphere", structure_factor_parameters=[0.02, 60])
-data = sts.simulate_scattering(scattering.q, scattering.I, exposure=500)
+r, pr = particle.pr()
+q = sts.uniform_q(0.001, 0.5, 400)
+I = particle.scattering(q, conc=0.02, structure_factor="hardsphere", structure_factor_parameters=[0.02, 60])
+I_sim, sigma = sts.simulate_scattering(q, I, exposure=500)
 ```
 
-`pdd` holds the pair distance distribution `r`, `pr` with its `dmax` and `Rg`; `scattering` holds `q`, the intensity `I`, the form factor `Pq` and the effective structure factor `S_eff`; `data` holds `q`, `I` and `sigma`. Intensities are in absolute units, cm<sup>-1</sup>, with I(q) = `conc` · P(q) · S(q). Invalid input, such as an unknown subunit, raises a `ValueError`.
+A subunit has unit contrast (`sld=1.0`), sits at the origin and is not rotated, unless `sld`, `com`, `rotation` or `rotation_point` say otherwise. The particle also gives its `points()`, `volume`, `dmax`, `Rg` and effective `structure_factor(q, name, parameters)`. The points and p(r) are calculated on first use, and kept until another subunit is added, so the scattering can be calculated for several q ranges, concentrations or structure factors without sampling the particle again. Intensities are in absolute units, cm<sup>-1</sup>, with I(q) = `conc` · P(q) · S(q). Invalid input, such as an unknown subunit, raises a `ValueError`.
 
 The `shape2sas` command is built on these same functions. Only the names exported by `shape2sas` (listed in `shape2sas.__all__`) are part of the API; the modules they are defined in may change without notice.
 

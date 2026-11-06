@@ -3,12 +3,11 @@ and the resulting intensity I(q)."""
 
 import logging
 import os
-from dataclasses import dataclass
 
 import numpy as np
 from fast_histogram import histogram1d #histogram1d from fast_histogram is faster than np.histogram (https://pypi.org/project/fast-histogram/) 
 
-from .helpfunctions import getStructureFactorClass, sinc
+from .helpfunctions import sinc
 
 logger = logging.getLogger(__name__)
 
@@ -354,56 +353,9 @@ def calc_Iq_func(q, Pq, S_eff, sigma_r):
 
     return I
     
-def calc_S_func(q,point_distribution,stype,S_par,Pq):
-    """calculate the effective structure factor S_eff(q)
-
-    the structure factors themselves live in the structure_factors folder
-    """
-    return getStructureFactorClass(stype)(S_par).structure_eff(q,point_distribution,Pq)
-
 def uniform_q(qmin=0.001, qmax=0.5, qpoints=400):
     """equidistant q values from qmin to qmax [1/A]"""
     return np.linspace(qmin, qmax, qpoints)
-
-@dataclass
-class TheoreticalScattering:
-    """
-    the scattering of a model system, I(q) = conc * Pq * S_eff * exp(-(q sigma_r)^2 / 2)
-
-    q     : q values [1/A]
-    I     : intensity [cm^-1]
-    Pq    : form factor per unit volume fraction [cm^-1], so Pq[q -> 0] = V * contrast^2
-    S_eff : effective structure factor (decoupling approximation)
-    """
-
-    q: np.ndarray
-    I: np.ndarray
-    Pq: np.ndarray
-    S_eff: np.ndarray
-
-def get_theoretical_scattering(pdd, q, structure_factor="none", structure_factor_parameters=(), conc=0.02, sigma_r=0.0):
-    """
-    calculate the scattering, in absolute units, of particles with the pair distance distribution pdd
-
-    pdd                         : PairDistanceDistribution of the particle
-    q                           : q values [1/A]
-    structure_factor            : "none", "hardsphere" or "aggregation" (or any of their aliases)
-    structure_factor_parameters : parameters of the structure factor, see its par_names
-                                  (hardsphere: concentration, R_HS; aggregation: R_eff, N_aggr, fraction_aggregated)
-    conc                        : volume fraction of the particles
-    sigma_r                     : interface roughness [A]
-
-    raises ValueError on an unknown structure factor or a wrong number of its parameters
-    """
-    q = np.asarray(q, dtype=float)
-
-    # the decoupling approximation needs the form factor normalized so P(0) = 1
-    Pq_norm = pdd.calc_Pq(q)
-    S_eff = calc_S_func(q, pdd.point_distribution, structure_factor, structure_factor_parameters, Pq_norm)
-    P0 = pdd.calc_P0()
-    I = conc * P0 * calc_Iq_func(q, Pq_norm, S_eff, sigma_r)
-
-    return TheoreticalScattering(q=q, I=I, Pq=P0 * Pq_norm, S_eff=S_eff)
 
 def save_pr_func(r,pr,model_filename):
     """save pair distance distribution p(r)"""

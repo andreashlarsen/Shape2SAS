@@ -116,8 +116,7 @@ def main(argv=None):
     ax[1].plot(q,I_mix,color='black',label='mixture')
 
     #### Simulate I(q) 
-    simulated = simulate_scattering(q,I_mix,args.exposure)
-    Isim_mix,sigma_mix = simulated.I,simulated.sigma
+    Isim_mix,sigma_mix = simulate_scattering(q,I_mix,args.exposure)
     save_Isim_func(q,Isim_mix,sigma_mix,folder)
 
     if args.scale: 
