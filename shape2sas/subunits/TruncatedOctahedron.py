@@ -1,5 +1,6 @@
 import numpy as np
-from .subunits_helpfunctions import check_dimension, printt
+from ..helpfunctions import InputError
+from .subunits_helpfunctions import check_dimension
 
 class TruncatedOctahedron:
     """
@@ -23,9 +24,8 @@ class TruncatedOctahedron:
         check_dimension(self.aliases[0],dimensions,4)
         self.a,self.b,self.c,self.t = dimensions
         if not 0 <= self.t <= 0.5:
-            printt("\nERROR: the truncation of a truncated_octahedron must be between 0 "
-                   "and 0.5, but " + str(self.t) + " was given\n")
-            exit()
+            raise InputError("the truncation of a truncated_octahedron must be between 0 "
+                             "and 0.5, but " + str(self.t) + " was given")
 
     def getVolume(self):
         """Returns the volume of a truncated octahedron"""

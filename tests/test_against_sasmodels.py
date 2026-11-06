@@ -133,7 +133,7 @@ def test_form_factor_matches_sasmodels(subunit, dimensions, model, pars):
                 [subunit.lower()], [1.0], [list(dimensions)], [[0, 0, 0]], [[0, 0, 0]],
                 True, 10000)
             pr = PairDistanceDistribution(distribution, prpoints=100, use_ausaxs=False)
-        simulated.append(pr.calc_Pq(Q, 0.001)[1])
+        simulated.append(pr.calc_Pq(Q))
     simulated = np.mean(simulated, axis=0)
 
     significant = expected > 1e-3
