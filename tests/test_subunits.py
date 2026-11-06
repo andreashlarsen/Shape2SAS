@@ -24,6 +24,8 @@ CASES = {
     "Sphere":             [50.],
     "Cube":               [50.],
     "Cuboid":             [50., 40., 30.],
+    "Octahedron":         [40., 30., 25.],
+    "TruncatedOctahedron": [40., 30., 25., 0.3],
     "Cylinder":           [30., 80.],
     "CircularDisc":       [30., 20.],
     "CylinderRing":       [50., 30., 40.],

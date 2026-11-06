@@ -38,6 +38,10 @@ ausaxs = [
 all = [
   "shape2sas[ausaxs]"
 ]
+test = [
+  "pytest",
+  "sasmodels"
+]
 
 [project.urls]
 Homepage = "https://github.com/andreashlarsen/Shape2SAS"
