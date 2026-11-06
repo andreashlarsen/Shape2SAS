@@ -85,12 +85,14 @@ def test_subunit_defaults():
 
 
 def test_adding_a_subunit_updates_the_particle():
-    """the points and p(r) are kept between calls, but recalculated once the particle changes"""
+    """the points, p(r) and P(q) are kept between calls, but recalculated once the particle changes"""
     particle = sphere()
     assert np.array_equal(particle.points()[0], particle.points()[0]), "the random points must not be drawn again"
-    dmax = particle.dmax
+    dmax, I = particle.dmax, particle.scattering(Q)
     particle.add_subunit("sphere", [50.], com=[0, 0, 150.])
     assert particle.dmax > 2 * dmax
+    I_dumbbell = particle.scattering(Q)
+    assert not np.allclose(I_dumbbell / I_dumbbell[0], I / I[0], rtol=0.05), "the form factor must be recalculated"
 
 
 def test_invalid_input_raises_value_error():
