@@ -1,23 +1,8 @@
 """Simulated experimental data: noise added to the theoretical intensity."""
 
 import os
-from dataclasses import dataclass
 
 import numpy as np
-
-@dataclass
-class SimulatedScattering:
-    """
-    simulated measurement of a theoretical intensity
-
-    q     : q values [1/A]
-    I     : simulated intensity, with noise [cm^-1]
-    sigma : uncertainty of I [cm^-1]
-    """
-
-    q: np.ndarray
-    I: np.ndarray
-    sigma: np.ndarray
 
 def simulate_scattering(q, I, exposure=500.0):
     """
@@ -30,7 +15,7 @@ def simulate_scattering(q, I, exposure=500.0):
     exposure : exposure (in arbitrary units) - a longer exposure gives less noise
 
     output
-    SimulatedScattering with the q values, the simulated intensity and its uncertainty
+    I_sim, sigma : simulated intensity and its uncertainty [cm^-1]
     """
     q = np.asarray(q, dtype=float)
     I = np.asarray(I, dtype=float)
@@ -70,7 +55,7 @@ def simulate_scattering(q, I, exposure=500.0):
     ## simulate data using errors
     Isim = np.random.normal(I, sigma)
 
-    return SimulatedScattering(q=q, I=Isim, sigma=sigma)
+    return Isim, sigma
 
 def save_Isim_func(q, I_sim, sigma, model_filename):
     """Save theoretical intensity to file"""

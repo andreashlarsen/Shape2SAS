@@ -17,7 +17,7 @@ from sasmodels.core import load_model
 from sasmodels.direct_model import call_Fq, call_kernel
 
 from shape2sas import subunits
-from shape2sas.models import ModelProfile, get_point_distribution
+from shape2sas.particle import create_particle
 from shape2sas.theoretical_scattering import PairDistanceDistribution
 
 # subunit, its dimensions, and the same body in sasmodels
@@ -97,7 +97,9 @@ def test_form_factor_matches_sasmodels(subunit, dimensions, model, pars):
     for seed in range(4):
         np.random.seed(seed)
         with contextlib.redirect_stdout(io.StringIO()):
-            distribution = get_point_distribution(ModelProfile(subunits=[subunit], dimensions=[list(dimensions)]), 10000)
+            particle = create_particle(Npoints=10000)
+            particle.add_subunit(subunit, list(dimensions))
+            distribution = particle._points()
             pr = PairDistanceDistribution(distribution, prpoints=100, use_ausaxs=False)
         simulated.append(pr.calc_Pq(Q))
     simulated = np.mean(simulated, axis=0)
