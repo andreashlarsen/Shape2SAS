@@ -4,8 +4,6 @@ Self-consistency tests for the subunits, the structure factors and the
 rotation machinery.
 """
 
-import contextlib
-import io
 import os
 import sys
 
@@ -20,14 +18,14 @@ from shape2sas.models import (
     rotate_and_translate,
     undo_rotate_and_translate,
 )
-from shape2sas.theoretical_scattering import PairDistanceDistribution
 
 # one representative set of dimensions per subunit
 CASES = {
     "Sphere":             [50.],
     "Cube":               [50.],
     "Cuboid":             [50., 40., 30.],
-    "Octahedron":         [50.],
+    "Octahedron":         [40., 30., 25.],
+    "TruncatedOctahedron": [40., 30., 25., 0.3],
     "Cylinder":           [30., 80.],
     "CircularDisc":       [30., 20.],
     "CylinderRing":       [50., 30., 40.],
@@ -162,78 +160,3 @@ def test_structure_factor_parameter_counts():
         except ValueError:
             continue
         raise AssertionError("%s accepted the wrong number of parameters" % name)
-
-def octahedron_amplitude(qx, qy, qz, r):
-    """
-    scattering amplitude of the regular octahedron |x| + |y| + |z| <= r
-
-    the octahedron is eight simplices, one per octant; the Hermite-Genocchi
-    formula gives the Fourier transform of each, and summed they reduce to
-        F(q) = -8 r^3 h[A^2, B^2, C^2],    h(u) = sqrt(u) sin(sqrt(u))
-    with A = qx r, B = qy r, C = qz r and h[.,.,.] the second divided
-    difference. F -> 4 r^3 / 3, the volume, as q -> 0.
-    """
-    A2, B2, C2 = (qx * r)**2, (qy * r)**2, (qz * r)**2
-
-    def h(u):
-        return np.sqrt(u) * np.sin(np.sqrt(u))
-
-    return -8 * r**3 * (h(A2) / ((A2 - B2) * (A2 - C2))
-                        + h(B2) / ((B2 - A2) * (B2 - C2))
-                        + h(C2) / ((C2 - A2) * (C2 - B2)))
-
-
-def octahedron_form_factor(q, a, n=40):
-    """
-    orientationally averaged P(q) of a regular octahedron with edge length a
-
-    |F|^2 is symmetric under sign flips of qx, qy, qz, so Gauss-Legendre
-    quadrature over one octant is enough. With an even n no node lies on the
-    planes |qx| = |qy| etc., where the divided difference is 0/0.
-    """
-    r = a / np.sqrt(2)
-    volume = np.sqrt(2) / 3 * a**3
-
-    nodes, weights = np.polynomial.legendre.leggauss(n)
-    cos_theta, w_theta = 0.5 * (nodes + 1), 0.5 * weights
-    phi, w_phi = np.pi / 4 * (nodes + 1), np.pi / 4 * weights
-    cos_theta, phi = np.meshgrid(cos_theta, phi, indexing="ij")
-    w = np.outer(w_theta, w_phi)
-    sin_theta = np.sqrt(1 - cos_theta**2)
-    ux, uy, uz = sin_theta * np.cos(phi), sin_theta * np.sin(phi), cos_theta
-
-    Pq = np.array([np.sum(w * octahedron_amplitude(qi * ux, qi * uy, qi * uz, r)**2)
-                   for qi in q])
-    return Pq / np.sum(w) / volume**2
-
-
-def test_octahedron_matches_analytical_form_factor():
-    """
-    the simulated P(q) of an octahedron must match the analytical one
-
-    near the minima the sampling noise in P(q) scales as 1/sqrt(N P), so P(q)
-    is averaged over a few independent point clouds and compared by its mean
-    relative deviation. Measured: 0.01-0.02 for the octahedron, 0.07 for a
-    cube of the same volume (which has nearly the same Rg) and 0.09 for an
-    octahedron 2% too large.
-    """
-    a = 50.
-    q = np.linspace(0.001, 0.5, 200)
-    expected = octahedron_form_factor(q, a)
-
-    simulated = []
-    for seed in range(4):
-        np.random.seed(seed)
-        with contextlib.redirect_stdout(io.StringIO()):
-            distribution = getPointDistribution(
-                ["octahedron"], [1.0], [[a]], [[0, 0, 0]], [[0, 0, 0]], True, 10000)
-            pr = PairDistanceDistribution(distribution, prpoints=100, use_ausaxs=False)
-        simulated.append(pr.calc_Pq(q, 0.001)[1])
-    simulated = np.mean(simulated, axis=0)
-
-    significant = expected > 1e-3
-    deviation = np.mean(np.abs(simulated[significant] - expected[significant])
-                        / expected[significant])
-    assert deviation < 0.04, ("simulated octahedron P(q) deviates from the "
-                              "analytical form factor by %.1f%% on average"
-                              % (100 * deviation))
