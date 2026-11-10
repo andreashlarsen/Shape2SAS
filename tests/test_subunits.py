@@ -40,7 +40,7 @@ def test_subunits_are_self_consistent():
     """getPointDistribution() and checkOverlap() must describe the same body"""
     failures = []
     for name, dimensions in CASES.items():
-        obj = getattr(subunits, name)(list(dimensions))
+        obj = getattr(subunits, name)(*dimensions)
         x, y, z = obj.getPointDistribution(N)
 
         # checkOverlap returns the points OUTSIDE the subunit, so a subunit's
@@ -62,15 +62,22 @@ def test_subunits_are_self_consistent():
     assert not failures, "\n".join(failures)
 
 
-def test_missing_dimensions_are_rejected():
-    """a subunit given the wrong number of dimensions must complain"""
+def test_wrong_number_of_dimensions_is_rejected():
+    """a dimensions list of the wrong length must give an InputError (a ValueError) that names the parameters"""
     for name, dimensions in CASES.items():
         cls = getattr(subunits, name)
-        try:
-            cls(list(dimensions)[:-1] if len(dimensions) > 1 else [])
-        except ValueError:
-            continue
-        raise AssertionError("%s accepted too few dimensions" % name)
+        for wrong in (list(dimensions)[:-1], list(dimensions) + [1.]):
+            with pytest.raises(ValueError, match=", ".join(cls.parameters())):
+                cls.from_dimensions(wrong)
+
+
+def test_named_and_listed_dimensions_give_the_same_subunit():
+    """keywords, positional arguments and from_dimensions() are three spellings of the same subunit"""
+    for name, dimensions in CASES.items():
+        cls = getattr(subunits, name)
+        keywords = dict(zip(cls.parameters(), dimensions))
+        for obj in (cls(*dimensions), cls.from_dimensions(dimensions)):
+            assert obj.getVolume() == cls(**keywords).getVolume(), name
 
 
 def test_every_subunit_derives_from_subunit():
@@ -79,19 +86,16 @@ def test_every_subunit_derives_from_subunit():
              if issubclass(getattr(subunits, name), subunits.Subunit) and name != "Subunit"}
     assert names == set(CASES), "subunits missing from CASES: %s" % sorted(names - set(CASES))
     for name, dimensions in CASES.items():
-        obj = getattr(subunits, name)(list(dimensions))
-        assert isinstance(obj, subunits.Subunit), name
-        assert len(dimensions) == obj.n_dimensions, name
+        cls = getattr(subunits, name)
+        assert isinstance(cls(*dimensions), subunits.Subunit), name
+        assert len(dimensions) == len(cls.parameters()), name
 
 
 def test_malformed_subunits_are_rejected():
-    """a subunit must define its own aliases and n_dimensions, and implement every method"""
+    """a subunit must define its own aliases, and implement every method"""
     with pytest.raises(TypeError):
         class NoAliases(subunits.Subunit):
-            n_dimensions = 1
-    with pytest.raises(TypeError):
-        class NoDimensions(subunits.Subunit):
-            aliases = ["nodimensions"]
+            pass
     with pytest.raises(TypeError):
         # inheriting the aliases would give two subunits the same names
         class InheritedAliases(subunits.Sphere):
@@ -99,9 +103,8 @@ def test_malformed_subunits_are_rejected():
 
     class NoMethods(subunits.Subunit):
         aliases = ["nomethods"]
-        n_dimensions = 1
     with pytest.raises(TypeError):
-        NoMethods([1.])
+        NoMethods()
 
 
 def test_rotation_round_trip():

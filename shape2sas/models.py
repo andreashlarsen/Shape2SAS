@@ -27,8 +27,7 @@ class ModelPointDistribution:
 class SubunitPlacement:
     """a subunit of a particle, and where it is placed"""
 
-    shape: type[Subunit]
-    dimensions: list[float]
+    subunit: Subunit
     sld: float
     com: list[float]
     rotation: list[float]
@@ -84,9 +83,8 @@ def undo_rotate_and_translate(x,y,z,rotation,rotation_point,com):
 class GenerateAllPoints:
     def __init__(self, Npoints, placements, exclude_overlap):
         self.Npoints = Npoints
-        self.subunits = [p.shape for p in placements]
+        self.subunits = [p.subunit for p in placements]
         self.Number_of_subunits = len(placements)
-        self.dimensions = [p.dimensions for p in placements]
         self.sld = [p.sld for p in placements]
         self.com = [p.com for p in placements]
         self.rotation = [p.rotation for p in placements]
@@ -113,7 +111,7 @@ class GenerateAllPoints:
         return x_new, y_new, z_new, sld_new
 
     @staticmethod
-    def onCheckOverlap(x, y, z, p, rotation, rotation_point, com, subunitClass, dimensions):
+    def onCheckOverlap(x, y, z, p, rotation, rotation_point, com, subunit):
         """
         check for overlap with previous subunits. 
         if overlap, the point is removed
@@ -123,7 +121,7 @@ class GenerateAllPoints:
         x_eff, y_eff, z_eff = undo_rotate_and_translate(x, y, z, rotation, rotation_point, com)
 
         # then check overlaps
-        idx = subunitClass(dimensions).checkOverlap(x_eff, y_eff, z_eff)
+        idx = subunit.checkOverlap(x_eff, y_eff, z_eff)
         x_add, y_add, z_add, sld_add = x[idx], y[idx], z[idx], p[idx]
 
         ## number of excluded points
@@ -138,7 +136,7 @@ class GenerateAllPoints:
 
         #Get volume of each subunit
         for i in range(self.Number_of_subunits):
-            v = self.subunits[i](self.dimensions[i]).getVolume()
+            v = self.subunits[i].getVolume()
             volume.append(v)
             sum_vol += v
 
@@ -148,7 +146,7 @@ class GenerateAllPoints:
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
             
-            x_add, y_add, z_add = self.subunits[i](self.dimensions[i]).getPointDistribution(Npoints)
+            x_add, y_add, z_add = self.subunits[i].getPointDistribution(Npoints)
 
             # rotate and translate
             x_add, y_add, z_add = rotate_and_translate(x_add, y_add, z_add, self.rotation[i], self.rotation_points[i], self.com[i])
@@ -163,7 +161,7 @@ class GenerateAllPoints:
             if self.exclude_overlap:
                 for j in range(i): 
                     x_add, y_add, z_add, sld_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, sld_add, self.rotation[j],
-                                                    self.rotation_points[j], self.com[j], self.subunits[j], self.dimensions[j])
+                                                    self.rotation_points[j], self.com[j], self.subunits[j])
                     N_x_sum += N_x
     
             N.append(N_subunit)

@@ -3,14 +3,13 @@ from .Subunit import Subunit
 
 class Hyperboloid(Subunit):
     aliases = ["hyperboloid", "hourglass", "coolingtower"]
-    n_dimensions = 3
-    
+
     # https://mathworld.wolfram.com/One-SheetedHyperboloid.html
     # https://www.vcalc.com/wiki/hyperboloid-volume
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.r,self.c,self.h = dimensions
+    def __init__(self, radius, curvature, half_height):
+        """the smallest radius (at the waist), the curvature c of x^2/r^2 + y^2/r^2 - z^2/c^2 = 1, and half the height"""
+        self.r,self.c,self.h = radius,curvature,half_height
 
     def getVolume(self):
         """Returns the volume of a hyperboloid"""

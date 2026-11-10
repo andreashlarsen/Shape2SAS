@@ -3,11 +3,10 @@ from .Subunit import Subunit
 
 class Ellipsoid_shell(Subunit):
     aliases = ["ellipsoid_shell","ellips_shell"]
-    n_dimensions = 4
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.a,self.b,self.c,self.T = dimensions
+    def __init__(self, a, b, c, thickness):
+        """semi-axes along x, y and z, measured to the middle of the shell, and the shell thickness"""
+        self.a,self.b,self.c,self.T = a,b,c,thickness
         # define outer dimensions ( = semiaxis + half thickness):
         self.a_plus,self.b_plus,self.c_plus = self.a+self.T/2,self.b+self.T/2,self.c+self.T/2
 

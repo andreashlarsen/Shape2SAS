@@ -3,11 +3,10 @@ from .Subunit import Subunit
 
 class EllipticalCylinder(Subunit):
     aliases = ["ellipticalcylinder","ellipticalcyl","ellipticalrod"]
-    n_dimensions = 3
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.a,self.b,self.l = dimensions
+    def __init__(self, a, b, length):
+        """semi-axes of the cross section along x and y, and the length along z"""
+        self.a,self.b,self.l = a,b,length
 
     def getVolume(self):
         """Returns the volume of an elliptical cylinder"""

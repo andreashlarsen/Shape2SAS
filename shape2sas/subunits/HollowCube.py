@@ -3,11 +3,9 @@ from .Subunit import Subunit
 
 class HollowCube(Subunit):
     aliases = ["hollowcube","hollowdice"]
-    n_dimensions = 2
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.a,self.b = dimensions
+    def __init__(self, side, inner_side):
+        self.a,self.b = side,inner_side
 
     def getVolume(self) :
         """Returns the volume of a hollow cube"""

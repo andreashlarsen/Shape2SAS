@@ -97,6 +97,17 @@ def test_subunit_by_class_or_name():
         assert np.array_equal(points, particles[0])
 
 
+def test_subunit_as_instance():
+    """a subunit created with named dimensions gives the same particle as one given by name and a dimensions list"""
+    particles = []
+    for args in ((sts.subunits.Cylinder(radius=20., length=60.),), ("cylinder", [20., 60.])):
+        np.random.seed(2)
+        particle = sts.create_particle(Npoints=2000, use_ausaxs=False)
+        particle.add_subunit(*args, com=[0, 0, 10.])
+        particles.append(particle.points())
+    assert np.array_equal(particles[0], particles[1])
+
+
 def test_adding_a_subunit_updates_the_particle():
     """the points, p(r) and P(q) are kept between calls, but recalculated once the particle changes"""
     particle = sphere()
@@ -118,6 +129,10 @@ def test_invalid_input_raises_value_error():
         particle.add_subunit(dict, [10.])
     with pytest.raises(ValueError):
         particle.add_subunit("cylinder", [10.])
+    with pytest.raises(ValueError):
+        particle.add_subunit("cylinder")
+    with pytest.raises(ValueError):
+        particle.add_subunit(sts.subunits.Sphere(radius=10.), [10.])
     with pytest.raises(ValueError):
         particle.add_subunit("sphere", [10.], com=[0, 0])
     with pytest.raises(ValueError):

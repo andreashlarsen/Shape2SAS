@@ -3,11 +3,9 @@ from .Subunit import Subunit
 
 class Sphere(Subunit):
     aliases = ["sphere","ball","sph"]
-    n_dimensions = 1
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.R = dimensions[0]
+    def __init__(self, radius):
+        self.R = radius
 
     def getVolume(self) -> float:
         """Returns the volume of a sphere"""

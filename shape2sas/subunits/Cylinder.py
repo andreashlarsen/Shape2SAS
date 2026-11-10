@@ -3,11 +3,9 @@ from .Subunit import Subunit
 
 class Cylinder(Subunit):
     aliases = ["cylinder","rod","cyl"]
-    n_dimensions = 2
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.R,self.l = dimensions
+    def __init__(self, radius, length):
+        self.R,self.l = radius,length
 
     def getVolume(self):
         """Returns the volume of a cylinder"""

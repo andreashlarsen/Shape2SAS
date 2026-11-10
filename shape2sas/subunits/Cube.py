@@ -3,11 +3,9 @@ from .Subunit import Subunit
 
 class Cube(Subunit):
     aliases = ["cube","dice"]
-    n_dimensions = 1
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.a = dimensions[0]
+    def __init__(self, side):
+        self.a = side
 
     def getVolume(self):
         """Returns the volume of a cube"""

@@ -3,11 +3,9 @@ from .Subunit import Subunit
 
 class CylinderRing(Subunit):
     aliases = ["cylinderring","ring","cylring","discring","hollowcylinder","hollowdisc","hollowrod"]
-    n_dimensions = 3
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.R,self.r,self.l = dimensions
+    def __init__(self, radius, inner_radius, length):
+        self.R,self.r,self.l = radius,inner_radius,length
     
     def getVolume(self):
         """Returns the volume of a cylinder ring"""

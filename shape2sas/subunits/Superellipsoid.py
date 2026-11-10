@@ -5,11 +5,10 @@ from scipy.special import gamma
 
 class Superellipsoid(Subunit):
     aliases = ["superellipsoid","superellips"]
-    n_dimensions = 4
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.R,self.eps,self.t,self.s = dimensions
+    def __init__(self, radius, eccentricity, t, s):
+        """the equatorial radius, the eccentricity (polar over equatorial radius), and the shape parameters t and s"""
+        self.R,self.eps,self.t,self.s = radius,eccentricity,t,s
 
     @staticmethod
     def beta(a, b):

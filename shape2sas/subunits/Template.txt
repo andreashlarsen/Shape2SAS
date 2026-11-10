@@ -9,7 +9,13 @@ The first alias is the canonical name and is the one used in error messages.
 
 Every subunit derives from Subunit (see Subunit.py), which declares the methods
 below. A subunit that leaves one out cannot be instantiated, and one without
-its own aliases or n_dimensions raises a TypeError as soon as it is imported.
+its own aliases raises a TypeError as soon as it is imported.
+
+The dimensions are the named arguments of __init__, in the order the user
+gives them after --dimension/-d. Give them descriptive names (radius, length,
+...): they appear in the error message when the wrong number is given, and
+can be used as keywords, e.g. Cylinder(radius=20, length=100). There is no
+need to check their number - Python does that.
 
 NOTE: getPointDistribution() and checkOverlap() must describe the SAME body.
 The generating box must enclose the subunit, and getVolume() must return the
@@ -20,12 +26,9 @@ from .Subunit import Subunit
 
 class <NAME OF SUBUNIT HERE>(Subunit):
     aliases = ["<CANONICAL NAME>", "<OTHER ACCEPTED NAMES>"]
-    n_dimensions = <NUMBER OF DIMENSIONS>
 
-    def __init__(self, dimensions):
-        # checks the number of dimensions
-        super().__init__(dimensions)
-        self.<PARAMETER NAME>, self.<PARAMETER NAME> = dimensions
+    def __init__(self, <PARAMETER NAME>, <PARAMETER NAME>):
+        self.<SYMBOL>, self.<SYMBOL> = <PARAMETER NAME>, <PARAMETER NAME>
 
     def getVolume(self):
         """Returns the volume of the subunit"""

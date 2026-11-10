@@ -3,11 +3,9 @@ from .Subunit import Subunit
 
 class HollowSphere(Subunit):
     aliases = ["hollowsphere","shell"]
-    n_dimensions = 2
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.R,self.r = dimensions
+    def __init__(self, radius, inner_radius):
+        self.R,self.r = radius,inner_radius
 
     def getVolume(self):
         """Returns the volume of a hollow sphere"""

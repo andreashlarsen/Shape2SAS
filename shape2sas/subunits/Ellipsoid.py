@@ -3,11 +3,10 @@ from .Subunit import Subunit
 
 class Ellipsoid(Subunit):
     aliases = ["ellipsoid","ellips"]
-    n_dimensions = 3
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.a,self.b,self.c = dimensions
+    def __init__(self, a, b, c):
+        """semi-axes along x, y and z"""
+        self.a,self.b,self.c = a,b,c
 
     def getVolume(self):
         """Returns the volume of an ellipsoid"""

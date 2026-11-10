@@ -3,11 +3,10 @@ from .Subunit import Subunit
 
 class Torus(Subunit):
     aliases = ["torus","toroid","doughnut"]
-    n_dimensions = 2
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.R,self.r = dimensions
+    def __init__(self, radius, tube_radius):
+        """the overall radius, to the centre of the tube, and the radius of the tube's cross section"""
+        self.R,self.r = radius,tube_radius
 
     def getVolume(self):
         """Returns the volume of a torus"""

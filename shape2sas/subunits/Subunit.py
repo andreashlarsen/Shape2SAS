@@ -1,24 +1,23 @@
+import inspect
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
 import numpy as np
 
-from .subunits_helpfunctions import check_dimension
+from ..helpfunctions import InputError
 
 class Subunit(ABC):
     """
     Base class of all subunits. A subunit is a geometric body, described in
     its own frame: centred on the origin, before any rotation or translation.
 
-    A subclass must set the class attributes
-        aliases      : names the user can type for the subunit; the first is the canonical name
-        n_dimensions : number of dimensions the subunit takes
-    call super().__init__(dimensions) from its __init__, and implement
+    A subclass must set the class attribute
+        aliases : names the user can type for the subunit; the first is the canonical name
+    take its dimensions as named arguments of __init__, and implement
     getVolume(), getPointDistribution() and checkOverlap().
     """
 
     aliases: ClassVar[list[str]]
-    n_dimensions: ClassVar[int]
 
     def __init_subclass__(cls, **kwargs):
         """catch a missing or malformed class attribute when the subunit is defined, not when it is first used"""
@@ -27,11 +26,28 @@ class Subunit(ABC):
         aliases = cls.__dict__.get("aliases")
         if not isinstance(aliases, list) or not aliases or not all(isinstance(a, str) for a in aliases):
             raise TypeError("subunit " + cls.__name__ + " must define aliases as a non-empty list of names")
-        if not isinstance(getattr(cls, "n_dimensions", None), int):
-            raise TypeError("subunit " + cls.__name__ + " must define n_dimensions as an integer")
 
-    def __init__(self, dimensions):
-        check_dimension(self.aliases[0], dimensions, self.n_dimensions)
+    @classmethod
+    def parameters(cls) -> list[str]:
+        """the names of the dimensions the subunit takes, in order"""
+        return list(inspect.signature(cls).parameters)
+
+    @classmethod
+    def from_dimensions(cls, dimensions):
+        """
+        create the subunit from a list of dimensions, in the order of its parameters, as given on the command line
+
+        raises InputError, naming the parameters, if the wrong number of dimensions is given
+        """
+        dimensions = list(dimensions)
+        try:
+            inspect.signature(cls).bind(*dimensions)
+        except TypeError:
+            names = cls.parameters()
+            raise InputError("subunit %s takes %d dimension%s (%s), but %d %s given: %s"
+                             % (cls.aliases[0], len(names), "" if len(names) == 1 else "s", ", ".join(names),
+                                len(dimensions), "was" if len(dimensions) == 1 else "were", dimensions)) from None
+        return cls(*dimensions)
 
     @abstractmethod
     def getVolume(self) -> float:

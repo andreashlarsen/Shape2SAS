@@ -3,11 +3,10 @@ from .Subunit import Subunit
 
 class Cuboid(Subunit):
     aliases = ["cuboid","brick"]
-    n_dimensions = 3
 
-    def __init__(self, dimensions):
-        super().__init__(dimensions)
-        self.a,self.b,self.c = dimensions
+    def __init__(self, side_a, side_b, side_c):
+        """full side lengths along x, y and z"""
+        self.a,self.b,self.c = side_a,side_b,side_c
 
     def getVolume(self):
         """Returns the volume of a cuboid"""

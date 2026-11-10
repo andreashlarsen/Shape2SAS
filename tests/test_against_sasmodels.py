@@ -78,7 +78,7 @@ def sasmodels_reference(name, pars):
 def test_volume_matches_sasmodels(subunit, dimensions, model, pars):
     """getVolume() must give the volume of the sasmodels body"""
     expected = sasmodels_reference(model, pars)[1]
-    volume = getattr(subunits, subunit)(list(dimensions)).getVolume()
+    volume = getattr(subunits, subunit)(*dimensions).getVolume()
     assert volume == pytest.approx(expected, rel=1e-3), (
         "%s %s has volume %.6g, sasmodels %s gives %.6g" % (subunit, dimensions, volume, model, expected))
 
