@@ -7,7 +7,7 @@ import os
 
 import numpy as np
 
-from .subunits.Subunit import Subunit
+from .subunits.Subunit import Placement
 
 logger = logging.getLogger(__name__)
 
@@ -22,16 +22,6 @@ class ModelPointDistribution:
     z: np.ndarray
     sld: np.ndarray #scattering length density for each point
     volume_total: float
-
-@dataclass
-class SubunitPlacement:
-    """a subunit of a particle, and where it is placed"""
-
-    subunit: Subunit
-    sld: float
-    com: list[float]
-    rotation: list[float]
-    rotation_point: list[float]
 
 def euler_rotation_matrix(alpha,beta,gamma):
     """
@@ -64,7 +54,7 @@ def rotate_and_translate(x,y,z,rotation,rotation_point,com):
 def undo_rotate_and_translate(x,y,z,rotation,rotation_point,com):
     """
     Inverse of rotate_and_translate(): bring points back into the frame of the
-    subunit, so that checkOverlap() can be applied to them.
+    subunit, so that outside() can be applied to them.
 
         v = R^T * (v' - com - rp) + rp
 
@@ -81,8 +71,9 @@ def undo_rotate_and_translate(x,y,z,rotation,rotation_point,com):
     return out[0],out[1],out[2]
 
 class GenerateAllPoints:
-    def __init__(self, Npoints, placements, exclude_overlap):
+    def __init__(self, Npoints, placements: list[Placement], exclude_overlap, rng: np.random.Generator):
         self.Npoints = Npoints
+        self.rng = rng
         self.subunits = [p.subunit for p in placements]
         self.Number_of_subunits = len(placements)
         self.sld = [p.sld for p in placements]
@@ -120,12 +111,12 @@ class GenerateAllPoints:
         # so the points are expressed in that subunit's own frame
         x_eff, y_eff, z_eff = undo_rotate_and_translate(x, y, z, rotation, rotation_point, com)
 
-        # then check overlaps
-        idx = subunit.checkOverlap(x_eff, y_eff, z_eff)
-        x_add, y_add, z_add, sld_add = x[idx], y[idx], z[idx], p[idx]
+        # then keep the points outside it
+        keep = subunit.outside(x_eff, y_eff, z_eff)
+        x_add, y_add, z_add, sld_add = x[keep], y[keep], z[keep], p[keep]
 
         ## number of excluded points
-        N_x = len(x) - len(idx[0])
+        N_x = len(x) - int(np.count_nonzero(keep))
         return x_add, y_add, z_add, sld_add, N_x
 
     def onGeneratingAllPointsSeparately(self):
@@ -136,7 +127,7 @@ class GenerateAllPoints:
 
         #Get volume of each subunit
         for i in range(self.Number_of_subunits):
-            v = self.subunits[i].getVolume()
+            v = self.subunits[i].volume()
             volume.append(v)
             sum_vol += v
 
@@ -146,7 +137,7 @@ class GenerateAllPoints:
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
             
-            x_add, y_add, z_add = self.subunits[i].getPointDistribution(Npoints)
+            x_add, y_add, z_add = self.subunits[i].generate_points(Npoints, self.rng)
 
             # rotate and translate
             x_add, y_add, z_add = rotate_and_translate(x_add, y_add, z_add, self.rotation[i], self.rotation_points[i], self.com[i])

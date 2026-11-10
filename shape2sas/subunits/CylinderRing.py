@@ -7,7 +7,7 @@ class CylinderRing(Subunit):
     def __init__(self, radius, inner_radius, length):
         self.R,self.r,self.l = radius,inner_radius,length
     
-    def getVolume(self):
+    def volume(self):
         """Returns the volume of a cylinder ring"""
         if self.r > self.R:
             self.R, self.r = self.r, self.R
@@ -16,35 +16,35 @@ class CylinderRing(Subunit):
         else: 
             return np.pi * (self.R**2 - self.r**2) * self.l
 
-    def getPointDistribution(self, Npoints):
-        """Returns the point distribution of a cylinder ring"""
-        Volume = self.getVolume()
+    def generate_points(self, Npoints, rng):
+        """Returns points drawn uniformly in a cylinder ring"""
+        Volume = self.volume()
         if self.r == self.R:
             #The cylinder ring is a shell
-            phi = np.random.uniform(0, 2 * np.pi, Npoints)
+            phi = rng.uniform(0, 2 * np.pi, Npoints)
             x_add = self.R * np.cos(phi)
             y_add = self.R * np.sin(phi)
-            z_add = np.random.uniform(-self.l / 2, self.l / 2, Npoints)
+            z_add = rng.uniform(-self.l / 2, self.l / 2, Npoints)
             return x_add, y_add, z_add
         Volume_max = 2 * self.R * 2 * self.R * self.l
         Vratio = Volume_max / Volume
         N = int(Vratio * Npoints)
-        x = np.random.uniform(-self.R, self.R, N)
-        y = np.random.uniform(-self.R, self.R, N)
-        z = np.random.uniform(-self.l / 2, self.l / 2, N)
+        x = rng.uniform(-self.R, self.R, N)
+        y = rng.uniform(-self.R, self.R, N)
+        z = rng.uniform(-self.l / 2, self.l / 2, N)
         d = np.sqrt(x**2 + y**2)
         idx = np.where((d < self.R) & (d > self.r))
         x_add, y_add, z_add = x[idx], y[idx], z[idx]
         return x_add, y_add, z_add
 
-    def checkOverlap(self, x_eff, y_eff, z_eff):
-        """Check for points within a cylinder ring"""
+    def outside(self, x_eff, y_eff, z_eff):
+        """Returns which points are outside the cylinder ring"""
         d = np.sqrt(x_eff**2 + y_eff**2)
         if self.r > self.R:
             self.R, self.r = self.r, self.R
         if self.r == self.R:
-            idx = np.where((d != self.R) | (abs(z_eff) > self.l / 2))
+            idx = ((d != self.R) | (abs(z_eff) > self.l / 2))
             return idx
         else: 
-            idx = np.where((d > self.R) | (d < self.r) | (abs(z_eff) > self.l / 2))
+            idx = ((d > self.R) | (d < self.r) | (abs(z_eff) > self.l / 2))
             return idx

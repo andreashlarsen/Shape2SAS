@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-def simulate_scattering(q, I, exposure=500.0):
+def simulate_scattering(q, I, exposure=500.0, *, rng=None):
     """
     simulate measured data, with noise, from a theoretical intensity
 
@@ -13,6 +13,7 @@ def simulate_scattering(q, I, exposure=500.0):
     input
     q,I      : calculated scattering, in absolute units
     exposure : exposure (in arbitrary units) - a longer exposure gives less noise
+    rng      : random number generator (np.random.Generator), or a seed for one; None draws a fresh seed
 
     output
     I_sim, sigma : simulated intensity and its uncertainty [cm^-1]
@@ -53,7 +54,7 @@ def simulate_scattering(q, I, exposure=500.0):
     sigma = sigma_sed / exposure
 
     ## simulate data using errors
-    Isim = np.random.normal(I, sigma)
+    Isim = np.random.default_rng(rng).normal(I, sigma)
 
     return Isim, sigma
 

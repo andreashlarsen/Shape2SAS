@@ -291,7 +291,7 @@ class PairDistanceDistribution:
         self.Rg = self.calc_Rg(self.r_hist, self.hr)
         logger.info(f"           Rg  : {self.Rg:.3e} A")
 
-    def calc_Pq(self, q):
+    def form_factor(self, q):
         """
         calculate form factor, P(q), normalized so P(0) = 1
 
@@ -316,7 +316,7 @@ class PairDistanceDistribution:
 
         return Pq
 
-    def calc_P0(self):
+    def forward_scattering(self):
         """
         calculate forward scattering per unit volume fraction, P(0), so that I(q) = conc * P(0) * P(q) * S(q)
 

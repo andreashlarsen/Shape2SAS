@@ -1,21 +1,18 @@
-import importlib
-import pkgutil
-import inspect
+"""
+The structure factors of the particles in solution.
 
-__all__ = []
+A new structure factor derives from StructureFactor, and must be imported and listed in __all__ here, so that users can select it
+by name.
+"""
 
-# Dynamically import all modules in this package
-package_name = __name__
+from .StructureFactor import StructureFactor
+from .Aggregation import Aggregation
+from .HardSphere import HardSphere
+from .NoStructure import NoStructure
 
-for loader, module_name, is_pkg in pkgutil.walk_packages(__path__, package_name + "."):
-    if module_name.split(".")[-1] == "structure_factors_helpfunctions":
-        continue  # skip helper functions
-
-    module = importlib.import_module(module_name)
-
-    # Find all classes in the module
-    for name, obj in inspect.getmembers(module, inspect.isclass):
-        # Only export classes defined in this module (not imported ones)
-        if obj.__module__ == module_name:
-            globals()[name] = obj   # export the class
-            __all__.append(name)
+__all__ = [
+    "StructureFactor",
+    "Aggregation",
+    "HardSphere",
+    "NoStructure",
+]

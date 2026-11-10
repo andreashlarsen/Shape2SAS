@@ -63,13 +63,13 @@ class Subunit(Aliased, ABC):
 
 @dataclass(frozen=True)
 class Placement:
-    """a subunit, and where it is placed in a particle; create it with Subunit.placed"""
+    """a subunit, and where it is placed in a particle; create it with Subunit.placed. the vectors are stored as tuples"""
 
     subunit: Subunit
     sld: float = 1.0
-    com: tuple[float, float, float] = (0., 0., 0.)
-    rotation: tuple[float, float, float] = (0., 0., 0.)
-    rotation_point: tuple[float, float, float] = (0., 0., 0.)
+    com: Sequence[float] = (0., 0., 0.)
+    rotation: Sequence[float] = (0., 0., 0.)
+    rotation_point: Sequence[float] = (0., 0., 0.)
 
     def __post_init__(self):
         if not isinstance(self.subunit, Subunit):

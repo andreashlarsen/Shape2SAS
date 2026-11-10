@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from shape2sas.particle import create_particle
+from shape2sas.subunits import Sphere
 
 Q = np.linspace(0.001, 0.5, 400)
 
@@ -33,12 +34,10 @@ def sphere(Npoints=4000, radius=40., seed=0):
     a reproducible sphere: returns a function giving its point distribution for the histogram settings passed to it, drawn from
     the same seed each time, so that both backends see the same points
     """
-    particle = create_particle()
-    particle.add_subunit("Sphere", [radius])
+    particle = create_particle(Sphere(radius=radius))
 
     def points(**settings):
-        np.random.seed(seed)
-        return quiet(particle.generate_points, Npoints, **settings)
+        return quiet(particle.generate_points, Npoints, rng=seed, **settings)
     return points
 
 
@@ -48,7 +47,7 @@ def pr(points, prpoints=100, polydispersity=0.0, use_ausaxs=False):
 
 
 def Pq(points, **kwargs):
-    return pr(points, **kwargs).calc_Pq(Q)
+    return pr(points, **kwargs).form_factor(Q)
 
 
 def max_rel_deviation(a, b):
@@ -131,7 +130,7 @@ def test_dmax_rg_and_i0_match_default():
         "Rg differs by %.3f%%: %.4f vs %.4f"
         % (100 * abs(rg_a - rg_d) / rg_d, rg_a, rg_d))
 
-    i0_d, i0_a = default.calc_P0(), ausaxs.calc_P0()
+    i0_d, i0_a = default.forward_scattering(), ausaxs.forward_scattering()
     assert abs(i0_a - i0_d) <= 0.005 * abs(i0_d), (
         "I(0) differs by %.3f%%: %.6e vs %.6e"
         % (100 * abs(i0_a - i0_d) / abs(i0_d), i0_a, i0_d))
@@ -216,7 +215,7 @@ def test_pr_has_roughly_prpoints_bins():
 def test_i0_is_independent_of_binning():
     """I(0) is a property of the particle, so it must not change with prpoints"""
     p = sphere()
-    i0 = [pr(p, prpoints=prpoints).calc_P0() for prpoints in (50, 100, 400)]
+    i0 = [pr(p, prpoints=prpoints).forward_scattering() for prpoints in (50, 100, 400)]
     assert np.allclose(i0, i0[0], rtol=1e-5), "I(0) depends on prpoints: %s" % i0
 
 
@@ -226,13 +225,11 @@ def test_i0_of_homogeneous_particle():
     estimate of the mean squared contrast is exact and I(0) = conc * V * sld^2 * 1E-4
     """
     sld, conc = 2.0, 0.02
-    np.random.seed(0)
-    particle = create_particle()
-    particle.add_subunit("Sphere", [40.], sld=sld)
-    p = quiet(particle.generate_points, 2000, use_ausaxs=False)
+    particle = create_particle(Sphere(radius=40.).placed(sld=sld))
+    p = quiet(particle.generate_points, 2000, rng=0, use_ausaxs=False)
 
     pdd = quiet(lambda: p.histogram)
-    I0, Pq0 = conc * pdd.calc_P0(), pdd.calc_Pq(np.array([0.0]))
+    I0, Pq0 = conc * pdd.forward_scattering(), pdd.form_factor(np.array([0.0]))
     expected = conc * p.volume * sld**2 * 1E-4
     assert abs(I0 - expected) <= 1e-5 * expected, "I(0) = %.6e, expected %.6e" % (I0, expected)
     assert abs(Pq0[0] - 1.0) <= 1e-6, "P(0) = %.6f, expected 1" % Pq0[0]

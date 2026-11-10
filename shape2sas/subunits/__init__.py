@@ -4,7 +4,7 @@ The geometric subunits a particle is built from.
 A new subunit derives from Subunit, and must be imported and listed in __all__ here, so that users can select it by name.
 """
 
-from .Subunit import Subunit
+from .Subunit import Placement, Subunit
 from .CircularDisc import CircularDisc
 from .Cube import Cube
 from .Cuboid import Cuboid
@@ -25,6 +25,7 @@ from .TruncatedOctahedron import TruncatedOctahedron
 
 __all__ = [
     "Subunit",
+    "Placement",
     "CircularDisc",
     "Cube",
     "Cuboid",

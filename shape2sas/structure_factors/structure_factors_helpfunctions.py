@@ -1,16 +1,7 @@
 import os
 
 import numpy as np
-from ..helpfunctions import InputError, sinc, calc_com_dist
-
-def check_Spar(name,S_par,par_names):
-    """check if the number of input parameters for the structure factor is correct, else raise an InputError"""
-    n = len(par_names)
-    len_par = len(S_par)
-    if len_par != n:
-        par = ' parameter ' if n == 1 else ' parameters '
-        were = ' was ' if len_par == 1 else ' were '
-        raise InputError("structure factor " + name + " needs " + str(n) + par + "(provided after --S_par or -Sp): " + ", ".join(par_names) + ", but " + str(len_par) + were + "given: " + str(list(S_par)))
+from ..helpfunctions import sinc, calc_com_dist
 
 def calc_A00(q,point_distribution):
     """

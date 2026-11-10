@@ -210,6 +210,7 @@ def run(argv=None):
             S_par = args.S_par[i][0]
         except:
             S_par = []
+        structure_factor = getStructureFactorClass(S_type).from_parameters(S_par)
 
         ### calculate p(r)
         logger.info("\n    Calculating pair distance distribution, p(r)...")
@@ -223,7 +224,7 @@ def run(argv=None):
             # make extended q-range for sesans
             # the structure factor decides the length scale: an aggregate is
             # larger than the particle it is built from
-            qmin, deltamax = getStructureFactorClass(S_type).getSesansRange(S_par, points.histogram.dmax)
+            qmin, deltamax = structure_factor.sesans_range(points.histogram.dmax)
             qmax = 1e4 * qmin
             qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)
@@ -237,10 +238,10 @@ def run(argv=None):
         logger.info("\n    Calculating intensity, I(q)...")
 
         ### calculate theoretical SAS, in absolute units, with its structure factor (and SESANS)
-        S_eff = points.structure_factor(q, S_type, S_par)
+        S_eff = points.effective_structure_factor(q, structure_factor)
         save_S_func(q,S_eff,model_filename)
         S_list.append(S_eff)
-        I = points.scattering(q, conc, S_type, S_par, sigma_r)
+        I = points.scattering(q, conc=conc, structure_factor=structure_factor, sigma_r=sigma_r)
         save_I_func(q,I,model_filename)
         I_list.append(I)
         if args.sesans:

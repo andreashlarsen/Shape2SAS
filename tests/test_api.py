@@ -16,14 +16,16 @@ sys.path.insert(0, REPO)
 
 import shape2sas as sts
 
+from shape2sas.structure_factors import Aggregation, HardSphere
+from shape2sas.subunits import Cylinder, Sphere
+
 Q = sts.uniform_q(0.001, 0.5, 200)
 
 
 def sphere(radius=50., sld=1.0, Npoints=3000, seed=0):
-    np.random.seed(seed)
     # the default path needs no optional dependency, so the tests run without pyausaxs
-    particle = sts.create_particle(["sphere", [radius], {"sld": sld}])
-    return particle.generate_points(Npoints, use_ausaxs=False)
+    particle = sts.create_particle(Sphere(radius=radius).placed(sld=sld))
+    return particle.generate_points(Npoints, rng=seed, use_ausaxs=False)
 
 
 def coordinates(points):
@@ -59,16 +61,27 @@ def test_pair_distance_distribution():
     assert len(r) == len(pr)
     assert abs(histogram.Rg - np.sqrt(3 / 5) * radius) <= 0.02 * radius
     assert 1.9 * radius <= histogram.dmax <= 2 * radius
+    assert histogram.form_factor(np.array([0.]))[0] == pytest.approx(1.)
 
 
 def test_structure_factor():
     """the structure factor multiplies the form factor, and is lowered at small q by hard-sphere repulsion"""
     points = sphere()
-    S_eff = points.structure_factor(Q, "Hard Sphere", [0.2, 50.])
+    hard_spheres = HardSphere(volume_fraction=0.2, radius=50.)
+    S_eff = points.effective_structure_factor(Q, hard_spheres)
     assert S_eff[0] < 1.0
-    I = points.scattering(Q, structure_factor="Hard Sphere", structure_factor_parameters=[0.2, 50.])
+    I = points.scattering(Q, structure_factor=hard_spheres)
     assert np.allclose(I, points.scattering(Q) * S_eff)
-    assert np.allclose(points.structure_factor(Q), 1.0)
+    assert np.allclose(points.effective_structure_factor(Q), 1.0)
+    # the name and parameter list of the command line give the same structure factor
+    assert np.allclose(I, points.scattering(Q, structure_factor=HardSphere.from_parameters([0.2, 50.])))
+
+
+def test_aggregation_sets_the_sesans_range():
+    """an aggregate, not the particle, sets the length scale of a SESANS calculation"""
+    dmax = 100.
+    assert Aggregation(effective_radius=300., particles_per_aggregate=10., fraction_aggregated=0.5).sesans_range(dmax)[1] == 900.
+    assert HardSphere(volume_fraction=0.1, radius=50.).sesans_range(dmax)[1] == 3 * dmax
 
 
 def test_interface_roughness():
@@ -79,77 +92,75 @@ def test_interface_roughness():
 
 def test_subunit_defaults():
     """a subunit has unit contrast, sits at the origin and is not rotated unless told otherwise"""
-    np.random.seed(1)
-    particle = sts.create_particle()
-    particle.add_subunit("sphere", [30.])
-    x, y, z, sld = coordinates(particle.generate_points(2000, use_ausaxs=False))
+    particle = sts.create_particle(Sphere(radius=30.))
+    x, y, z, sld = coordinates(particle.generate_points(2000, rng=1, use_ausaxs=False))
     assert np.all(sld == 1.0)
     assert np.all(x**2 + y**2 + z**2 <= 30.**2)
+    placement = Sphere(radius=30.).placed()
+    assert (placement.sld, placement.com, placement.rotation, placement.rotation_point) == (1., (0., 0., 0.), (0., 0., 0.), (0., 0., 0.))
+
+
+def test_seed_makes_the_points_reproducible():
+    """the same seed, or a generator seeded alike, gives the same points; another seed other points"""
+    particle = sts.create_particle(Cylinder(radius=20., length=60.))
+    same = [coordinates(particle.generate_points(2000, rng=rng, use_ausaxs=False)) for rng in (7, np.random.default_rng(7))]
+    assert np.array_equal(same[0], same[1])
+    other = coordinates(particle.generate_points(2000, rng=8, use_ausaxs=False))
+    assert not np.array_equal(same[0], other)
 
 
 def test_subunit_by_class_or_name():
     """a subunit can be given as a class or by any of its names, with the same result"""
-    from shape2sas import subunits
     particles = []
-    for shape in (subunits.Cylinder, "cylinder", "Rod"):
-        np.random.seed(2)
+    for shape in (Cylinder, "cylinder", "Rod"):
         particle = sts.create_particle()
         particle.add_subunit(shape, [20., 60.])
-        particles.append(coordinates(particle.generate_points(2000, use_ausaxs=False)))
+        particles.append(coordinates(particle.generate_points(2000, rng=2, use_ausaxs=False)))
     for points in particles[1:]:
         assert np.array_equal(points, particles[0])
 
 
-def test_subunit_as_instance():
-    """a subunit created with named dimensions gives the same particle as one given by name and a dimensions list"""
-    particles = []
-    for args in ((sts.subunits.Cylinder(radius=20., length=60.),), ("cylinder", [20., 60.])):
-        np.random.seed(2)
-        particle = sts.create_particle()
-        particle.add_subunit(*args, com=[0, 0, 10.])
-        particles.append(coordinates(particle.generate_points(2000, use_ausaxs=False)))
-    assert np.array_equal(particles[0], particles[1])
+def test_placed_subunit_and_named_subunit_agree():
+    """a subunit placed with placed() gives the same particle as one given by name, dimensions and placement keywords"""
+    placement = dict(sld=2., com=(0, 0, 10.), rotation=(30., 0, 0), rotation_point=(0, 0, 5.))
+    placed = sts.create_particle(Cylinder(radius=20., length=60.).placed(**placement))
+    named = sts.create_particle()
+    named.add_subunit("cylinder", [20., 60.], **placement)
+    points = [coordinates(particle.generate_points(2000, rng=2, use_ausaxs=False)) for particle in (placed, named)]
+    assert np.array_equal(points[0], points[1])
 
 
 def test_subunits_given_to_create_particle():
-    """create_particle forwards each subunit to add_subunit, in every form add_subunit takes"""
-    from shape2sas.subunits import Cylinder, Sphere
+    """create_particle takes subunits and placed subunits, as add_subunit does"""
     added = sts.create_particle()
     added.add_subunit("sphere", [50.], com=[0, 0, -60.])
-    added.add_subunit(Sphere(radius=50.), com=[0, 0, 60.])
+    added.add_subunit(Sphere(radius=50.).placed(com=(0, 0, 60.)))
     added.add_subunit(Cylinder(radius=10., length=120.))
-    added.add_subunit(Cylinder, [10., 20.], sld=2.)
     given = sts.create_particle(
-        ["sphere", [50.], {"com": [0, 0, -60.]}],
-        [Sphere(radius=50.), {"com": [0, 0, 60.]}],
+        Sphere(radius=50.).placed(com=(0, 0, -60.)),
+        Sphere(radius=50.).placed(com=(0, 0, 60.)),
         Cylinder(radius=10., length=120.),
-        (Cylinder, [10., 20.], {"sld": 2.}),
     )
-    particles = []
-    for particle in (added, given):
-        np.random.seed(4)
-        particles.append(coordinates(particle.generate_points(3000, use_ausaxs=False)))
-    assert np.array_equal(particles[0], particles[1])
+    points = [coordinates(particle.generate_points(3000, rng=4, use_ausaxs=False)) for particle in (added, given)]
+    assert np.array_equal(points[0], points[1])
 
-    for wrong in ("sphere", [], 50., ["sphere"], ["sphere", [50.], {"color": "red"}]):
-        with pytest.raises((ValueError, TypeError)):
+    for wrong in ("sphere", ["sphere", [50.]], 50., Sphere):
+        with pytest.raises(ValueError):
             sts.create_particle(wrong)
 
 
 def test_point_distribution_does_not_change():
     """a point distribution keeps its points and histogram, and is not affected by subunits added to the particle later"""
-    np.random.seed(0)
-    particle = sts.create_particle()
-    particle.add_subunit("sphere", [50.])
-    points = particle.generate_points(3000, use_ausaxs=False)
+    particle = sts.create_particle(Sphere(radius=50.))
+    points = particle.generate_points(3000, rng=0, use_ausaxs=False)
     before = coordinates(points)
     assert points.histogram is points.histogram, "the histogram must not be calculated again"
     with pytest.raises(ValueError):
         points.x[0] = 0.
 
-    particle.add_subunit("sphere", [50.], com=[0, 0, 150.])
+    particle.add_subunit(Sphere(radius=50.).placed(com=(0, 0, 150.)))
     assert np.array_equal(coordinates(points), before)
-    dumbbell = particle.generate_points(3000, use_ausaxs=False)
+    dumbbell = particle.generate_points(3000, rng=0, use_ausaxs=False)
     assert dumbbell.histogram.dmax > 2 * points.histogram.dmax
     I, I_dumbbell = points.scattering(Q), dumbbell.scattering(Q)
     assert not np.allclose(I_dumbbell / I_dumbbell[0], I / I[0], rtol=0.05)
@@ -168,19 +179,32 @@ def test_invalid_input_raises_value_error():
     with pytest.raises(ValueError):
         particle.add_subunit("cylinder")
     with pytest.raises(ValueError):
-        particle.add_subunit(sts.subunits.Sphere(radius=10.), [10.])
+        particle.add_subunit(Sphere(radius=10.), [10.])
     with pytest.raises(ValueError):
         particle.add_subunit("sphere", [10.], com=[0, 0])
     with pytest.raises(ValueError):
-        sphere().scattering(Q, structure_factor="Hard Sphere", structure_factor_parameters=[0.2])
+        Sphere(radius=10.).placed(com=(0, 0))
+    with pytest.raises(ValueError):
+        HardSphere.from_parameters([0.2])
+    with pytest.raises(ValueError):
+        sphere().scattering(Q, structure_factor="hardsphere")
+
+
+def test_placement_keywords_are_checked():
+    """a placement keyword that does not exist is an error, not silently ignored"""
+    particle = sts.create_particle()
+    with pytest.raises(TypeError):
+        particle.add_subunit("sphere", [10.], colour="red")
+    with pytest.raises(ValueError):
+        particle.add_subunit(Sphere(radius=10.), sld=2.)
 
 
 def test_simulated_scattering():
     """the simulated data scatter around the theoretical intensity, with less noise for longer exposures"""
     I = sphere().scattering(Q)
-    np.random.seed(2)
-    I_short, sigma_short = sts.simulate_scattering(Q, I, exposure=100.)
-    I_long, sigma_long = sts.simulate_scattering(Q, I, exposure=400.)
+    I_short, sigma_short = sts.simulate_scattering(Q, I, exposure=100., rng=2)
+    I_long, sigma_long = sts.simulate_scattering(Q, I, exposure=400., rng=2)
     assert np.allclose(sigma_short / sigma_long, 2.0), "sigma must scale as 1/sqrt(exposure)"
     pulls = (I_short - I) / sigma_short
     assert abs(np.mean(pulls)) < 0.3 and 0.8 < np.std(pulls) < 1.2
+    assert np.array_equal(sts.simulate_scattering(Q, I, exposure=100., rng=2)[0], I_short), "the same seed must give the same data"
