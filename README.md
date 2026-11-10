@@ -103,6 +103,8 @@ The following subunits are currently available:
 | `cube` | side length | `dice` | Cube |
 | `hollow_cube` | outer side length, inner side length  | -- | Hollow cube (cavity is also a cube) |
 | `cuboid` | side length 1, side length 2, side length 3 | `brick` | cuboid, i.e. not same side lengths |
+| `octahedron` | half-diagonal a, half-diagonal b, half-diagonal c | `octa`, `bipyramid` | Octahedron with vertices at $\pm a$, $\pm b$, $\pm c$ on the x, y and z axes; regular for $a=b=c$ |
+| `truncated_octahedron` | half-diagonal a, half-diagonal b, half-diagonal c, truncation $t$ | `truncated_octa` | Octahedron as above, with each vertex cut off by a square facet at a fraction $1-t$ of the way out ($0 \le t \le 1/2$). $a=b=c$ gives a regular octahedron for $t=0$, a truncated octahedron for $t=1/3$ and a cuboctahedron for $t=1/2$<sup>****</sup> |
 | `torus` | overall radius, cross-sectional radius  | `toroid`, `doughnut` | Torus, i.e a doughnut shape | 
 | `hyperboloid` | smallest radius, curvature, half of the height  | `hourglass`, `cooling_tower`| Hyperboloid, i.e. an filled hourglass shape | 
 | `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>***</sup> | 
@@ -110,6 +112,7 @@ The following subunits are currently available:
 <sup>*</sup> input order is important.   
 <sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
 <sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)   
+<sup>****</sup>same as the `truncated_octahedron` model in SasView, with `radius_a` = a, `b2a_ratio` = b/a, `c2a_ratio` = c/a   
 
 [Back to Table of contents](#table-of-contents)
 

@@ -5,14 +5,9 @@ Agreement tests between the optional AUSAXS backend (pyausaxs) and the default p
 
 import contextlib
 import io
-import os
-import sys
 
 import numpy as np
 import pytest
-
-# this file lives in tests/, so put the repository root on the path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from shape2sas.models import getPointDistribution
 from shape2sas.theoretical_scattering import PairDistanceDistribution

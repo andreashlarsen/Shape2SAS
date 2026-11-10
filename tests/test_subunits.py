@@ -4,13 +4,7 @@ Self-consistency tests for the subunits, the structure factors and the
 rotation machinery.
 """
 
-import os
-import sys
-
 import numpy as np
-
-# this file lives in tests/, so put the repository root on the path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from shape2sas import subunits
 from shape2sas.models import (
@@ -24,6 +18,8 @@ CASES = {
     "Sphere":             [50.],
     "Cube":               [50.],
     "Cuboid":             [50., 40., 30.],
+    "Octahedron":         [40., 30., 25.],
+    "TruncatedOctahedron": [40., 30., 25., 0.3],
     "Cylinder":           [30., 80.],
     "CircularDisc":       [30., 20.],
     "CylinderRing":       [50., 30., 40.],
