@@ -3,9 +3,8 @@ from .TruncatedOctahedron import TruncatedOctahedron
 
 class Octahedron(TruncatedOctahedron):
     """
-    A general octahedron |x|/a + |y|/b + |z|/c <= 1: a truncated octahedron
-    without truncation, parameterised by the vertex distances a, b and c.
-    a = b = c gives a regular octahedron.
+    A general octahedron |x|/a + |y|/b + |z|/c <= 1: a truncated octahedron without truncation, parameterised by the vertex distances
+    a, b and c. a = b = c gives a regular octahedron.
     """
     aliases = ["octahedron","octa","bipyramid"]
 

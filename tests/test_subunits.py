@@ -4,13 +4,7 @@ Self-consistency tests for the subunits, the structure factors and the
 rotation machinery.
 """
 
-import os
-import sys
-
 import numpy as np
-
-# this file lives in tests/, so put the repository root on the path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from shape2sas import subunits
 from shape2sas.models import (
