@@ -56,7 +56,6 @@ shape2sas-compare = "shape2sas.compare:main"
 shape2sas-mixture = "shape2sas.mixture:main"
 
 [tool.pytest.ini_options]
-# run the tests in parallel, one worker per CPU; pass -n 0 to run them serially, e.g. when debugging a single test
 addopts = "-n auto"
 
 [tool.setuptools.packages.find]

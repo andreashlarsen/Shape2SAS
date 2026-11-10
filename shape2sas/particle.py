@@ -1,10 +1,13 @@
 """A particle built from subunits, and the scattering it gives."""
 
+from collections.abc import Sequence
+from typing import overload
+
 import numpy as np
 
 from .helpfunctions import InputError, getStructureFactorClass, getSubunitClass
 from .models import ModelPointDistribution, SubunitPlacement, GenerateAllPoints
-from .subunits import Subunit
+from .subunits.Subunit import Subunit
 from .theoretical_scattering import PairDistanceDistribution, calc_Iq_func
 
 
@@ -28,15 +31,25 @@ class Particle:
         self._pdd = None
         self._Pq = None
 
-    def add_subunit(self, shape, dimensions=None, sld=1.0, com=(0, 0, 0), rotation=(0, 0, 0), rotation_point=(0, 0, 0)):
-        """
-        add a subunit to the particle
+    @overload
+    def add_subunit(self, subunit: Subunit, /, *, sld: float = 1.0, com: Sequence[float] = (0, 0, 0),
+                    rotation: Sequence[float] = (0, 0, 0), rotation_point: Sequence[float] = (0, 0, 0)) -> None:
+        """add a subunit, e.g. subunits.Cylinder(radius=20, length=100), to the particle"""
 
-        shape          : a subunit, e.g. subunits.Cylinder(radius=20, length=100), or
-                         a subunit class, e.g. subunits.Cylinder, or its name, e.g. "cylinder" (any alias, ignoring case, spaces,
-                         underscores and hyphens), together with its dimensions
-        dimensions     : dimensions of the subunit [A], in the order of its parameters, see the table of subunits in the README.
-                         only given together with a subunit class or name
+    @overload
+    def add_subunit(self, shape: str | type[Subunit], dimensions: Sequence[float], /, *, sld: float = 1.0,
+                    com: Sequence[float] = (0, 0, 0), rotation: Sequence[float] = (0, 0, 0),
+                    rotation_point: Sequence[float] = (0, 0, 0)) -> None:
+        """add a subunit, given by its name, e.g. "cylinder", or class, and a list of its dimensions, e.g. [20, 100], to the particle"""
+
+    def add_subunit(self, shape, dimensions=None, /, *, sld=1.0, com=(0, 0, 0), rotation=(0, 0, 0), rotation_point=(0, 0, 0)):
+        """
+        add a subunit to the particle, either as
+            add_subunit(subunit, ...)            : a subunit, e.g. subunits.Cylinder(radius=20, length=100)
+            add_subunit(shape, dimensions, ...)  : a subunit class, e.g. subunits.Cylinder, or its name, e.g. "cylinder" (any alias, ignoring
+                                                   case, spaces, underscores and hyphens), and its dimensions [A], in the order of its
+                                                   parameters, e.g. [20, 100]; see the table of subunits in the README
+
         sld            : excess scattering length density (contrast) [1e-6 A^-2]
         com            : displacement of the subunit [A]
         rotation       : rotation of the subunit, as Euler angles (intrinsic ZYX) [degrees]
@@ -44,14 +57,16 @@ class Particle:
 
         raises ValueError on an unknown subunit, a wrong number of dimensions, or a vector without three components
         """
-        if isinstance(shape, Subunit):
-            if dimensions is not None:
-                raise InputError("the dimensions of a subunit are given when it is created, so they cannot also be given to add_subunit")
-            subunit = shape
-        else:
+        if not isinstance(shape, Subunit):
+            # the second form: build the subunit, and add it with the first
             if dimensions is None:
-                raise InputError("a subunit given by class or name needs its dimensions")
+                raise InputError("a subunit given by name or class needs its dimensions")
             subunit = getSubunitClass(shape).from_dimensions(dimensions)
+            return self.add_subunit(subunit, sld=sld, com=com, rotation=rotation, rotation_point=rotation_point)
+
+        if dimensions is not None:
+            raise InputError("the dimensions of a subunit are given when it is created, so they cannot also be given to add_subunit")
+        subunit = shape
         for name, vector in (("com", com), ("rotation", rotation), ("rotation_point", rotation_point)):
             if len(vector) != 3:
                 raise InputError("%s must have three components, but %s was given" % (name, list(vector)))

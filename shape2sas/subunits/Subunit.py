@@ -22,8 +22,8 @@ class Subunit(ABC):
     def __init_subclass__(cls, **kwargs):
         """catch a missing or malformed class attribute when the subunit is defined, not when it is first used"""
         super().__init_subclass__(**kwargs)
-        # aliases must be the subclass' own: inheriting them would make two subunits share the same names
-        aliases = cls.__dict__.get("aliases")
+
+        aliases = cls.__dict__.get("aliases") # get the attribute from the class itself, not from its parents
         if not isinstance(aliases, list) or not aliases or not all(isinstance(a, str) for a in aliases):
             raise TypeError("subunit " + cls.__name__ + " must define aliases as a non-empty list of names")
 
@@ -51,7 +51,7 @@ class Subunit(ABC):
 
     @abstractmethod
     def getVolume(self) -> float:
-        """Returns the volume of the subunit itself - not of the box used to generate its points"""
+        """Returns the volume of the subunit itself"""
 
     @abstractmethod
     def getPointDistribution(self, Npoints: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

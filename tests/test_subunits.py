@@ -4,6 +4,10 @@ Self-consistency tests for the subunits, the structure factors and the
 rotation machinery.
 """
 
+import importlib
+import inspect
+import pkgutil
+
 import numpy as np
 import pytest
 
@@ -78,6 +82,16 @@ def test_named_and_listed_dimensions_give_the_same_subunit():
         keywords = dict(zip(cls.parameters(), dimensions))
         for obj in (cls(*dimensions), cls.from_dimensions(dimensions)):
             assert obj.getVolume() == cls(**keywords).getVolume(), name
+
+
+def test_every_subunit_is_exported():
+    """every subunit class in the package must be imported and listed in subunits/__init__.py, or users cannot select it"""
+    defined = set()
+    for module in pkgutil.iter_modules(subunits.__path__):
+        module = importlib.import_module(subunits.__name__ + "." + module.name)
+        defined |= {name for name, obj in inspect.getmembers(module, inspect.isclass)
+                    if issubclass(obj, subunits.Subunit) and obj.__module__ == module.__name__}
+    assert defined == set(subunits.__all__), "not exported in subunits/__init__.py: %s" % sorted(defined - set(subunits.__all__))
 
 
 def test_every_subunit_derives_from_subunit():
