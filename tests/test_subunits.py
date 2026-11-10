@@ -5,6 +5,7 @@ rotation machinery.
 """
 
 import numpy as np
+import pytest
 
 from shape2sas import subunits
 from shape2sas.models import rotate_and_translate, undo_rotate_and_translate
@@ -70,6 +71,37 @@ def test_missing_dimensions_are_rejected():
         except ValueError:
             continue
         raise AssertionError("%s accepted too few dimensions" % name)
+
+
+def test_every_subunit_derives_from_subunit():
+    """all subunit classes share the Subunit interface, and CASES covers all of them"""
+    names = {name for name in subunits.__all__
+             if issubclass(getattr(subunits, name), subunits.Subunit) and name != "Subunit"}
+    assert names == set(CASES), "subunits missing from CASES: %s" % sorted(names - set(CASES))
+    for name, dimensions in CASES.items():
+        obj = getattr(subunits, name)(list(dimensions))
+        assert isinstance(obj, subunits.Subunit), name
+        assert len(dimensions) == obj.n_dimensions, name
+
+
+def test_malformed_subunits_are_rejected():
+    """a subunit must define its own aliases and n_dimensions, and implement every method"""
+    with pytest.raises(TypeError):
+        class NoAliases(subunits.Subunit):
+            n_dimensions = 1
+    with pytest.raises(TypeError):
+        class NoDimensions(subunits.Subunit):
+            aliases = ["nodimensions"]
+    with pytest.raises(TypeError):
+        # inheriting the aliases would give two subunits the same names
+        class InheritedAliases(subunits.Sphere):
+            pass
+
+    class NoMethods(subunits.Subunit):
+        aliases = ["nomethods"]
+        n_dimensions = 1
+    with pytest.raises(TypeError):
+        NoMethods([1.])
 
 
 def test_rotation_round_trip():

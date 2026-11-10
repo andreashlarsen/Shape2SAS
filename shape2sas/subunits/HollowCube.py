@@ -1,11 +1,12 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class HollowCube:
+class HollowCube(Subunit):
     aliases = ["hollowcube","hollowdice"]
+    n_dimensions = 2
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,2)     
+        super().__init__(dimensions)
         self.a,self.b = dimensions
 
     def getVolume(self) :

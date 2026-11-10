@@ -1,11 +1,12 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class Ellipsoid:
+class Ellipsoid(Subunit):
     aliases = ["ellipsoid","ellips"]
+    n_dimensions = 3
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,3)     
+        super().__init__(dimensions)
         self.a,self.b,self.c = dimensions
 
     def getVolume(self):

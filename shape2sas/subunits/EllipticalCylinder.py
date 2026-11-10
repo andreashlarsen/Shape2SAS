@@ -1,11 +1,12 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class EllipticalCylinder:
+class EllipticalCylinder(Subunit):
     aliases = ["ellipticalcylinder","ellipticalcyl","ellipticalrod"]
+    n_dimensions = 3
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,3)     
+        super().__init__(dimensions)
         self.a,self.b,self.l = dimensions
 
     def getVolume(self):

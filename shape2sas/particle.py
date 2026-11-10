@@ -2,8 +2,7 @@
 
 import numpy as np
 
-from . import subunits
-from .helpfunctions import InputError, build_alias_registry, getStructureFactorClass, lookup_alias
+from .helpfunctions import InputError, getStructureFactorClass, getSubunitClass
 from .models import ModelPointDistribution, SubunitPlacement, GenerateAllPoints
 from .theoretical_scattering import PairDistanceDistribution, calc_Iq_func
 
@@ -32,7 +31,7 @@ class Particle:
         """
         add a subunit to the particle
 
-        shape          : subunit name, e.g. "sphere" or "cylinder" (any alias, ignoring case, spaces, underscores and hyphens)
+        shape          : subunit class, e.g. subunits.Sphere, or its name, e.g. "sphere" (any alias, ignoring case, spaces, underscores and hyphens)
         dimensions     : dimensions of the subunit [A], see the table of subunits in the README
         sld            : excess scattering length density (contrast) [1e-6 A^-2]
         com            : displacement of the subunit [A]
@@ -41,8 +40,9 @@ class Particle:
 
         raises ValueError on an unknown subunit, a wrong number of dimensions, or a vector without three components
         """
+        shape = getSubunitClass(shape)
         # constructing the subunit checks its number of dimensions
-        lookup_alias(build_alias_registry(subunits), shape, "subunit")(dimensions)
+        shape(dimensions)
         for name, vector in (("com", com), ("rotation", rotation), ("rotation_point", rotation_point)):
             if len(vector) != 3:
                 raise InputError("%s must have three components, but %s was given" % (name, list(vector)))

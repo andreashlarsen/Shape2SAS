@@ -37,6 +37,15 @@ def lookup_alias(registry, name, what):
         available = sorted(set(cls.aliases[0] for cls in registry.values()))
         raise InputError("unknown " + what + " '" + str(name) + "'. Available " + what + "s: " + ", ".join(available)) from None
 
+def getSubunitClass(shape):
+    """look up a subunit class by any of its aliases, or pass a subunit class through"""
+    from . import subunits
+    if inspect.isclass(shape) and issubclass(shape, subunits.Subunit):
+        return shape
+    if not isinstance(shape, str):
+        raise InputError("a subunit must be given by name or as a subclass of Subunit, but " + repr(shape) + " was given")
+    return lookup_alias(build_alias_registry(subunits), shape, "subunit")
+
 def getStructureFactorClass(stype):
     """look up a structure factor class by any of its aliases"""
     from . import structure_factors

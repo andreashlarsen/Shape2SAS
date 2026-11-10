@@ -1,11 +1,12 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class Ellipsoid_shell:
+class Ellipsoid_shell(Subunit):
     aliases = ["ellipsoid_shell","ellips_shell"]
+    n_dimensions = 4
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,4)     
+        super().__init__(dimensions)
         self.a,self.b,self.c,self.T = dimensions
         # define outer dimensions ( = semiaxis + half thickness):
         self.a_plus,self.b_plus,self.c_plus = self.a+self.T/2,self.b+self.T/2,self.c+self.T/2

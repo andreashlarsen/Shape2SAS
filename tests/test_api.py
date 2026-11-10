@@ -84,6 +84,19 @@ def test_subunit_defaults():
     assert np.all(x**2 + y**2 + z**2 <= 30.**2)
 
 
+def test_subunit_by_class_or_name():
+    """a subunit can be given as a class or by any of its names, with the same result"""
+    from shape2sas import subunits
+    particles = []
+    for shape in (subunits.Cylinder, "cylinder", "Rod"):
+        np.random.seed(2)
+        particle = sts.create_particle(Npoints=2000, use_ausaxs=False)
+        particle.add_subunit(shape, [20., 60.])
+        particles.append(particle.points())
+    for points in particles[1:]:
+        assert np.array_equal(points, particles[0])
+
+
 def test_adding_a_subunit_updates_the_particle():
     """the points, p(r) and P(q) are kept between calls, but recalculated once the particle changes"""
     particle = sphere()
@@ -101,6 +114,8 @@ def test_invalid_input_raises_value_error():
         particle.scattering(Q)
     with pytest.raises(ValueError):
         particle.add_subunit("no such subunit", [10.])
+    with pytest.raises(ValueError):
+        particle.add_subunit(dict, [10.])
     with pytest.raises(ValueError):
         particle.add_subunit("cylinder", [10.])
     with pytest.raises(ValueError):

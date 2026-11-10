@@ -1,14 +1,15 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class Hyperboloid:
+class Hyperboloid(Subunit):
     aliases = ["hyperboloid", "hourglass", "coolingtower"]
+    n_dimensions = 3
     
     # https://mathworld.wolfram.com/One-SheetedHyperboloid.html
     # https://www.vcalc.com/wiki/hyperboloid-volume
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,3)     
+        super().__init__(dimensions)
         self.r,self.c,self.h = dimensions
 
     def getVolume(self):

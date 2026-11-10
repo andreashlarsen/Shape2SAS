@@ -7,8 +7,7 @@ import os
 
 import numpy as np
 
-from . import subunits
-from .helpfunctions import build_alias_registry, lookup_alias
+from .subunits.Subunit import Subunit
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class ModelPointDistribution:
 class SubunitPlacement:
     """a subunit of a particle, and where it is placed"""
 
-    shape: str
+    shape: type[Subunit]
     dimensions: list[float]
     sld: float
     com: list[float]
@@ -93,16 +92,6 @@ class GenerateAllPoints:
         self.rotation = [p.rotation for p in placements]
         self.rotation_points = [p.rotation_point for p in placements]
         self.exclude_overlap = exclude_overlap
-        self.setAvailableSubunits()
-
-    def setAvailableSubunits(self):
-        """Dynamically build dictionary of aliases -> subunit classes"""
-        self.subunitClasses = build_alias_registry(subunits)
-
-    def getSubunitClass(self, name):
-        """Look up a subunit class by any of its aliases, ignoring case,
-        spaces, underscores and hyphens"""
-        return lookup_alias(self.subunitClasses, name, "subunit")
 
     @staticmethod
     def AppendingPoints(x_new, y_new, z_new,sld_new, x_add, y_add, z_add, sld_add):
@@ -149,8 +138,7 @@ class GenerateAllPoints:
 
         #Get volume of each subunit
         for i in range(self.Number_of_subunits):
-            subunitClass = self.getSubunitClass(self.subunits[i])
-            v = subunitClass(self.dimensions[i]).getVolume()
+            v = self.subunits[i](self.dimensions[i]).getVolume()
             volume.append(v)
             sum_vol += v
 
@@ -160,7 +148,7 @@ class GenerateAllPoints:
         for i in range(self.Number_of_subunits):
             Npoints = int(self.Npoints * volume[i] / sum_vol)
             
-            x_add, y_add, z_add = self.getSubunitClass(self.subunits[i])(self.dimensions[i]).getPointDistribution(Npoints)
+            x_add, y_add, z_add = self.subunits[i](self.dimensions[i]).getPointDistribution(Npoints)
 
             # rotate and translate
             x_add, y_add, z_add = rotate_and_translate(x_add, y_add, z_add, self.rotation[i], self.rotation_points[i], self.com[i])
@@ -175,7 +163,7 @@ class GenerateAllPoints:
             if self.exclude_overlap:
                 for j in range(i): 
                     x_add, y_add, z_add, sld_add, N_x = self.onCheckOverlap(x_add, y_add, z_add, sld_add, self.rotation[j],
-                                                    self.rotation_points[j], self.com[j], self.getSubunitClass(self.subunits[j]), self.dimensions[j])
+                                                    self.rotation_points[j], self.com[j], self.subunits[j], self.dimensions[j])
                     N_x_sum += N_x
     
             N.append(N_subunit)
@@ -194,7 +182,7 @@ class GenerateAllPoints:
         for j in range(self.Number_of_subunits):
             srho = rho[j] * self.sld[j]
             N_remain.append(N[j] - N_exclude[j])
-            logger.info(f"        {N[j]} points for subunit {j}: {self.subunits[j]}")
+            logger.info(f"        {N[j]} points for subunit {j}: {self.subunits[j].aliases[0]}")
             logger.info(f"             Point density     : {rho[j]:.3e} (points per volume)")
             logger.info(f"             Scattering density: {srho:.3e} (density times scattering length)")
             if self.exclude_overlap:

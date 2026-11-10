@@ -1,11 +1,12 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class Sphere:
+class Sphere(Subunit):
     aliases = ["sphere","ball","sph"]
+    n_dimensions = 1
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,1)
+        super().__init__(dimensions)
         self.R = dimensions[0]
 
     def getVolume(self) -> float:

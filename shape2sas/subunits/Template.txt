@@ -7,18 +7,24 @@ matched case-insensitively and ignoring spaces and underscores, so "hollow
 sphere", "Hollow_Sphere" and "hollowsphere" all resolve to the same class.
 The first alias is the canonical name and is the one used in error messages.
 
+Every subunit derives from Subunit (see Subunit.py), which declares the methods
+below. A subunit that leaves one out cannot be instantiated, and one without
+its own aliases or n_dimensions raises a TypeError as soon as it is imported.
+
 NOTE: getPointDistribution() and checkOverlap() must describe the SAME body.
 The generating box must enclose the subunit, and getVolume() must return the
 volume of the subunit itself - not of the box.
 
 import numpy as np
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class <NAME OF SUBUNIT HERE>:
+class <NAME OF SUBUNIT HERE>(Subunit):
     aliases = ["<CANONICAL NAME>", "<OTHER ACCEPTED NAMES>"]
+    n_dimensions = <NUMBER OF DIMENSIONS>
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0], dimensions, <NUMBER OF DIMENSIONS>)
+        # checks the number of dimensions
+        super().__init__(dimensions)
         self.<PARAMETER NAME>, self.<PARAMETER NAME> = dimensions
 
     def getVolume(self):

@@ -1,8 +1,8 @@
 import numpy as np
 from ..helpfunctions import InputError
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class TruncatedOctahedron:
+class TruncatedOctahedron(Subunit):
     """
     A general octahedron with truncated vertices.
 
@@ -17,9 +17,10 @@ class TruncatedOctahedron:
     truncation = t.
     """
     aliases = ["truncated_octahedron","truncatedocta"]
+    n_dimensions = 4
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,4)
+        super().__init__(dimensions)
         self.a,self.b,self.c,self.t = dimensions
         if not 0 <= self.t <= 0.5:
             raise InputError("the truncation of a truncated_octahedron must be between 0 and 0.5, but " + str(self.t) + " was given")

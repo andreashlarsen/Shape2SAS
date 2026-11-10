@@ -1,13 +1,14 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
 from scipy.special import gamma
 
-class Superellipsoid:
+class Superellipsoid(Subunit):
     aliases = ["superellipsoid","superellips"]
+    n_dimensions = 4
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,4)     
+        super().__init__(dimensions)
         self.R,self.eps,self.t,self.s = dimensions
 
     @staticmethod

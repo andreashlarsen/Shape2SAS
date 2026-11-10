@@ -1,4 +1,4 @@
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 from .TruncatedOctahedron import TruncatedOctahedron
 
 class Octahedron(TruncatedOctahedron):
@@ -7,7 +7,10 @@ class Octahedron(TruncatedOctahedron):
     a, b and c. a = b = c gives a regular octahedron.
     """
     aliases = ["octahedron","octa","bipyramid"]
+    n_dimensions = 3
 
     def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,3)
-        super().__init__(list(dimensions) + [0])
+        # skip TruncatedOctahedron.__init__, which expects the truncation as a fourth dimension
+        Subunit.__init__(self, dimensions)
+        self.a,self.b,self.c = dimensions
+        self.t = 0
