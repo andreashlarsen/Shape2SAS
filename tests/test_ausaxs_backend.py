@@ -10,7 +10,6 @@ import numpy as np
 import pytest
 
 from shape2sas.particle import create_particle
-from shape2sas.theoretical_scattering import PairDistanceDistribution
 
 Q = np.linspace(0.001, 0.5, 400)
 
@@ -30,20 +29,26 @@ def quiet(func, *args, **kwargs):
 
 
 def sphere(Npoints=4000, radius=40., seed=0):
-    """one reproducible point distribution, shared by both backends"""
-    np.random.seed(seed)
-    particle = create_particle(Npoints=Npoints)
+    """
+    a reproducible sphere: returns a function giving its point distribution for the histogram settings passed to it, drawn from
+    the same seed each time, so that both backends see the same points
+    """
+    particle = create_particle()
     particle.add_subunit("Sphere", [radius])
-    return quiet(particle._points)
+
+    def points(**settings):
+        np.random.seed(seed)
+        return quiet(particle.generate_points, Npoints, **settings)
+    return points
 
 
-def pr(point_distribution, prpoints=100, polydispersity=0.0, use_ausaxs=False):
-    return quiet(PairDistanceDistribution, point_distribution, prpoints=prpoints,
-                 polydispersity=polydispersity, use_ausaxs=use_ausaxs)
+def pr(points, prpoints=100, polydispersity=0.0, use_ausaxs=False):
+    distribution = points(prpoints=prpoints, polydispersity=polydispersity, use_ausaxs=use_ausaxs)
+    return quiet(lambda: distribution.histogram)
 
 
-def Pq(point_distribution, **kwargs):
-    return pr(point_distribution, **kwargs).calc_Pq(Q)
+def Pq(points, **kwargs):
+    return pr(points, **kwargs).calc_Pq(Q)
 
 
 def max_rel_deviation(a, b):
@@ -222,12 +227,12 @@ def test_i0_of_homogeneous_particle():
     """
     sld, conc = 2.0, 0.02
     np.random.seed(0)
-    particle = create_particle(Npoints=2000)
+    particle = create_particle()
     particle.add_subunit("Sphere", [40.], sld=sld)
-    p = quiet(particle._points)
+    p = quiet(particle.generate_points, 2000, use_ausaxs=False)
 
-    pdd = pr(p)
+    pdd = quiet(lambda: p.histogram)
     I0, Pq0 = conc * pdd.calc_P0(), pdd.calc_Pq(np.array([0.0]))
-    expected = conc * p.volume_total * sld**2 * 1E-4
+    expected = conc * p.volume * sld**2 * 1E-4
     assert abs(I0 - expected) <= 1e-5 * expected, "I(0) = %.6e, expected %.6e" % (I0, expected)
     assert abs(Pq0[0] - 1.0) <= 1e-6, "P(0) = %.6f, expected 1" % Pq0[0]

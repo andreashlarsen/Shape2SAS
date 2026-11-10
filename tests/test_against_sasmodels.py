@@ -18,7 +18,6 @@ from sasmodels.direct_model import call_Fq, call_kernel
 
 from shape2sas import subunits
 from shape2sas.particle import create_particle
-from shape2sas.theoretical_scattering import PairDistanceDistribution
 
 # subunit, its dimensions, and the same body in sasmodels
 CASES = [
@@ -93,15 +92,13 @@ def test_form_factor_matches_sasmodels(subunit, dimensions, model, pars):
     """
     expected = sasmodels_reference(model, pars)[0]
 
+    particle = create_particle([subunit, list(dimensions)])
     simulated = []
     for seed in range(4):
         np.random.seed(seed)
         with contextlib.redirect_stdout(io.StringIO()):
-            particle = create_particle(Npoints=10000)
-            particle.add_subunit(subunit, list(dimensions))
-            distribution = particle._points()
-            pr = PairDistanceDistribution(distribution, prpoints=100, use_ausaxs=False)
-        simulated.append(pr.calc_Pq(Q))
+            points = particle.generate_points(10000, use_ausaxs=False)
+            simulated.append(points.histogram.calc_Pq(Q))
     simulated = np.mean(simulated, axis=0)
 
     significant = expected > 1e-3

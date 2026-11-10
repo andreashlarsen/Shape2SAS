@@ -495,21 +495,28 @@ Shape2SAS can also be used from Python, e.g. in scripts or other programs:
 ```python
 import shape2sas as sts
 
-# a dumbbell: two spheres, displaced along z
-particle = sts.create_particle(Npoints=5000, prpoints=100, polydispersity=0.0)
-particle.add_subunit("sphere", [50], com=[0, 0, -60])
-particle.add_subunit("sphere", [50], com=[0, 0, 60])
+# a dumbbell: two spheres, displaced along z, joined by a cylinder
+particle = sts.create_particle(
+    ["sphere", [50], {"com": [0, 0, -60]}],
+    ["sphere", [50], {"com": [0, 0, 60]}],
+    sts.subunits.Cylinder(radius=10, length=120),  # a subunit can also be created with named dimensions
+)
 
-# a subunit can also be created with named dimensions
-particle.add_subunit(sts.subunits.Cylinder(radius=10, length=120))
+# more subunits can be added later
+particle.add_subunit("sphere", [10], sld=2.0)
 
-r, pr = particle.pr()
+# fill the particle with random points
+points = particle.generate_points(5000, prpoints=100, polydispersity=0.0)
+
+r, pr = points.histogram.r, points.histogram.pr
 q = sts.uniform_q(0.001, 0.5, 400)
-I = particle.scattering(q, conc=0.02, structure_factor="hardsphere", structure_factor_parameters=[0.02, 60])
+I = points.scattering(q, conc=0.02, structure_factor="hardsphere", structure_factor_parameters=[0.02, 60])
 I_sim, sigma = sts.simulate_scattering(q, I, exposure=500)
 ```
 
-A subunit is given either by name (any name from the [table of subunits](#subunits)) and a list of its dimensions, or as a subunit from `sts.subunits`, created with its dimensions by name. A subunit has unit contrast (`sld=1.0`), sits at the origin and is not rotated, unless `sld`, `com`, `rotation` or `rotation_point` say otherwise. The particle also gives its `points()`, `volume`, `dmax`, `Rg` and effective `structure_factor(q, name, parameters)`. The points and p(r) are calculated on first use, and kept until another subunit is added, so the scattering can be calculated for several q ranges, concentrations or structure factors without sampling the particle again. Intensities are in absolute units, cm<sup>-1</sup>, with I(q) = `conc` · P(q) · S(q). Invalid input, such as an unknown subunit, raises a `ValueError`.
+A subunit is given either by name (any name from the [table of subunits](#subunits)) and a list of its dimensions, or as a subunit from `sts.subunits`, created with its dimensions by name. `create_particle` takes each subunit either as a subunit, or as a list of the arguments of `add_subunit`, optionally ending with a dict of its keyword arguments. A subunit has unit contrast (`sld=1.0`), sits at the origin and is not rotated, unless `sld`, `com`, `rotation` or `rotation_point` say otherwise.
+
+`generate_points` draws new random points every time it is called, and returns them as a `PointDistribution`, which never changes: subunits added to the particle afterwards need new points. Its `x`, `y`, `z` and `sld` are the points, and `volume` the volume of the particle. Its `histogram` holds the pair distance distribution, `r` and `pr`, together with `dmax`, `Rg` and the form factor `calc_Pq(q)`, normalised so P(0) = 1. The histogram is calculated on first use and kept, so the scattering can be calculated for several q ranges, concentrations or structure factors (`structure_factor(q, name, parameters)`) without calculating it again. Intensities are in absolute units, cm<sup>-1</sup>, with I(q) = `conc` · P(q) · S(q). Invalid input, such as an unknown subunit, raises a `ValueError`.
 
 The `shape2sas` command is built on these same functions. Only the names exported by `shape2sas` (listed in `shape2sas.__all__`) are part of the API; the modules they are defined in may change without notice.
 

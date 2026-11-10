@@ -189,12 +189,13 @@ def run(argv=None):
 
         ### make point cloud
         logger.info(f"    Generating points for Model: " + model_name)
-        particle = create_particle(Npoints=args.Npoints, prpoints=args.prpoints, polydispersity=polydispersity,
-                                   exclude_overlap=exclude_overlap, use_ausaxs=not args.disable_ausaxs)
+        particle = create_particle(exclude_overlap=exclude_overlap)
         for j in range(N_subunits):
             particle.add_subunit(args.subunit[i][j], args.dimension[i][j], sld=sld[j], com=com[j],
                                  rotation=rotation[j], rotation_point=rotation_points[j])
-        x, y, z, sld_points = particle.points()
+        points = particle.generate_points(args.Npoints, prpoints=args.prpoints, polydispersity=polydispersity,
+                                          use_ausaxs=not args.disable_ausaxs)
+        x, y, z, sld_points = points.x, points.y, points.z, points.sld
         save_points(x, y, z, sld_points, model_filename)
         x_list.append(x)
         y_list.append(y)
@@ -212,7 +213,7 @@ def run(argv=None):
 
         ### calculate p(r)
         logger.info("\n    Calculating pair distance distribution, p(r)...")
-        r, pr = particle.pr()
+        r, pr = points.histogram.r, points.histogram.pr
         save_pr_func(r, pr, model_filename)
         r_list.append(r)
         pr_norm_list.append(pr)
@@ -222,7 +223,7 @@ def run(argv=None):
             # make extended q-range for sesans
             # the structure factor decides the length scale: an aggregate is
             # larger than the particle it is built from
-            qmin, deltamax = getStructureFactorClass(S_type).getSesansRange(S_par, particle.dmax)
+            qmin, deltamax = getStructureFactorClass(S_type).getSesansRange(S_par, points.histogram.dmax)
             qmax = 1e4 * qmin
             qpoints = 5000
             q = np.linspace(qmin,qmax,qpoints)
@@ -236,10 +237,10 @@ def run(argv=None):
         logger.info("\n    Calculating intensity, I(q)...")
 
         ### calculate theoretical SAS, in absolute units, with its structure factor (and SESANS)
-        S_eff = particle.structure_factor(q, S_type, S_par)
+        S_eff = points.structure_factor(q, S_type, S_par)
         save_S_func(q,S_eff,model_filename)
         S_list.append(S_eff)
-        I = particle.scattering(q, conc, S_type, S_par, sigma_r)
+        I = points.scattering(q, conc, S_type, S_par, sigma_r)
         save_I_func(q,I,model_filename)
         I_list.append(I)
         if args.sesans:

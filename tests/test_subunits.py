@@ -143,10 +143,11 @@ def test_buried_subunit_is_fully_excluded():
     """
     for rotation in ROTATIONS:
         np.random.seed(2)
-        particle = create_particle(Npoints=8000)
+        particle = create_particle()
         for _ in range(2):
             particle.add_subunit("ellipticalcylinder", [40., 15., 90.], rotation=list(rotation))
-        distribution = particle._points()
+        # the points of each subunit are only kept apart internally
+        distribution = particle.generate_points(8000)._distribution
         survivors = len(distribution.x[1])
         assert survivors == 0, ("rotation %s: %d points of the buried subunit "
                                 "were not excluded" % (rotation, survivors))
@@ -157,10 +158,11 @@ def test_structure_factor_with_several_subunits():
     from shape2sas.structure_factors.structure_factors_helpfunctions import calc_A00
 
     np.random.seed(3)
-    particle = create_particle(Npoints=2000)
+    particle = create_particle()
     particle.add_subunit("sphere", [50.])
     particle.add_subunit("sphere", [30.], com=[60, 0, 0])
-    distribution = particle._points()
+    # the points of each subunit are only kept apart internally
+    distribution = particle.generate_points(2000)._distribution
     assert len(distribution.x[0]) != len(distribution.x[1]), \
         "test needs subunits with different point counts"
     A00 = calc_A00(np.linspace(0.001, 0.5, 20), distribution)
