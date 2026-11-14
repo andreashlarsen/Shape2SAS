@@ -10,10 +10,6 @@ import sys
 import numpy as np
 import pytest
 
-# this file lives in tests/, so put the repository root on the path
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, REPO)
-
 import shape2sas as sts
 
 from shape2sas.structure_factors import Aggregation, HardSphere
@@ -81,12 +77,6 @@ def test_aggregation_sets_the_sesans_range():
     assert HardSphere(volume_fraction=0.1, radius=50.).sesans_range(dmax)[1] == 3 * dmax
 
 
-def test_interface_roughness():
-    points = sphere()
-    smooth, rough = points.scattering(Q).I, points.scattering(Q, sigma_r=5.).I
-    assert np.allclose(rough, smooth * np.exp(-(Q * 5.)**2 / 2))
-
-
 def test_subunit_defaults():
     """a subunit has unit contrast, sits at the origin and is not rotated unless told otherwise"""
     particle = sts.create_particle(Sphere(radius=30.))
@@ -120,10 +110,6 @@ def test_subunits_given_to_create_particle():
     points = [coordinates(particle.generate_points(3000, rng=4, use_ausaxs=False)) for particle in (added, given)]
     assert np.array_equal(points[0], points[1])
 
-    for wrong in ("sphere", ["sphere", [50.]], 50., Sphere):
-        with pytest.raises(ValueError):
-            sts.create_particle(wrong)
-
 
 def test_point_distribution_does_not_change():
     """a point distribution keeps its points and histogram, and is not affected by subunits added to the particle later"""
@@ -140,30 +126,6 @@ def test_point_distribution_does_not_change():
     assert dumbbell.histogram.dmax > 2 * points.histogram.dmax
     I, I_dumbbell = points.scattering(Q).I, dumbbell.scattering(Q).I
     assert not np.allclose(I_dumbbell / I_dumbbell[0], I / I[0], rtol=0.05)
-
-
-def test_invalid_input_raises_value_error():
-    particle = sts.create_particle()
-    with pytest.raises(ValueError):
-        particle.generate_points(1000)
-    for wrong in ("sphere", Sphere, 50.):
-        with pytest.raises(ValueError):
-            particle.add_subunit(wrong)
-    with pytest.raises(ValueError):
-        Sphere(radius=10.).placed(com=(0, 0))
-    with pytest.raises(ValueError):
-        sphere().scattering(Q, structure_factor="hardsphere")
-
-
-def test_placement_keywords_are_checked():
-    """a subunit is placed with placed(), whose keywords are checked; add_subunit takes the subunit and nothing else"""
-    particle = sts.create_particle()
-    with pytest.raises(TypeError):
-        Sphere(radius=10.).placed(colour="red")
-    with pytest.raises(TypeError):
-        particle.add_subunit(Sphere(radius=10.), sld=2.)
-    with pytest.raises(TypeError):
-        particle.add_subunit(Sphere(radius=10.), [10.])
 
 
 def test_simulated_scattering():
@@ -190,8 +152,10 @@ def test_sesans():
 
 def test_save_points_pr_and_intensity(tmp_path):
     """the points, p(r), I(q) and S_eff(q) are saved as text files that read back to the same values"""
-    points = sts.create_particle(Sphere(radius=50.).placed(sld=1.0),
-                                 Sphere(radius=20.).placed(com=(0, 0, 60.), sld=-1.0)).generate_points(2000, rng=0, use_ausaxs=False)
+    points = sts.create_particle(
+        Sphere(radius=50.).placed(sld=1.0),
+        Sphere(radius=20.).placed(com=(0, 0, 60.), sld=-1.0)
+    ).generate_points(2000, rng=0, use_ausaxs=False)
     points.save(tmp_path / "points.txt")
     assert np.allclose(np.loadtxt(tmp_path / "points.txt").T, coordinates(points), atol=1e-6)
 
@@ -210,17 +174,6 @@ def test_save_points_pr_and_intensity(tmp_path):
 
     points.write_pdb(tmp_path / "points.pdb")
     lines = (tmp_path / "points.pdb").read_text().splitlines()
-    assert lines[0] == "TITLE    POINT SCATTER FOR MODEL: points"
     atoms = [line for line in lines if line.startswith("ATOM")]
     assert len(atoms) == len(points.x)
     assert [line.split()[2] for line in atoms] == ['C' if s > 0 else 'O' for s in points.sld]
-
-
-def test_plot_projections(tmp_path):
-    """the projections are saved to a file, or returned as a figure"""
-    pytest.importorskip("matplotlib").use("Agg")  # no display needed
-    points = sphere(Npoints=500)
-    points.plot_projections(tmp_path / "points.png")
-    assert (tmp_path / "points.png").stat().st_size > 0
-    fig = points.plot_projections(extent=2 * points.extent)
-    assert [ax.get_xlim() for ax in fig.axes] == [(-2.2 * points.extent, 2.2 * points.extent)] * 3

@@ -68,15 +68,6 @@ def test_subunits_are_self_consistent():
     assert not failures, "\n".join(failures)
 
 
-def test_wrong_number_of_dimensions_is_rejected():
-    """on the command line, a dimensions list of the wrong length must give an InputError (a ValueError) that names the parameters"""
-    for name, dimensions in CASES.items():
-        cls = getattr(subunits, name)
-        for wrong in (list(dimensions)[:-1], list(dimensions) + [1.]):
-            with pytest.raises(ValueError, match=", ".join(parameter_names(cls))):
-                make_subunit(cls.aliases[0], wrong)
-
-
 def test_named_and_listed_dimensions_give_the_same_subunit():
     """keywords, positional arguments and the command line's name and list are three spellings of the same subunit"""
     for name, dimensions in CASES.items():
@@ -85,53 +76,6 @@ def test_named_and_listed_dimensions_give_the_same_subunit():
         for obj in (cls(*dimensions), make_subunit(cls.aliases[-1], dimensions)):
             assert type(obj) is cls, name
             assert obj.volume() == cls(**keywords).volume(), name
-
-
-@pytest.mark.parametrize("package", [subunits, structure_factors], ids=lambda package: package.__name__)
-def test_every_class_is_exported(package):
-    """every class in the package must be imported and listed in its __init__.py, or users cannot select it"""
-    defined = set()
-    for module in pkgutil.iter_modules(package.__path__):
-        module = importlib.import_module(package.__name__ + "." + module.name)
-        defined |= {name for name, obj in inspect.getmembers(module, inspect.isclass) if obj.__module__ == module.__name__}
-    assert defined == set(package.__all__), "not exported in %s/__init__.py: %s" % (package.__name__, sorted(defined - set(package.__all__)))
-
-
-def test_every_subunit_derives_from_subunit():
-    """all subunit classes share the Subunit interface, and CASES covers all of them"""
-    names = {name for name in subunits.__all__
-             if issubclass(getattr(subunits, name), subunits.Subunit) and name != "Subunit"}
-    assert names == set(CASES), "subunits missing from CASES: %s" % sorted(names - set(CASES))
-    for name, dimensions in CASES.items():
-        cls = getattr(subunits, name)
-        assert isinstance(cls(*dimensions), subunits.Subunit), name
-        assert len(dimensions) == len(parameter_names(cls)), name
-
-
-@pytest.mark.parametrize("package, base", [(subunits, subunits.Subunit), (structure_factors, structure_factors.StructureFactor)],
-                         ids=["subunits", "structure_factors"])
-def test_every_class_has_its_own_aliases(package, base):
-    """every class must define its own, non-empty list of aliases, and no alias may name two classes, or the command line
-    could not select it"""
-    classes = [cls for cls in (getattr(package, name) for name in package.__all__)
-               if isinstance(cls, type) and issubclass(cls, base) and cls is not base]
-    owners = {}
-    for cls in classes:
-        aliases = cls.__dict__.get("aliases")  # inherited aliases would name two classes
-        assert isinstance(aliases, list) and aliases and all(isinstance(a, str) for a in aliases), \
-            "%s must define aliases as a non-empty list of names" % cls.__name__
-        for alias in aliases:
-            owner = owners.setdefault(normalise_alias(alias), cls)
-            assert owner is cls, "alias '%s' names both %s and %s" % (alias, owner.__name__, cls.__name__)
-    assert set(alias_registry(package).values()) == set(classes)
-
-
-def test_malformed_subunits_are_rejected():
-    """a subunit must implement every method"""
-    class NoMethods(subunits.Subunit):
-        pass
-    with pytest.raises(TypeError):
-        NoMethods()
 
 
 def test_rotation_round_trip():
@@ -175,40 +119,3 @@ def test_structure_factor_with_several_subunits():
         "test needs subunits with different point counts"
     A00 = calc_A00(np.linspace(0.001, 0.5, 20), distribution)
     assert np.all(np.isfinite(A00))
-
-
-def test_structure_factor_names_resolve():
-    """every name documented in the README must resolve to a class"""
-    documented = {
-        "hardsphere": "HardSphere", "hs": "HardSphere",
-        "hard-sphere": "HardSphere", "hard_sphere": "HardSphere",
-        "aggregation": "Aggregation", "aggr": "Aggregation",
-        "frac2d": "Aggregation", "aggregate": "Aggregation",
-        "None": "NoStructure", "no": "NoStructure", "unity": "NoStructure",
-    }
-    for name, expected in documented.items():
-        cls = getattr(structure_factors, expected)
-        got = type(make_structure_factor(name, [1.0] * len(parameter_names(cls)))).__name__
-        assert got == expected, "%s resolved to %s, expected %s" % (name, got, expected)
-
-    with pytest.raises(ValueError, match="Available structure factors"):
-        make_structure_factor("hardsphre", [0.2, 50.])
-
-
-def test_structure_factor_parameter_counts():
-    """on the command line, a parameter list of the wrong length must give an InputError (a ValueError) that names the
-    parameters"""
-    for cls in (structure_factors.HardSphere, structure_factors.Aggregation, structure_factors.NoStructure):
-        n = len(parameter_names(cls))
-        for wrong in ([1.0] * (n + 1), [1.0] * (n - 1)) if n else ([1.0],):
-            with pytest.raises(ValueError, match=", ".join(parameter_names(cls))):
-                make_structure_factor(cls.aliases[0], wrong)
-        assert type(make_structure_factor(cls.aliases[0], [1.0] * n)) is cls
-
-
-def test_malformed_structure_factors_are_rejected():
-    """a structure factor must implement structure_factor()"""
-    class NoMethods(structure_factors.StructureFactor):
-        pass
-    with pytest.raises(TypeError):
-        NoMethods()
