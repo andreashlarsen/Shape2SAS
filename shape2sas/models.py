@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 
 import logging
-import os
 
 import numpy as np
 
@@ -185,11 +184,3 @@ class GenerateAllPoints:
         logger.info(" ")
 
         return ModelPointDistribution(x=x_new, y=y_new, z=z_new, sld=sld_new, volume_total=volume_total)
-
-def save_points(x, y, z, sld, model_filename):
-    """save point cloud to a file"""
-    os.makedirs(model_filename, exist_ok=True)
-    with open('%s/points_%s.txt' % (model_filename,model_filename),'w') as f:
-        f.write('# x y z sld\n')
-        for xi,yi,zi,s in zip(x,y,z,sld):
-            f.write('%f %f %f %f\n' % (xi,yi,zi,s))

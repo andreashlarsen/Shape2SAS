@@ -176,3 +176,32 @@ def test_simulated_scattering():
     pulls = (I_short - I) / sigma_short
     assert abs(np.mean(pulls)) < 0.3 and 0.8 < np.std(pulls) < 1.2
     assert np.array_equal(sts.simulate_scattering(Q, I, exposure=100., rng=2)[0], I_short), "the same seed must give the same data"
+
+
+def test_save_points_and_pr(tmp_path):
+    """the points and p(r) are saved as text files that read back to the same values"""
+    points = sts.create_particle(Sphere(radius=50.).placed(sld=1.0),
+                                 Sphere(radius=20.).placed(com=(0, 0, 60.), sld=-1.0)).generate_points(2000, rng=0, use_ausaxs=False)
+    points.save(tmp_path / "points.txt")
+    assert np.allclose(np.loadtxt(tmp_path / "points.txt").T, coordinates(points), atol=1e-6)
+
+    points.histogram.save(tmp_path / "pr.dat")
+    r, pr = np.loadtxt(tmp_path / "pr.dat", unpack=True)
+    assert np.allclose(r, points.histogram.r, rtol=1e-5) and np.allclose(pr, points.histogram.pr, rtol=1e-5)
+
+    points.write_pdb(tmp_path / "points.pdb")
+    lines = (tmp_path / "points.pdb").read_text().splitlines()
+    assert lines[0] == "TITLE    POINT SCATTER FOR MODEL: points"
+    atoms = [line for line in lines if line.startswith("ATOM")]
+    assert len(atoms) == len(points.x)
+    assert [line.split()[2] for line in atoms] == ['C' if s > 0 else 'O' for s in points.sld]
+
+
+def test_plot_projections(tmp_path):
+    """the projections are saved to a file, or returned as a figure"""
+    pytest.importorskip("matplotlib").use("Agg")  # no display needed
+    points = sphere(Npoints=500)
+    points.plot_projections(tmp_path / "points.png")
+    assert (tmp_path / "points.png").stat().st_size > 0
+    fig = points.plot_projections(extent=2 * points.extent)
+    assert [ax.get_xlim() for ax in fig.axes] == [(-2.2 * points.extent, 2.2 * points.extent)] * 3

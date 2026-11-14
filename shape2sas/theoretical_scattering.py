@@ -334,9 +334,9 @@ class PairDistanceDistribution:
         contrast2 = max(0.0, 2 * sum_hr / (N * (N - 1)))
         return self.point_distribution.volume_total * contrast2 * 1E-4
 
-    def save(self, model_filename):
-        """save p(r)"""
-        save_pr_func(self.r, self.pr, model_filename)
+    def save(self, path):
+        """save p(r) as a text file with the columns r, p(r)"""
+        write_pr(path, self.r, self.pr)
 
 def calc_Iq_func(q, Pq, S_eff, sigma_r):
     """
@@ -357,15 +357,17 @@ def uniform_q(qmin=0.001, qmax=0.5, qpoints=400):
     """equidistant q values from qmin to qmax [1/A]"""
     return np.linspace(qmin, qmax, qpoints)
 
-def save_pr_func(r,pr,model_filename):
-    """save pair distance distribution p(r)"""
-
-    os.makedirs(model_filename, exist_ok=True)  
-    with open('%s/pr_%s.dat' % (model_filename,model_filename),'w') as f:
-        #f.write('# Pair distance distribution function (PDDF) p(r)\n')
+def write_pr(path, r, pr):
+    """save pair distance distribution p(r) to path"""
+    with open(path, 'w') as f:
         f.write('# %-12s %-12s\n' % ('r','p(r)'))
         for r_i,pr_i in zip(r,pr):
             f.write('  %-12.5e %-12.5e\n' % (r_i, pr_i))
+
+def save_pr_func(r,pr,model_filename):
+    """save pair distance distribution p(r) to <model_filename>/pr_<model_filename>.dat"""
+    os.makedirs(model_filename, exist_ok=True)
+    write_pr('%s/pr_%s.dat' % (model_filename,model_filename), r, pr)
 
 def save_I_func(q, I, model_filename):
     """Save theoretical intensity to file"""

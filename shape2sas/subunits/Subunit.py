@@ -36,7 +36,7 @@ class Subunit(ABC):
 
     @abstractmethod
     def volume(self) -> float:
-        """Returns the volume of the subunit itself - not of the box used to generate its points"""
+        """Returns the volume of the subunit itself"""
 
     @abstractmethod
     def generate_points(self, Npoints: int, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -46,8 +46,7 @@ class Subunit(ABC):
     def outside(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np.ndarray:
         """Returns a boolean array, true for the points OUTSIDE the subunit.
 
-        Points are given in the subunit's own frame (rotation and translation
-        already undone by the caller).
+        Points are given in the subunit's own frame (rotation and translation already undone by the caller).
         """
 
 

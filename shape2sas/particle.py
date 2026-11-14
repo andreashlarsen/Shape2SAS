@@ -1,6 +1,7 @@
 """A particle built from subunits, the random points filling it, and the scattering they give."""
 
 from functools import cached_property
+import os
 
 import numpy as np
 
@@ -17,6 +18,7 @@ class PointDistribution:
 
     the points never change: other subunits or other settings need a new point distribution from generate_points.
     the histogram is therefore calculated on first use and kept, as is the form factor for the last q.
+    save, write_pdb and plot_projections write the points to a text file, a PDB file for visualization, or a figure.
 
     attributes:
     x, y, z        : coordinates of the points [A], read-only
@@ -89,6 +91,55 @@ class PointDistribution:
         Pq_norm = self._form_factor(q)
         S_eff = self._effective_structure_factor(q, Pq_norm, structure_factor)
         return conc * self.histogram.forward_scattering() * calc_Iq_func(q, Pq_norm, S_eff, sigma_r)
+
+    def save(self, path) -> None:
+        """save the points as a text file with the columns x, y, z, sld"""
+        np.savetxt(path, np.column_stack((self.x, self.y, self.z, self.sld)), fmt='%f', header='x y z sld')
+
+    def write_pdb(self, path, *, title: str | None = None) -> None:
+        """
+        save the points as a PDB file, for visualization only, e.g. with PyMOL
+
+        each point is a dummy atom, carbon (C) for positive, hydrogen (H) for zero and oxygen (O) for negative contrast;
+        only the sign of the contrast is kept, so scattering calculated from the file with e.g. CRYSOL, Pepsi-SAXS or FoXS is wrong
+
+        title : title in the file header, by default the file name without extension
+        """
+        if title is None:
+            title = os.path.splitext(os.path.basename(path))[0]
+        atoms = np.where(self.sld > 0, 'C', np.where(self.sld == 0, 'H', 'O'))
+        with open(path, 'w') as f:
+            f.write('TITLE    POINT SCATTER FOR MODEL: %s\n' % title)
+            f.write('REMARK   GENERATED WITH Shape2SAS\n')
+            f.write('REMARK   EACH BEAD REPRESENTED BY DUMMY ATOM\n')
+            f.write('REMARK   CARBON, C : POSITIVE EXCESS SCATTERING LENGTH\n')
+            f.write('REMARK   HYDROGEN, H : ZERO EXCESS SCATTERING LENGTH\n')
+            f.write('REMARK   OXYGEN, O : NEGATIVE EXCESS SCATTERING LENGTH\n')
+            f.write('REMARK   ACCURATE SCATTERING LENGTH DENSITY INFORMATION NOT INCLUDED\n')
+            f.write('REMARK   OBS: WILL NOT GIVE CORRECT RESULTS IF SCATTERING IS CALCULATED FROM THIS MODEL WITH E.G CRYSOL, PEPSI-SAXS, FOXS, CAPP OR THE LIKE!\n')
+            f.write('REMARK   ONLY FOR VISUALIZATION, E.G. WITH PYMOL\n')
+            f.write('REMARK    \n')
+            for i, (atom, xi, yi, zi) in enumerate(zip(atoms, self.x, self.y, self.z)):
+                f.write('ATOM  %6i %s   ALA A%6i  %8.3f%8.3f%8.3f  1.00  0.00           %s \n' % (i, atom, i, xi, yi, zi, atom))
+            f.write('END')
+
+    @property
+    def extent(self) -> float:
+        """largest distance of a point from the origin along x, y or z [A]"""
+        return float(max(np.amax(np.abs(a)) for a in (self.x, self.y, self.z)))
+
+    def plot_projections(self, path=None, *, color='blue', extent: float | None = None):
+        """
+        plot the points projected onto the (x,z), (y,z) and (x,y) planes, needs matplotlib.
+        points with positive contrast are drawn in color, zero contrast in grey and negative contrast in black
+
+        path   : file to save the figure to, which is then closed; None returns the figure instead
+        color  : color of the points with positive contrast
+        extent : the axes go from -1.1 * extent to 1.1 * extent [A]; by default the extent of these points.
+                 give the largest extent of several point distributions to plot them on the same scale
+        """
+        from .plots import plot_projections
+        return plot_projections(self.x, self.y, self.z, self.sld, path, color=color, extent=self.extent if extent is None else extent)
 
 
 class Particle:

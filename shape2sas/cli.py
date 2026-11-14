@@ -4,6 +4,7 @@ import time
 import argparse
 import logging
 import sys
+import os
 import numpy as np
 import shutil
 
@@ -18,12 +19,11 @@ from .helpfunctions import (
     str2bool,
 )
 from .cli_models import make_structure_factor, make_subunit
-from .models import save_points
 from .particle import create_particle
-from .theoretical_scattering import save_I_func, save_pr_func, uniform_q
+from .theoretical_scattering import save_I_func, uniform_q
 from .structure_factors.structure_factors_helpfunctions import save_S_func
 from .simulated_scattering import save_Isim_func, simulate_scattering
-from .plots import generate_pdb, plot_2D, plot_fit, plot_results
+from .plots import plot_fit, plot_results
 from .sesans import calc_G_sesans, simulate_sesans
 from .sesans.sesans_output import plot_sesans, save_sesans
 
@@ -162,7 +162,7 @@ def run(argv=None):
 
     # prepare lists (several models can be simulated simultaneously)
     r_list, pr_norm_list, I_list, I_sim_list, sigma_list, S_list = [], [], [], [], [], [] 
-    x_list, y_list, z_list, sld_list, model_filename_list, model_name_list = [], [], [], [], [], []
+    points_list, model_filename_list, model_name_list = [], [], []
     if args.sesans:
         delta_list,G_list,G_sim_list,sigma_G_list = [],[],[],[]
 
@@ -175,6 +175,7 @@ def run(argv=None):
             #model names should be unique - else add a number
             model_name += '_' + str(i+1)  
         model_filename = "_".join(model_name.split()) # remove whitespace for filenames
+        os.makedirs(model_filename, exist_ok=True)
         model_name_list.append(model_name)
         model_filename_list.append(model_filename)
 
@@ -193,14 +194,9 @@ def run(argv=None):
         for j in range(N_subunits):
             particle.add_subunit(make_subunit(args.subunit[i][j], args.dimension[i][j]).placed(
                 sld=sld[j], com=com[j], rotation=rotation[j], rotation_point=rotation_points[j]))
-        points = particle.generate_points(args.Npoints, prpoints=args.prpoints, polydispersity=polydispersity,
-                                          use_ausaxs=not args.disable_ausaxs)
-        x, y, z, sld_points = points.x, points.y, points.z, points.sld
-        save_points(x, y, z, sld_points, model_filename)
-        x_list.append(x)
-        y_list.append(y)
-        z_list.append(z)
-        sld_list.append(sld_points)
+        points = particle.generate_points(args.Npoints, prpoints=args.prpoints, polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
+        points.save(f"{model_filename}/points_{model_filename}.txt")
+        points_list.append(points)
 
         ### read concentration, interface roughness/fuzziness, structure factor and structure factor-related parameters for model i
         conc = check_input(args.conc, 0.02, "concentration", i)
@@ -214,10 +210,9 @@ def run(argv=None):
 
         ### calculate p(r)
         logger.info("\n    Calculating pair distance distribution, p(r)...")
-        r, pr = points.histogram.r, points.histogram.pr
-        save_pr_func(r, pr, model_filename)
-        r_list.append(r)
-        pr_norm_list.append(pr)
+        points.histogram.save(f"{model_filename}/pr_{model_filename}.dat")
+        r_list.append(points.histogram.r)
+        pr_norm_list.append(points.histogram.pr)
 
         ### define q (and if sesans is opted for, also define the spin echo length, delta)
         if args.sesans:
@@ -271,15 +266,16 @@ def run(argv=None):
     else:
         filetype = 'png'
 
-    # plot 2D projections
-    for m in model_filename_list:
+    # plot 2D projections, all on the same scale
+    extent = max(points.extent for points in points_list)
+    for points, m, color in zip(points_list, model_filename_list, colors):
         print("    2D projection:       points_" + m + "." + filetype)
-    plot_2D(x_list, y_list, z_list, sld_list, model_filename_list, filetype, colors)
-    
+        points.plot_projections(f"{m}/points_{m}.{filetype}", color=color, extent=extent)
+
     # 3D vizualization: generate pdb file with points
-    for m in model_filename_list:
+    for points, m in zip(points_list, model_filename_list):
         print("    3D models:           " + m + ".pdb")
-    generate_pdb(x_list, y_list, z_list, sld_list, model_filename_list)
+        points.write_pdb(f"{m}/{m}.pdb")
     
     # plot p(r) and I(q)
     print("    pr, Iq, and Isim:    plot." + filetype)
