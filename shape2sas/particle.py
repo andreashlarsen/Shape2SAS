@@ -1,5 +1,6 @@
 """A particle built from subunits, the random points filling it, and the scattering they give."""
 
+from dataclasses import dataclass
 from functools import cached_property
 import os
 
@@ -9,7 +10,7 @@ from .helpfunctions import InputError
 from .models import ModelPointDistribution, GenerateAllPoints
 from .structure_factors import NoStructure, StructureFactor
 from .subunits.Subunit import Placement, Subunit
-from .theoretical_scattering import PairDistanceDistribution, calc_Iq_func
+from .theoretical_scattering import PairDistanceDistribution, calc_Iq_func, write_columns
 
 
 class PointDistribution:
@@ -17,7 +18,7 @@ class PointDistribution:
     the random points filling a particle, drawn by Particle.generate_points, and the scattering calculated from them
 
     the points never change: other subunits or other settings need a new point distribution from generate_points.
-    the histogram is therefore calculated on first use and kept, as is the form factor for the last q.
+    the histogram is therefore calculated on first use and kept.
     save, write_pdb and plot_projections write the points to a text file, a PDB file for visualization, or a figure.
 
     attributes:
@@ -38,7 +39,6 @@ class PointDistribution:
         self.prpoints = prpoints
         self.polydispersity = polydispersity
         self.use_ausaxs = use_ausaxs
-        self._Pq = None
 
     @cached_property
     def histogram(self) -> PairDistanceDistribution:
@@ -52,45 +52,28 @@ class PointDistribution:
         """
         return PairDistanceDistribution(self._distribution, self.prpoints, self.polydispersity, self.use_ausaxs)
 
-    def _form_factor(self, q):
-        """form factor normalized so P(0) = 1, kept for the last q, since the structure factor and the scattering both need it"""
-        if self._Pq is None or not np.array_equal(self._Pq[0], q):
-            self._Pq = (q.copy(), self.histogram.form_factor(q))
-        return self._Pq[1]
-
-    def effective_structure_factor(self, q, structure_factor: StructureFactor | None = None):
+    def scattering(self, q, *, conc: float = 0.02, structure_factor: StructureFactor | None = None, sigma_r: float = 0.0) -> 'TotalIntensity':
         """
-        effective structure factor, S_eff(q), of the particles (decoupling approximation)
+        scattering of the particles in absolute units [cm^-1], I(q) = conc * P(q) * S_eff(q) * exp(-(q sigma_r)^2 / 2),
+        where the form factor P(q) is per unit volume fraction, so P(0) = V * contrast^2,
+        and S_eff(q) is the structure factor corrected for the shape of the particles (decoupling approximation)
 
         q                : q values [1/A]
+        conc             : volume fraction of the particles
         structure_factor : e.g. structure_factors.HardSphere(volume_fraction=0.2, radius=50); None for dilute particles, S = 1
+        sigma_r          : interface roughness [A]
         """
-        q = np.asarray(q, dtype=float)
-        return self._effective_structure_factor(q, self._form_factor(q), structure_factor)
-
-    def _effective_structure_factor(self, q, Pq_norm, structure_factor):
         if structure_factor is None:
             structure_factor = NoStructure()
         if not isinstance(structure_factor, StructureFactor):
             raise InputError("a structure factor must be given as e.g. structure_factors.HardSphere(volume_fraction=0.2, radius=50), "
                              "but %r was given" % (structure_factor,))
-        # the decoupling approximation needs the form factor normalized so P(0) = 1
-        return structure_factor.effective_structure_factor(q, self._distribution, Pq_norm)
-
-    def scattering(self, q, *, conc: float = 0.02, structure_factor: StructureFactor | None = None, sigma_r: float = 0.0):
-        """
-        scattering of the particles in absolute units [cm^-1], I(q) = conc * P(q) * S_eff(q) * exp(-(q sigma_r)^2 / 2),
-        where the form factor P(q) is per unit volume fraction, so P(0) = V * contrast^2
-
-        q                : q values [1/A]
-        conc             : volume fraction of the particles
-        structure_factor : see effective_structure_factor
-        sigma_r          : interface roughness [A]
-        """
         q = np.asarray(q, dtype=float)
-        Pq_norm = self._form_factor(q)
-        S_eff = self._effective_structure_factor(q, Pq_norm, structure_factor)
-        return conc * self.histogram.forward_scattering() * calc_Iq_func(q, Pq_norm, S_eff, sigma_r)
+        # the decoupling approximation needs the form factor normalized so P(0) = 1
+        Pq_norm = self.histogram.form_factor(q)
+        S_eff = structure_factor.effective_structure_factor(q, self._distribution, Pq_norm)
+        I = conc * self.histogram.forward_scattering() * calc_Iq_func(q, Pq_norm, S_eff, sigma_r)
+        return TotalIntensity(q, I, S_eff)
 
     def save(self, path) -> None:
         """save the points as a text file with the columns x, y, z, sld"""
@@ -140,6 +123,28 @@ class PointDistribution:
         """
         from .plots import plot_projections
         return plot_projections(self.x, self.y, self.z, self.sld, path, color=color, extent=self.extent if extent is None else extent)
+
+
+@dataclass(frozen=True)
+class TotalIntensity:
+    """
+    total scattering calculated by PointDistribution.scattering: the intensity of the single particles times their structure factor
+
+    q : q values [1/A]
+    I : total intensity in absolute units [cm^-1], including S
+    S : effective structure factor S_eff(q)
+    """
+    q: np.ndarray
+    I: np.ndarray
+    S: np.ndarray
+
+    def save_intensity(self, path) -> None:
+        """save the total intensity as a text file with the columns q, I"""
+        write_columns(path, ('q', 'I'), (self.q, self.I), title='Theoretical SAS data')
+
+    def save_structure_factor(self, path) -> None:
+        """save the effective structure factor as a text file with the columns q, S"""
+        write_columns(path, ('q', 'S'), (self.q, self.S), title='Structure factor SAS data')
 
 
 class Particle:

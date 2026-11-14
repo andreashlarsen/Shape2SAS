@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 from ..helpfunctions import sinc, calc_com_dist
 
@@ -40,14 +38,3 @@ def decoupling_approx(q,point_distribution,Pq,S):
     Beta = (A00**2 + const) / (Pq + const)
     S_eff = 1 + Beta * (S - 1)
     return S_eff
-
-def save_S_func(q, S, model_filename):
-    """Save structure factor to file"""
-
-    os.makedirs(model_filename, exist_ok=True)  
-    with open('%s/Sq_%s.dat' % (model_filename,model_filename),'w') as f:
-        f.write('# Structure factor SAS data\n')
-        f.write('# %-12s %-12s\n' % ('q','S'))
-        for qi,Si in zip(q,S):
-            f.write('  %-12.5e %-12.5e\n' % (qi, Si))
-

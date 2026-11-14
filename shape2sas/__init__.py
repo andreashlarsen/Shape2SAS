@@ -1,10 +1,11 @@
 from . import structure_factors, subunits
-from .particle import PointDistribution, create_particle
+from .particle import PointDistribution, TotalIntensity, create_particle
 from .simulated_scattering import simulate_scattering
 from .theoretical_scattering import uniform_q
 
 __all__ = [
     "PointDistribution",
+    "TotalIntensity",
     "create_particle",
     "structure_factors",
     "subunits",

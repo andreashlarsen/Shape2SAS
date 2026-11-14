@@ -47,7 +47,7 @@ def test_import_is_light():
 def test_forward_scattering_is_absolute():
     """I(0) = conc * V * sld^2 * 1E-4 cm^-1, so it scales with the volume fraction and the squared contrast"""
     radius, sld, conc = 50., 2.0, 0.05
-    I = sphere(radius, sld).scattering(Q, conc=conc)
+    I = sphere(radius, sld).scattering(Q, conc=conc).I
     expected = conc * 4 / 3 * np.pi * radius**3 * sld**2 * 1E-4
     # q[0] is small but not zero, and V is a Monte Carlo estimate
     assert abs(I[0] - expected) <= 0.01 * expected, "I(0) = %.4e, expected %.4e" % (I[0], expected)
@@ -68,11 +68,10 @@ def test_structure_factor():
     """the structure factor multiplies the form factor, and is lowered at small q by hard-sphere repulsion"""
     points = sphere()
     hard_spheres = HardSphere(volume_fraction=0.2, radius=50.)
-    S_eff = points.effective_structure_factor(Q, hard_spheres)
-    assert S_eff[0] < 1.0
-    I = points.scattering(Q, structure_factor=hard_spheres)
-    assert np.allclose(I, points.scattering(Q) * S_eff)
-    assert np.allclose(points.effective_structure_factor(Q), 1.0)
+    intensity = points.scattering(Q, structure_factor=hard_spheres)
+    assert intensity.S[0] < 1.0
+    assert np.allclose(intensity.I, points.scattering(Q).I * intensity.S)
+    assert np.allclose(points.scattering(Q).S, 1.0)
 
 
 def test_aggregation_sets_the_sesans_range():
@@ -84,7 +83,7 @@ def test_aggregation_sets_the_sesans_range():
 
 def test_interface_roughness():
     points = sphere()
-    smooth, rough = points.scattering(Q), points.scattering(Q, sigma_r=5.)
+    smooth, rough = points.scattering(Q).I, points.scattering(Q, sigma_r=5.).I
     assert np.allclose(rough, smooth * np.exp(-(Q * 5.)**2 / 2))
 
 
@@ -139,7 +138,7 @@ def test_point_distribution_does_not_change():
     assert np.array_equal(coordinates(points), before)
     dumbbell = particle.generate_points(3000, rng=0, use_ausaxs=False)
     assert dumbbell.histogram.dmax > 2 * points.histogram.dmax
-    I, I_dumbbell = points.scattering(Q), dumbbell.scattering(Q)
+    I, I_dumbbell = points.scattering(Q).I, dumbbell.scattering(Q).I
     assert not np.allclose(I_dumbbell / I_dumbbell[0], I / I[0], rtol=0.05)
 
 
@@ -169,7 +168,7 @@ def test_placement_keywords_are_checked():
 
 def test_simulated_scattering():
     """the simulated data scatter around the theoretical intensity, with less noise for longer exposures"""
-    I = sphere().scattering(Q)
+    I = sphere().scattering(Q).I
     I_short, sigma_short = sts.simulate_scattering(Q, I, exposure=100., rng=2)
     I_long, sigma_long = sts.simulate_scattering(Q, I, exposure=400., rng=2)
     assert np.allclose(sigma_short / sigma_long, 2.0), "sigma must scale as 1/sqrt(exposure)"
@@ -178,8 +177,8 @@ def test_simulated_scattering():
     assert np.array_equal(sts.simulate_scattering(Q, I, exposure=100., rng=2)[0], I_short), "the same seed must give the same data"
 
 
-def test_save_points_and_pr(tmp_path):
-    """the points and p(r) are saved as text files that read back to the same values"""
+def test_save_points_pr_and_intensity(tmp_path):
+    """the points, p(r), I(q) and S_eff(q) are saved as text files that read back to the same values"""
     points = sts.create_particle(Sphere(radius=50.).placed(sld=1.0),
                                  Sphere(radius=20.).placed(com=(0, 0, 60.), sld=-1.0)).generate_points(2000, rng=0, use_ausaxs=False)
     points.save(tmp_path / "points.txt")
@@ -188,6 +187,12 @@ def test_save_points_and_pr(tmp_path):
     points.histogram.save(tmp_path / "pr.dat")
     r, pr = np.loadtxt(tmp_path / "pr.dat", unpack=True)
     assert np.allclose(r, points.histogram.r, rtol=1e-5) and np.allclose(pr, points.histogram.pr, rtol=1e-5)
+
+    intensity = points.scattering(Q, structure_factor=HardSphere(volume_fraction=0.2, radius=60.))
+    intensity.save_intensity(tmp_path / "I.dat")
+    intensity.save_structure_factor(tmp_path / "S.dat")
+    assert np.allclose(np.loadtxt(tmp_path / "I.dat").T, [Q, intensity.I], rtol=1e-5)
+    assert np.allclose(np.loadtxt(tmp_path / "S.dat").T, [Q, intensity.S], rtol=1e-5)
 
     points.write_pdb(tmp_path / "points.pdb")
     lines = (tmp_path / "points.pdb").read_text().splitlines()

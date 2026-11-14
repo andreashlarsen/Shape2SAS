@@ -20,8 +20,7 @@ from .helpfunctions import (
 )
 from .cli_models import make_structure_factor, make_subunit
 from .particle import create_particle
-from .theoretical_scattering import save_I_func, uniform_q
-from .structure_factors.structure_factors_helpfunctions import save_S_func
+from .theoretical_scattering import uniform_q
 from .simulated_scattering import save_Isim_func, simulate_scattering
 from .plots import plot_fit, plot_results
 from .sesans import calc_G_sesans, simulate_sesans
@@ -233,20 +232,19 @@ def run(argv=None):
         logger.info("\n    Calculating intensity, I(q)...")
 
         ### calculate theoretical SAS, in absolute units, with its structure factor (and SESANS)
-        S_eff = points.effective_structure_factor(q, structure_factor)
-        save_S_func(q,S_eff,model_filename)
-        S_list.append(S_eff)
-        I = points.scattering(q, conc=conc, structure_factor=structure_factor, sigma_r=sigma_r)
-        save_I_func(q,I,model_filename)
-        I_list.append(I)
+        intensity = points.scattering(q, conc=conc, structure_factor=structure_factor, sigma_r=sigma_r)
+        intensity.save_intensity(f"{model_filename}/Iq_{model_filename}.dat")
+        intensity.save_structure_factor(f"{model_filename}/Sq_{model_filename}.dat")
+        I_list.append(intensity.I)
+        S_list.append(intensity.S)
         if args.sesans:
             # calculated theoretical SESANS
-            G = calc_G_sesans(q,delta,I)
+            G = calc_G_sesans(q,delta,intensity.I)
             delta_list.append(delta)
             G_list.append(G)
 
         ### simulate SAXS (and SESANS)
-        I_sim, sigma = simulate_scattering(q,I,args.exposure)
+        I_sim, sigma = simulate_scattering(q,intensity.I,args.exposure)
         save_Isim_func(q,I_sim,sigma,model_filename)
         I_sim_list.append(I_sim)
         sigma_list.append(sigma)
