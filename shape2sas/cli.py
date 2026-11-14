@@ -13,11 +13,11 @@ from .helpfunctions import (
     check_input,
     float_list,
     get_header_footer,
-    getStructureFactorClass,
     InputError,
     separate_string,
     str2bool,
 )
+from .cli_models import make_structure_factor, make_subunit
 from .models import save_points
 from .particle import create_particle
 from .theoretical_scattering import save_I_func, save_pr_func, uniform_q
@@ -191,8 +191,8 @@ def run(argv=None):
         logger.info(f"    Generating points for Model: " + model_name)
         particle = create_particle(exclude_overlap=exclude_overlap)
         for j in range(N_subunits):
-            particle.add_subunit(args.subunit[i][j], args.dimension[i][j], sld=sld[j], com=com[j],
-                                 rotation=rotation[j], rotation_point=rotation_points[j])
+            particle.add_subunit(make_subunit(args.subunit[i][j], args.dimension[i][j]).placed(
+                sld=sld[j], com=com[j], rotation=rotation[j], rotation_point=rotation_points[j]))
         points = particle.generate_points(args.Npoints, prpoints=args.prpoints, polydispersity=polydispersity,
                                           use_ausaxs=not args.disable_ausaxs)
         x, y, z, sld_points = points.x, points.y, points.z, points.sld
@@ -210,7 +210,7 @@ def run(argv=None):
             S_par = args.S_par[i][0]
         except:
             S_par = []
-        structure_factor = getStructureFactorClass(S_type).from_parameters(S_par)
+        structure_factor = make_structure_factor(S_type, S_par)
 
         ### calculate p(r)
         logger.info("\n    Calculating pair distance distribution, p(r)...")

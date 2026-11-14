@@ -1,34 +1,24 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import ClassVar
 
 import numpy as np
 
-from ..aliased import Aliased
 from ..helpfunctions import InputError
 
-class Subunit(Aliased, ABC):
+class Subunit(ABC):
     """
     Base class of all subunits. A subunit is a geometric body, described in
     its own frame: centred on the origin, before any rotation or translation.
 
     A subclass must set the class attribute
-        aliases : names the user can type for the subunit; the first is the canonical name
+        aliases : names the subunit has on the command line; the first is the canonical name
     take its dimensions as named arguments of __init__, and implement
     volume(), generate_points() and outside().
     """
 
-    _kind = "subunit"
-    _value_name = "dimension"
-
-    @classmethod
-    def from_dimensions(cls, dimensions):
-        """
-        create the subunit from a list of dimensions, in the order of its parameters, as given on the command line
-
-        raises InputError, naming the parameters, if the wrong number of dimensions is given
-        """
-        return cls._from_values(dimensions)
+    aliases: ClassVar[list[str]]
 
     def placed(self, *, sld: float = 1.0, com: Sequence[float] = (0, 0, 0), rotation: Sequence[float] = (0, 0, 0),
                rotation_point: Sequence[float] = (0, 0, 0)) -> "Placement":

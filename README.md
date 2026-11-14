@@ -504,8 +504,8 @@ particle = sts.create_particle(
     Cylinder(radius=10, length=120),
 )
 
-# more subunits can be added later, also by name and a list of dimensions, as on the command line
-particle.add_subunit("sphere", [10], sld=2.0)
+# more subunits can be added later
+particle.add_subunit(Sphere(radius=10).placed(sld=2.0))
 
 # fill the particle with random points; a seed makes them reproducible
 points = particle.generate_points(5000, rng=1, prpoints=100, polydispersity=0.0)
@@ -516,9 +516,9 @@ I = points.scattering(q, conc=0.02, structure_factor=HardSphere(volume_fraction=
 I_sim, sigma = sts.simulate_scattering(q, I, exposure=500, rng=1)
 ```
 
-A subunit from `sts.subunits` is created with its dimensions, named as in the [table of subunits](#subunits). It has unit contrast, sits at the origin and is not rotated, unless it is placed with `placed(sld=..., com=..., rotation=..., rotation_point=...)`. `create_particle` takes any number of subunits and placed subunits, and `add_subunit` adds one more; `add_subunit` also takes a subunit by name and a list of its dimensions, with the placement as keywords. Structure factors from `sts.structure_factors` are created with their parameters, named as in the [table of structure factors](#structure-factors).
+A subunit from `sts.subunits` is created with its dimensions, named as in the [table of subunits](#subunits). It has unit contrast, sits at the origin and is not rotated, unless it is placed with `placed(sld=..., com=..., rotation=..., rotation_point=...)`. `create_particle` takes any number of subunits and placed subunits, and `add_subunit` adds one more. Structure factors from `sts.structure_factors` are created with their parameters, named as in the [table of structure factors](#structure-factors).
 
-`generate_points` draws new random points every time it is called, unless it is given the same seed (`rng`, which also takes a `numpy.random.Generator`), and returns them as a `PointDistribution`, which never changes: subunits added to the particle afterwards need new points. Its `x`, `y`, `z` and `sld` are the points, and `volume` the volume of the particle. Its `histogram` holds the pair distance distribution, `r` and `pr`, together with `dmax`, `Rg`, the form factor `form_factor(q)`, normalised so P(0) = 1, and `forward_scattering()`. The histogram is calculated on first use and kept, so the scattering can be calculated for several q ranges, concentrations or structure factors (see also `effective_structure_factor(q, structure_factor)`) without calculating it again. Intensities are in absolute units, cm<sup>-1</sup>, with I(q) = `conc` · P(q) · S(q). Invalid input, such as an unknown subunit or a wrong number of dimensions, raises a `ValueError`.
+`generate_points` draws new random points every time it is called, unless it is given the same seed (`rng`, which also takes a `numpy.random.Generator`), and returns them as a `PointDistribution`, which never changes: subunits added to the particle afterwards need new points. Its `x`, `y`, `z` and `sld` are the points, and `volume` the volume of the particle. Its `histogram` holds the pair distance distribution, `r` and `pr`, together with `dmax`, `Rg`, the form factor `form_factor(q)`, normalised so P(0) = 1, and `forward_scattering()`. The histogram is calculated on first use and kept, so the scattering can be calculated for several q ranges, concentrations or structure factors (see also `effective_structure_factor(q, structure_factor)`) without calculating it again. Intensities are in absolute units, cm<sup>-1</sup>, with I(q) = `conc` · P(q) · S(q). Invalid input, such as a vector without three components, raises a `ValueError`.
 
 New subunits and structure factors derive from `sts.subunits.Subunit` and `sts.structure_factors.StructureFactor`, whose docstrings list the methods to implement, and are added to the `__init__.py` of their package.
 

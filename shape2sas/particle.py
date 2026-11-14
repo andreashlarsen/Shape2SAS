@@ -1,12 +1,10 @@
 """A particle built from subunits, the random points filling it, and the scattering they give."""
 
-from collections.abc import Sequence
 from functools import cached_property
-from typing import overload
 
 import numpy as np
 
-from .helpfunctions import InputError, getSubunitClass
+from .helpfunctions import InputError
 from .models import ModelPointDistribution, GenerateAllPoints
 from .structure_factors import NoStructure, StructureFactor
 from .subunits.Subunit import Placement, Subunit
@@ -105,40 +103,17 @@ class Particle:
         self.exclude_overlap = exclude_overlap
         self._placements: list[Placement] = []
 
-    @overload
     def add_subunit(self, subunit: Subunit | Placement, /) -> None:
-        """add a subunit, e.g. subunits.Cylinder(radius=20, length=100), or a placed one, e.g. Cylinder(...).placed(com=(0, 0, 50))"""
-
-    @overload
-    def add_subunit(self, shape: str | type[Subunit], dimensions: Sequence[float], /, *, sld: float = 1.0,
-                    com: Sequence[float] = (0, 0, 0), rotation: Sequence[float] = (0, 0, 0),
-                    rotation_point: Sequence[float] = (0, 0, 0)) -> None:
-        """add a subunit, given by its name, e.g. "cylinder", or class, and a list of its dimensions, e.g. [20, 100], and place it"""
-
-    def add_subunit(self, shape, dimensions=None, /, **placement):
         """
-        add a subunit to the particle, either as
-            add_subunit(subunit)                 : a subunit, e.g. subunits.Cylinder(radius=20, length=100), at the origin with unit
-                                                   contrast, or a placed subunit, e.g. subunits.Cylinder(...).placed(com=(0, 0, 50))
-            add_subunit(shape, dimensions, ...)  : a subunit class, e.g. subunits.Cylinder, or its name, e.g. "cylinder" (any alias,
-                                                   ignoring case, spaces, underscores and hyphens), and its dimensions [A], in the order of
-                                                   its parameters, e.g. [20, 100] (see the table of subunits in the README), placed by the
-                                                   keyword arguments of Subunit.placed: sld, com, rotation and rotation_point
+        add a subunit to the particle: a subunit, e.g. subunits.Cylinder(radius=20, length=100), at the origin with unit contrast,
+        or a placed subunit, e.g. subunits.Cylinder(radius=20, length=100).placed(com=(0, 0, 50), sld=2)
 
-        point distributions generated before the subunit is added are not affected.
-        raises ValueError on an unknown subunit, a wrong number of dimensions, or a vector without three components
+        point distributions generated before the subunit is added are not affected. raises ValueError on anything else
         """
-        if isinstance(shape, (Subunit, Placement)):
-            if dimensions is not None or placement:
-                raise InputError("a subunit is created with its dimensions and placed with its placed() method, "
-                                 "e.g. Cylinder(radius=20, length=100).placed(com=(0, 0, 50)), so add_subunit takes nothing else")
-            self._placements.append(shape if isinstance(shape, Placement) else shape.placed())
-            return
-
-        # the second form: build the subunit and its placement, and add them with the first
-        if dimensions is None:
-            raise InputError("a subunit given by name or class needs its dimensions")
-        self.add_subunit(getSubunitClass(shape).from_dimensions(dimensions).placed(**placement))
+        if not isinstance(subunit, (Subunit, Placement)):
+            raise InputError("add_subunit takes a subunit, e.g. Sphere(radius=50), or a placed subunit, e.g. "
+                             "Sphere(radius=50).placed(com=(0, 0, 60)), but %r was given" % (subunit,))
+        self._placements.append(subunit if isinstance(subunit, Placement) else subunit.placed())
 
     def generate_points(self, Npoints: int, *, rng: np.random.Generator | int | None = None, prpoints: int = 100,
                         polydispersity: float = 0.0, use_ausaxs: bool = True) -> PointDistribution:
@@ -173,9 +148,5 @@ def create_particle(*subunits: Subunit | Placement, exclude_overlap: bool = True
     """
     particle = Particle(exclude_overlap)
     for subunit in subunits:
-        if not isinstance(subunit, (Subunit, Placement)):
-            raise InputError("create_particle takes subunits, e.g. Sphere(radius=50), or placed subunits, e.g. "
-                             "Sphere(radius=50).placed(com=(0, 0, 60)), but %r was given; "
-                             "a subunit given by name is added with add_subunit" % (subunit,))
         particle.add_subunit(subunit)
     return particle

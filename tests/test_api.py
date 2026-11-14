@@ -73,8 +73,6 @@ def test_structure_factor():
     I = points.scattering(Q, structure_factor=hard_spheres)
     assert np.allclose(I, points.scattering(Q) * S_eff)
     assert np.allclose(points.effective_structure_factor(Q), 1.0)
-    # the name and parameter list of the command line give the same structure factor
-    assert np.allclose(I, points.scattering(Q, structure_factor=HardSphere.from_parameters([0.2, 50.])))
 
 
 def test_aggregation_sets_the_sesans_range():
@@ -109,31 +107,10 @@ def test_seed_makes_the_points_reproducible():
     assert not np.array_equal(same[0], other)
 
 
-def test_subunit_by_class_or_name():
-    """a subunit can be given as a class or by any of its names, with the same result"""
-    particles = []
-    for shape in (Cylinder, "cylinder", "Rod"):
-        particle = sts.create_particle()
-        particle.add_subunit(shape, [20., 60.])
-        particles.append(coordinates(particle.generate_points(2000, rng=2, use_ausaxs=False)))
-    for points in particles[1:]:
-        assert np.array_equal(points, particles[0])
-
-
-def test_placed_subunit_and_named_subunit_agree():
-    """a subunit placed with placed() gives the same particle as one given by name, dimensions and placement keywords"""
-    placement = dict(sld=2., com=(0, 0, 10.), rotation=(30., 0, 0), rotation_point=(0, 0, 5.))
-    placed = sts.create_particle(Cylinder(radius=20., length=60.).placed(**placement))
-    named = sts.create_particle()
-    named.add_subunit("cylinder", [20., 60.], **placement)
-    points = [coordinates(particle.generate_points(2000, rng=2, use_ausaxs=False)) for particle in (placed, named)]
-    assert np.array_equal(points[0], points[1])
-
-
 def test_subunits_given_to_create_particle():
     """create_particle takes subunits and placed subunits, as add_subunit does"""
     added = sts.create_particle()
-    added.add_subunit("sphere", [50.], com=[0, 0, -60.])
+    added.add_subunit(Sphere(radius=50.).placed(com=[0, 0, -60.]))
     added.add_subunit(Sphere(radius=50.).placed(com=(0, 0, 60.)))
     added.add_subunit(Cylinder(radius=10., length=120.))
     given = sts.create_particle(
@@ -170,33 +147,24 @@ def test_invalid_input_raises_value_error():
     particle = sts.create_particle()
     with pytest.raises(ValueError):
         particle.generate_points(1000)
-    with pytest.raises(ValueError):
-        particle.add_subunit("no such subunit", [10.])
-    with pytest.raises(ValueError):
-        particle.add_subunit(dict, [10.])
-    with pytest.raises(ValueError):
-        particle.add_subunit("cylinder", [10.])
-    with pytest.raises(ValueError):
-        particle.add_subunit("cylinder")
-    with pytest.raises(ValueError):
-        particle.add_subunit(Sphere(radius=10.), [10.])
-    with pytest.raises(ValueError):
-        particle.add_subunit("sphere", [10.], com=[0, 0])
+    for wrong in ("sphere", Sphere, 50.):
+        with pytest.raises(ValueError):
+            particle.add_subunit(wrong)
     with pytest.raises(ValueError):
         Sphere(radius=10.).placed(com=(0, 0))
-    with pytest.raises(ValueError):
-        HardSphere.from_parameters([0.2])
     with pytest.raises(ValueError):
         sphere().scattering(Q, structure_factor="hardsphere")
 
 
 def test_placement_keywords_are_checked():
-    """a placement keyword that does not exist is an error, not silently ignored"""
+    """a subunit is placed with placed(), whose keywords are checked; add_subunit takes the subunit and nothing else"""
     particle = sts.create_particle()
     with pytest.raises(TypeError):
-        particle.add_subunit("sphere", [10.], colour="red")
-    with pytest.raises(ValueError):
+        Sphere(radius=10.).placed(colour="red")
+    with pytest.raises(TypeError):
         particle.add_subunit(Sphere(radius=10.), sld=2.)
+    with pytest.raises(TypeError):
+        particle.add_subunit(Sphere(radius=10.), [10.])
 
 
 def test_simulated_scattering():

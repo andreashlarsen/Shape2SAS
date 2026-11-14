@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from shape2sas import structure_factors, subunits
+from shape2sas.cli_models import alias_registry, make_structure_factor, make_subunit, normalise_alias, parameter_names
 from shape2sas.models import rotate_and_translate, undo_rotate_and_translate
 from shape2sas.particle import create_particle
 
@@ -68,20 +69,21 @@ def test_subunits_are_self_consistent():
 
 
 def test_wrong_number_of_dimensions_is_rejected():
-    """a dimensions list of the wrong length must give an InputError (a ValueError) that names the parameters"""
+    """on the command line, a dimensions list of the wrong length must give an InputError (a ValueError) that names the parameters"""
     for name, dimensions in CASES.items():
         cls = getattr(subunits, name)
         for wrong in (list(dimensions)[:-1], list(dimensions) + [1.]):
-            with pytest.raises(ValueError, match=", ".join(cls.parameters())):
-                cls.from_dimensions(wrong)
+            with pytest.raises(ValueError, match=", ".join(parameter_names(cls))):
+                make_subunit(cls.aliases[0], wrong)
 
 
 def test_named_and_listed_dimensions_give_the_same_subunit():
-    """keywords, positional arguments and from_dimensions() are three spellings of the same subunit"""
+    """keywords, positional arguments and the command line's name and list are three spellings of the same subunit"""
     for name, dimensions in CASES.items():
         cls = getattr(subunits, name)
-        keywords = dict(zip(cls.parameters(), dimensions))
-        for obj in (cls(*dimensions), cls.from_dimensions(dimensions)):
+        keywords = dict(zip(parameter_names(cls), dimensions))
+        for obj in (cls(*dimensions), make_subunit(cls.aliases[-1], dimensions)):
+            assert type(obj) is cls, name
             assert obj.volume() == cls(**keywords).volume(), name
 
 
@@ -103,21 +105,31 @@ def test_every_subunit_derives_from_subunit():
     for name, dimensions in CASES.items():
         cls = getattr(subunits, name)
         assert isinstance(cls(*dimensions), subunits.Subunit), name
-        assert len(dimensions) == len(cls.parameters()), name
+        assert len(dimensions) == len(parameter_names(cls)), name
+
+
+@pytest.mark.parametrize("package, base", [(subunits, subunits.Subunit), (structure_factors, structure_factors.StructureFactor)],
+                         ids=["subunits", "structure_factors"])
+def test_every_class_has_its_own_aliases(package, base):
+    """every class must define its own, non-empty list of aliases, and no alias may name two classes, or the command line
+    could not select it"""
+    classes = [cls for cls in (getattr(package, name) for name in package.__all__)
+               if isinstance(cls, type) and issubclass(cls, base) and cls is not base]
+    owners = {}
+    for cls in classes:
+        aliases = cls.__dict__.get("aliases")  # inherited aliases would name two classes
+        assert isinstance(aliases, list) and aliases and all(isinstance(a, str) for a in aliases), \
+            "%s must define aliases as a non-empty list of names" % cls.__name__
+        for alias in aliases:
+            owner = owners.setdefault(normalise_alias(alias), cls)
+            assert owner is cls, "alias '%s' names both %s and %s" % (alias, owner.__name__, cls.__name__)
+    assert set(alias_registry(package).values()) == set(classes)
 
 
 def test_malformed_subunits_are_rejected():
-    """a subunit must define its own aliases, and implement every method"""
-    with pytest.raises(TypeError):
-        class NoAliases(subunits.Subunit):
-            pass
-    with pytest.raises(TypeError):
-        # inheriting the aliases would give two subunits the same names
-        class InheritedAliases(subunits.Sphere):
-            pass
-
+    """a subunit must implement every method"""
     class NoMethods(subunits.Subunit):
-        aliases = ["nomethods"]
+        pass
     with pytest.raises(TypeError):
         NoMethods()
 
@@ -167,8 +179,6 @@ def test_structure_factor_with_several_subunits():
 
 def test_structure_factor_names_resolve():
     """every name documented in the README must resolve to a class"""
-    from shape2sas.helpfunctions import getStructureFactorClass
-
     documented = {
         "hardsphere": "HardSphere", "hs": "HardSphere",
         "hard-sphere": "HardSphere", "hard_sphere": "HardSphere",
@@ -177,33 +187,28 @@ def test_structure_factor_names_resolve():
         "None": "NoStructure", "no": "NoStructure", "unity": "NoStructure",
     }
     for name, expected in documented.items():
-        got = getStructureFactorClass(name).__name__
+        cls = getattr(structure_factors, expected)
+        got = type(make_structure_factor(name, [1.0] * len(parameter_names(cls)))).__name__
         assert got == expected, "%s resolved to %s, expected %s" % (name, got, expected)
 
-    try:
-        getStructureFactorClass("hardsphre")
-    except ValueError:
-        return
-    raise AssertionError("an unknown structure factor name was accepted")
+    with pytest.raises(ValueError, match="Available structure factors"):
+        make_structure_factor("hardsphre", [0.2, 50.])
 
 
 def test_structure_factor_parameter_counts():
-    """a parameter list of the wrong length must give an InputError (a ValueError) that names the parameters"""
+    """on the command line, a parameter list of the wrong length must give an InputError (a ValueError) that names the
+    parameters"""
     for cls in (structure_factors.HardSphere, structure_factors.Aggregation, structure_factors.NoStructure):
-        n = len(cls.parameters())
+        n = len(parameter_names(cls))
         for wrong in ([1.0] * (n + 1), [1.0] * (n - 1)) if n else ([1.0],):
-            with pytest.raises(ValueError, match=", ".join(cls.parameters())):
-                cls.from_parameters(wrong)
-        assert isinstance(cls.from_parameters([1.0] * n), structure_factors.StructureFactor)
+            with pytest.raises(ValueError, match=", ".join(parameter_names(cls))):
+                make_structure_factor(cls.aliases[0], wrong)
+        assert type(make_structure_factor(cls.aliases[0], [1.0] * n)) is cls
 
 
 def test_malformed_structure_factors_are_rejected():
-    """a structure factor must define its own aliases, and implement structure_factor()"""
-    with pytest.raises(TypeError):
-        class NoAliases(structure_factors.StructureFactor):
-            def structure_factor(self, q):
-                return q
+    """a structure factor must implement structure_factor()"""
     class NoMethods(structure_factors.StructureFactor):
-        aliases = ["nomethods"]
+        pass
     with pytest.raises(TypeError):
         NoMethods()

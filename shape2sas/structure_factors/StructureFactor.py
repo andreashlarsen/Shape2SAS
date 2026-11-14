@@ -1,31 +1,21 @@
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
 import numpy as np
 
-from ..aliased import Aliased
 from ..sesans.sesans_helpfunctions import default_sesans_range
 from .structure_factors_helpfunctions import decoupling_approx
 
-class StructureFactor(Aliased, ABC):
+class StructureFactor(ABC):
     """
     Base class of all structure factors.
 
     A subclass must set the class attribute
-        aliases : names the user can type after --S; the first is the canonical name
+        aliases : names the structure factor has on the command line, after --S; the first is the canonical name
     take its parameters as named arguments of __init__, and implement structure_factor().
     """
 
-    _kind = "structure factor"
-    _value_name = "parameter"
-
-    @classmethod
-    def from_parameters(cls, parameters):
-        """
-        create the structure factor from a list of parameters, in the order of its arguments, as given on the command line
-
-        raises InputError, naming the parameters, if the wrong number of parameters is given
-        """
-        return cls._from_values(parameters)
+    aliases: ClassVar[list[str]]
 
     @abstractmethod
     def structure_factor(self, q: np.ndarray) -> np.ndarray:
