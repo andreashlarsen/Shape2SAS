@@ -1,9 +1,9 @@
 """General helpers shared across Shape2SAS.
 
 Only non-specific helpers belong here. The calculations themselves live in
-their own modules: models.py, theoretical_scattering.py,
-simulated_scattering.py, plots.py, and the subunits, structure_factors and
-sesans subpackages.
+their own modules: rotation.py, theoretical_scattering.py,
+simulated_scattering.py, plots.py, and the particle, subunits,
+structure_factors and sesans subpackages.
 """
 
 import argparse

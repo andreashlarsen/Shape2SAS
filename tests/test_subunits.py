@@ -13,7 +13,7 @@ import pytest
 
 from shape2sas import structure_factors, subunits
 from shape2sas.cli_models import alias_registry, make_structure_factor, make_subunit, normalise_alias, parameter_names
-from shape2sas.models import rotate_and_translate, undo_rotate_and_translate
+from shape2sas.rotation import rotate_and_translate, undo_rotate_and_translate
 from shape2sas.particle import create_particle
 
 # one representative set of dimensions per subunit
