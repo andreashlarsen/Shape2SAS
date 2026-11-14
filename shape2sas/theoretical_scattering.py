@@ -7,7 +7,7 @@ import os
 import numpy as np
 from fast_histogram import histogram1d #histogram1d from fast_histogram is faster than np.histogram (https://pypi.org/project/fast-histogram/) 
 
-from .helpfunctions import getStructureFactorClass, sinc
+from .helpfunctions import sinc
 
 logger = logging.getLogger(__name__)
 
@@ -291,7 +291,7 @@ class PairDistanceDistribution:
         self.Rg = self.calc_Rg(self.r_hist, self.hr)
         logger.info(f"           Rg  : {self.Rg:.3e} A")
 
-    def calc_Pq(self, q):
+    def form_factor(self, q):
         """
         calculate form factor, P(q), normalized so P(0) = 1
 
@@ -316,7 +316,7 @@ class PairDistanceDistribution:
 
         return Pq
 
-    def calc_P0(self):
+    def forward_scattering(self):
         """
         calculate forward scattering per unit volume fraction, P(0), so that I(q) = conc * P(0) * P(q) * S(q)
 
@@ -353,12 +353,9 @@ def calc_Iq_func(q, Pq, S_eff, sigma_r):
 
     return I
     
-def calc_S_func(q,point_distribution,stype,S_par,Pq):
-    """calculate the effective structure factor S_eff(q)
-
-    the structure factors themselves live in the structure_factors folder
-    """
-    return getStructureFactorClass(stype)(S_par).structure_eff(q,point_distribution,Pq)
+def uniform_q(qmin=0.001, qmax=0.5, qpoints=400):
+    """equidistant q values from qmin to qmax [1/A]"""
+    return np.linspace(qmin, qmax, qpoints)
 
 def save_pr_func(r,pr,model_filename):
     """save pair distance distribution p(r)"""

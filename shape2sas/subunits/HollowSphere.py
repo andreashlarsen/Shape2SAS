@@ -1,14 +1,13 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class HollowSphere:
+class HollowSphere(Subunit):
     aliases = ["hollowsphere","shell"]
 
-    def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,2)
-        self.R,self.r = dimensions
+    def __init__(self, radius, inner_radius):
+        self.R,self.r = radius,inner_radius
 
-    def getVolume(self):
+    def volume(self):
         """Returns the volume of a hollow sphere"""
         if self.r > self.R:
             self.R, self.r = self.r, self.R
@@ -17,13 +16,13 @@ class HollowSphere:
         else: 
             return (4 / 3) * np.pi * (self.R**3 - self.r**3)
 
-    def getPointDistribution(self, Npoints):
-        """Returns the point distribution of a hollow sphere"""
-        Volume = self.getVolume()
+    def generate_points(self, Npoints, rng):
+        """Returns points drawn uniformly in a hollow sphere"""
+        Volume = self.volume()
         if self.r == self.R:
             #The hollow sphere is a shell if r=R
-            phi = np.random.uniform(0,2 * np.pi, Npoints)
-            costheta = np.random.uniform(-1, 1, Npoints)
+            phi = rng.uniform(0,2 * np.pi, Npoints)
+            costheta = rng.uniform(-1, 1, Npoints)
             theta = np.arccos(costheta)
 
             x_add = self.R * np.sin(theta) * np.cos(phi)
@@ -34,23 +33,23 @@ class HollowSphere:
         Vratio = Volume_max/Volume
 
         N = int(Vratio * Npoints)
-        x = np.random.uniform(-self.R, self.R, N)
-        y = np.random.uniform(-self.R, self.R, N)
-        z = np.random.uniform(-self.R, self.R, N)
+        x = rng.uniform(-self.R, self.R, N)
+        y = rng.uniform(-self.R, self.R, N)
+        z = rng.uniform(-self.R, self.R, N)
         d = np.sqrt(x**2 + y**2 + z**2)
 
         idx = np.where((d < self.R) & (d > self.r))
         x_add, y_add, z_add = x[idx], y[idx], z[idx]
         return x_add, y_add, z_add
 
-    def checkOverlap(self, x_eff, y_eff, z_eff):
-        """Check for points within a hollow sphere"""
+    def outside(self, x_eff, y_eff, z_eff):
+        """Returns which points are outside the hollow sphere"""
         d = np.sqrt(x_eff**2+y_eff**2+z_eff**2)
         if self.r > self.R:
              self.r, self.R = self.R, self.r
         if self.r == self.R:
-            idx = np.where(d != self.R)
+            idx = (d != self.R)
             return idx
         else:
-            idx = np.where((d > self.R) | (d < self.r))
+            idx = ((d > self.R) | (d < self.r))
             return idx

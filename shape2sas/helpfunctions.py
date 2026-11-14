@@ -7,7 +7,6 @@ sesans subpackages.
 """
 
 import argparse
-import inspect
 import re
 import warnings
 
@@ -15,32 +14,6 @@ import numpy as np
 
 class InputError(ValueError):
     """invalid input, such as an unknown subunit or a wrong number of parameters"""
-
-def normalise_alias(name):
-    """normalise a name so that 'Hollow sphere', 'hollow_sphere' and
-    'hollowsphere' all refer to the same thing"""
-    return name.lower().replace("_", "").replace(" ", "").replace("-", "")
-
-def build_alias_registry(package):
-    """map every alias of every class in a package to that class"""
-    registry = {}
-    for _, cls in inspect.getmembers(package, inspect.isclass):
-        for alias in getattr(cls, "aliases", []):
-            registry[normalise_alias(alias)] = cls
-    return registry
-
-def lookup_alias(registry, name, what):
-    """look up a class by any of its aliases, or list the valid names"""
-    try:
-        return registry[normalise_alias(name)]
-    except KeyError:
-        available = sorted(set(cls.aliases[0] for cls in registry.values()))
-        raise InputError("unknown " + what + " '" + str(name) + "'. Available " + what + "s: " + ", ".join(available)) from None
-
-def getStructureFactorClass(stype):
-    """look up a structure factor class by any of its aliases"""
-    from . import structure_factors
-    return lookup_alias(build_alias_registry(structure_factors), stype, "structure factor")
 
 def sinc(x):
     """

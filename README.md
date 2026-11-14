@@ -36,6 +36,7 @@ Shape2SAS can also generate simulated SESANS data if opted for.
   - [General inputs](#general-and-optional-inputs)
   - [Plot-related inputs](#plot-related-and-optional-inputs)
   - [Fit-related inputs](#fit-related-and-optional-inputs)
+- [Python API](#python-api)
 - [GUI](#gui)
 - [Credit](#credit)
   - [Contributors](#contributors)
@@ -91,25 +92,25 @@ The following subunits are currently available:
 
 | Subunit          | Dimension(s)<sup>*</sup>   |  Alternative names<sup>**</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
-| `sphere` | radius  | `ball`, `sph` | Sphere
-| `hollow_sphere` | outer radius, inner radius  | `shell` | Hollow sphere |
-| `ellipsoid` | axis1, axis2, axis3  | `ellips` | Tri-axial ellipsoid |
-| `ellipsoid_shell` | axis1, axis2, axis3, thickness  | `ellips_shell` | Shell of a tri-axial ellipsoid |
-| `cylinder` | radius, length  | `rod`, `cyl` | Cylinder |
-| `disc` | radius1, radius2, length  | `disk`, `elliptical_disc` | Elliptical disc, i.e. a short elliptical cylinder. |
-| `circular_disc` | radius, length  | `round_disc` | Circular disc, i.e. a short cylinder. |
-| `ring` | outer radius, inner radius, length  | `hollow_cylinder`, `hollow_disc`, `cylinder_ring`, `disc_ring` | Hollow cylinder | 
-| `elliptical_cylinder` | radius1, radius2, length  | `elliptical_rod` | Cylinder | 
-| `cube` | side length | `dice` | Cube |
-| `hollow_cube` | outer side length, inner side length  | -- | Hollow cube (cavity is also a cube) |
-| `cuboid` | side length 1, side length 2, side length 3 | `brick` | cuboid, i.e. not same side lengths |
-| `octahedron` | half-diagonal a, half-diagonal b, half-diagonal c | `octa`, `bipyramid` | Octahedron with vertices at $\pm a$, $\pm b$, $\pm c$ on the x, y and z axes; regular for $a=b=c$ |
-| `truncated_octahedron` | half-diagonal a, half-diagonal b, half-diagonal c, truncation $t$ | `truncated_octa` | Octahedron as above, with each vertex cut off by a square facet at a fraction $1-t$ of the way out ($0 \le t \le 1/2$). $a=b=c$ gives a regular octahedron for $t=0$, a truncated octahedron for $t=1/3$ and a cuboctahedron for $t=1/2$<sup>****</sup> |
-| `torus` | overall radius, cross-sectional radius  | `toroid`, `doughnut` | Torus, i.e a doughnut shape | 
-| `hyperboloid` | smallest radius, curvature, half of the height  | `hourglass`, `cooling_tower`| Hyperboloid, i.e. an filled hourglass shape | 
-| `superellipsoid` | equator radius, eccentricity, shape parameter $t$, shape parameter $s$  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>***</sup> | 
+| `sphere` | `radius`  | `ball`, `sph` | Sphere
+| `hollow_sphere` | `radius`, `inner_radius`  | `shell` | Hollow sphere |
+| `ellipsoid` | `a`, `b`, `c` (semi-axes)  | `ellips` | Tri-axial ellipsoid |
+| `ellipsoid_shell` | `a`, `b`, `c`, `thickness` (semi-axes to the middle of the shell, and its thickness)  | `ellips_shell` | Shell of a tri-axial ellipsoid |
+| `cylinder` | `radius`, `length`  | `rod`, `cyl` | Cylinder |
+| `disc` | `a`, `b`, `length` (semi-axes of the cross section, and length)  | `disk`, `elliptical_disc` | Elliptical disc, i.e. a short elliptical cylinder. |
+| `circular_disc` | `radius`, `length`  | `round_disc` | Circular disc, i.e. a short cylinder. |
+| `ring` | `radius`, `inner_radius`, `length`  | `hollow_cylinder`, `hollow_disc`, `cylinder_ring`, `disc_ring` | Hollow cylinder | 
+| `elliptical_cylinder` | `a`, `b`, `length` (semi-axes of the cross section, and length)  | `elliptical_rod` | Cylinder | 
+| `cube` | `side` (side length) | `dice` | Cube |
+| `hollow_cube` | `side`, `inner_side` (outer and inner side length)  | -- | Hollow cube (cavity is also a cube) |
+| `cuboid` | `side_a`, `side_b`, `side_c` (side lengths) | `brick` | cuboid, i.e. not same side lengths |
+| `octahedron` | `a`, `b`, `c` (half-diagonals) | `octa`, `bipyramid` | Octahedron with vertices at $\pm a$, $\pm b$, $\pm c$ on the x, y and z axes; regular for $a=b=c$ |
+| `truncated_octahedron` | `a`, `b`, `c`, `truncation` (half-diagonals, and truncation $t$) | `truncated_octa` | Octahedron as above, with each vertex cut off by a square facet at a fraction $1-t$ of the way out ($0 \le t \le 1/2$). $a=b=c$ gives a regular octahedron for $t=0$, a truncated octahedron for $t=1/3$ and a cuboctahedron for $t=1/2$<sup>****</sup> |
+| `torus` | `radius`, `tube_radius` (overall radius, and cross-sectional radius)  | `toroid`, `doughnut` | Torus, i.e a doughnut shape | 
+| `hyperboloid` | `radius`, `curvature`, `half_height` (smallest radius, curvature, and half of the height)  | `hourglass`, `cooling_tower`| Hyperboloid, i.e. an filled hourglass shape | 
+| `superellipsoid` | `radius`, `eccentricity`, `t`, `s` (equator radius, eccentricity, and shape parameters $t$ and $s$)  | --| superellipsoid, very general shape including superspheres and superellipsoids<sup>***</sup> | 
 
-<sup>*</sup> input order is important.   
+<sup>*</sup> input order is important. In the [Python API](#python-api) the dimensions can also be given by these names.   
 <sup>**</sup> names are not case-sensitive, and underscores are ignored, so for example Hollowsphere or hollow_sphere or hollowSphere or HoLlo_w_sPh_Ere all give the same subunit.   
 <sup>***</sup>[see superellipsoid sasview model](https://marketplace.sasview.org/models/164/)   
 <sup>****</sup>same as the `truncated_octahedron` model in SasView, with `radius_a` = a, `b2a_ratio` = b/a, `c2a_ratio` = c/a   
@@ -207,11 +208,11 @@ The following structure factors are implemented
 
 | Structure factor   | Parameters<sup>*</sup>   |  Alternative names<sup>**</sup>           | Description                |
 |------------------|----------------|--------------------------------|----------------------------|
-| `hardsphere` | volume fraction, hard-sphere radius | `hs` | Hard-sphere structure factor |
-| `aggregation` | aggregate effective radius, particles per aggregate, fraction of particles in aggregates | `aggr`, `frac2d` | Two-dimensional fractal aggregate |
+| `hardsphere` | `volume_fraction`, `radius` (of the hard spheres) | `hs` | Hard-sphere structure factor |
+| `aggregation` | `effective_radius`, `particles_per_aggregate`, `fraction_aggregated` | `aggr`, `frac2d` | Two-dimensional fractal aggregate |
 | `None` |  | `no`, `unity`, `no_structure` | No structure factor (default) |
 
-<sup>*</sup> provided with flag `--S_par` (or `-Sp`) - input order is important.   
+<sup>*</sup> provided with flag `--S_par` (or `-Sp`) - input order is important. In the [Python API](#python-api) the parameters can also be given by these names.   
 <sup>**</sup> structure factor names are also not case-sensitive.
 
 [Back to Table of contents](#table-of-contents)
@@ -485,6 +486,43 @@ Shape2SAS has two types of inputs: model-dependent inputs, that only affect the 
 | Flag             | Default | Short name |Description                                         |
 |-----------------|---------|------------|-----------------------------------------|
 | `--data`         | None       | `-dat` | Experimental data for comparison  |
+
+[Back to Table of contents](#table-of-contents)
+
+## Python API
+Shape2SAS can also be used from Python, e.g. in scripts or other programs:
+
+```python
+import shape2sas as sts
+from shape2sas.structure_factors import HardSphere
+from shape2sas.subunits import Cylinder, Sphere
+
+# a dumbbell: two spheres, displaced along z, joined by a cylinder
+particle = sts.create_particle(
+    Sphere(radius=50).placed(com=(0, 0, -60)),
+    Sphere(radius=50).placed(com=(0, 0, 60)),
+    Cylinder(radius=10, length=120),
+)
+
+# more subunits can be added later
+particle.add_subunit(Sphere(radius=10).placed(sld=2.0))
+
+# fill the particle with random points; a seed makes them reproducible
+points = particle.generate_points(5000, rng=1, prpoints=100, polydispersity=0.0)
+
+r, pr = points.histogram.r, points.histogram.pr
+q = sts.uniform_q(0.001, 0.5, 400)
+I = points.scattering(q, conc=0.02, structure_factor=HardSphere(volume_fraction=0.02, radius=60))
+I_sim, sigma = sts.simulate_scattering(q, I, exposure=500, rng=1)
+```
+
+A subunit from `sts.subunits` is created with its dimensions, named as in the [table of subunits](#subunits). It has unit contrast, sits at the origin and is not rotated, unless it is placed with `placed(sld=..., com=..., rotation=..., rotation_point=...)`. `create_particle` takes any number of subunits and placed subunits, and `add_subunit` adds one more. Structure factors from `sts.structure_factors` are created with their parameters, named as in the [table of structure factors](#structure-factors).
+
+`generate_points` draws new random points every time it is called, unless it is given the same seed (`rng`, which also takes a `numpy.random.Generator`), and returns them as a `PointDistribution`, which never changes: subunits added to the particle afterwards need new points. Its `x`, `y`, `z` and `sld` are the points, and `volume` the volume of the particle. Its `histogram` holds the pair distance distribution, `r` and `pr`, together with `dmax`, `Rg`, the form factor `form_factor(q)`, normalised so P(0) = 1, and `forward_scattering()`. The histogram is calculated on first use and kept, so the scattering can be calculated for several q ranges, concentrations or structure factors (see also `effective_structure_factor(q, structure_factor)`) without calculating it again. Intensities are in absolute units, cm<sup>-1</sup>, with I(q) = `conc` · P(q) · S(q). Invalid input, such as a vector without three components, raises a `ValueError`.
+
+New subunits and structure factors derive from `sts.subunits.Subunit` and `sts.structure_factors.StructureFactor`, whose docstrings list the methods to implement, and are added to the `__init__.py` of their package.
+
+The `shape2sas` command is built on these same functions. Only the names exported by `shape2sas` (listed in `shape2sas.__all__`) are part of the API; the modules they are defined in may change without notice.
 
 [Back to Table of contents](#table-of-contents)
 

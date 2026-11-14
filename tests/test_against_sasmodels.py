@@ -17,8 +17,7 @@ from sasmodels.core import load_model
 from sasmodels.direct_model import call_Fq, call_kernel
 
 from shape2sas import subunits
-from shape2sas.models import getPointDistribution
-from shape2sas.theoretical_scattering import PairDistanceDistribution
+from shape2sas.particle import create_particle
 
 # subunit, its dimensions, and the same body in sasmodels
 CASES = [
@@ -76,9 +75,9 @@ def sasmodels_reference(name, pars):
 
 @pytest.mark.parametrize("subunit, dimensions, model, pars", CASES)
 def test_volume_matches_sasmodels(subunit, dimensions, model, pars):
-    """getVolume() must give the volume of the sasmodels body"""
+    """volume() must give the volume of the sasmodels body"""
     expected = sasmodels_reference(model, pars)[1]
-    volume = getattr(subunits, subunit)(list(dimensions)).getVolume()
+    volume = getattr(subunits, subunit)(*dimensions).volume()
     assert volume == pytest.approx(expected, rel=1e-3), (
         "%s %s has volume %.6g, sasmodels %s gives %.6g" % (subunit, dimensions, volume, model, expected))
 
@@ -93,13 +92,12 @@ def test_form_factor_matches_sasmodels(subunit, dimensions, model, pars):
     """
     expected = sasmodels_reference(model, pars)[0]
 
+    particle = create_particle(getattr(subunits, subunit)(*dimensions))
     simulated = []
     for seed in range(4):
-        np.random.seed(seed)
         with contextlib.redirect_stdout(io.StringIO()):
-            distribution = getPointDistribution([subunit.lower()], [1.0], [list(dimensions)], [[0, 0, 0]], [[0, 0, 0]], True, 10000)
-            pr = PairDistanceDistribution(distribution, prpoints=100, use_ausaxs=False)
-        simulated.append(pr.calc_Pq(Q))
+            points = particle.generate_points(10000, rng=seed, use_ausaxs=False)
+            simulated.append(points.histogram.form_factor(Q))
     simulated = np.mean(simulated, axis=0)
 
     significant = expected > 1e-3

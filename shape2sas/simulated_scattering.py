@@ -4,21 +4,22 @@ import os
 
 import numpy as np
 
-def simulate_data_func(q,I,exposure):
+def simulate_scattering(q, I, exposure=500.0, *, rng=None):
     """
-    Simulate SAXS data using calculated scattering and empirical expression for sigma
-    using Sedlak et al, 2017: (https://doi.org/10.1107/S1600576717003077)
+    simulate measured data, with noise, from a theoretical intensity
+
+    the noise follows the empirical expression of Sedlak et al. 2017 (https://doi.org/10.1107/S1600576717003077)
 
     input
     q,I      : calculated scattering, in absolute units
-    exposure : exposure (in arbitrary units) - affects the noise level of data
+    exposure : exposure (in arbitrary units) - a longer exposure gives less noise
+    rng      : random number generator (np.random.Generator), or a seed for one; None draws a fresh seed
 
     output
-    sigma    : simulated noise
-    Isim     : simulated data
-
-    data is also written to a file
+    I_sim, sigma : simulated intensity and its uncertainty [cm^-1]
     """
+    q = np.asarray(q, dtype=float)
+    I = np.asarray(I, dtype=float)
 
     # set constants
     k = 4500
@@ -53,7 +54,7 @@ def simulate_data_func(q,I,exposure):
     sigma = sigma_sed / exposure
 
     ## simulate data using errors
-    Isim = np.random.normal(I, sigma)
+    Isim = np.random.default_rng(rng).normal(I, sigma)
 
     return Isim, sigma
 

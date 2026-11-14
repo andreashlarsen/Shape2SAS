@@ -40,6 +40,7 @@ all = [
 ]
 test = [
   "pytest",
+  "pytest-xdist",
   "sasmodels"
 ]
 
@@ -53,6 +54,9 @@ Publication = "https://doi.org/10.1107/S1600576723005848"
 shape2sas = "shape2sas.cli:main"
 shape2sas-compare = "shape2sas.compare:main"
 shape2sas-mixture = "shape2sas.mixture:main"
+
+[tool.pytest.ini_options]
+addopts = "-n auto"
 
 [tool.setuptools.packages.find]
 where = ["."]
