@@ -2,6 +2,7 @@
 
 import time
 import argparse
+from dataclasses import dataclass
 import logging
 import sys
 import os
@@ -19,15 +20,26 @@ from .helpfunctions import (
     str2bool,
 )
 from .cli_models import make_structure_factor, make_subunit
-from .particle import create_particle
+from .particle import PointDistribution, SimulatedIntensity, TotalIntensity, create_particle
+from .sesans import Sesans, SimulatedSesans
 from .theoretical_scattering import uniform_q
-from .simulated_scattering import save_Isim_func, simulate_scattering
 from .plots import plot_fit, plot_results
-from .sesans import calc_G_sesans, simulate_sesans
-from .sesans.sesans_output import plot_sesans, save_sesans
+from .sesans.sesans_output import plot_sesans
 
 # named explicitly, so the messages also reach the handlers when run as python -m shape2sas.cli
 logger = logging.getLogger("shape2sas.cli")
+
+
+@dataclass
+class ModelResult:
+    """everything calculated for one model, kept for the plots after all models are done"""
+    name: str
+    filename: str  # also the folder of its output files
+    points: PointDistribution
+    intensity: TotalIntensity
+    simulated: SimulatedIntensity
+    sesans: Sesans | None = None
+    simulated_sesans: SimulatedSesans | None = None
 
 
 def log_to_terminal_and_file():
@@ -159,24 +171,19 @@ def run(argv=None):
     else: 
         logger.info(f"Simulating {num_models} models...")
 
-    # prepare lists (several models can be simulated simultaneously)
-    r_list, pr_norm_list, I_list, I_sim_list, sigma_list, S_list = [], [], [], [], [], [] 
-    points_list, model_filename_list, model_name_list = [], [], []
-    if args.sesans:
-        delta_list,G_list,G_sim_list,sigma_G_list = [],[],[],[]
+    # several models can be simulated simultaneously
+    models: list[ModelResult] = []
 
     # loop over models
     for i in range(num_models):
         
         ### read and print model name for model i
         model_name = check_input(args.model_name, f"Model {i}", "model name", i)
-        if model_name in model_name_list:
+        if model_name in [m.name for m in models]:
             #model names should be unique - else add a number
             model_name += '_' + str(i+1)  
         model_filename = "_".join(model_name.split()) # remove whitespace for filenames
         os.makedirs(model_filename, exist_ok=True)
-        model_name_list.append(model_name)
-        model_filename_list.append(model_filename)
 
         #### read number of subunits, SLD, COM, rotation and exclude overlap for model i
         N_subunits = len(args.subunit[i])
@@ -195,7 +202,6 @@ def run(argv=None):
                 sld=sld[j], com=com[j], rotation=rotation[j], rotation_point=rotation_points[j]))
         points = particle.generate_points(args.Npoints, prpoints=args.prpoints, polydispersity=polydispersity, use_ausaxs=not args.disable_ausaxs)
         points.save(f"{model_filename}/points_{model_filename}.txt")
-        points_list.append(points)
 
         ### read concentration, interface roughness/fuzziness, structure factor and structure factor-related parameters for model i
         conc = check_input(args.conc, 0.02, "concentration", i)
@@ -210,8 +216,6 @@ def run(argv=None):
         ### calculate p(r)
         logger.info("\n    Calculating pair distance distribution, p(r)...")
         points.histogram.save(f"{model_filename}/pr_{model_filename}.dat")
-        r_list.append(points.histogram.r)
-        pr_norm_list.append(points.histogram.pr)
 
         ### define q (and if sesans is opted for, also define the spin echo length, delta)
         if args.sesans:
@@ -235,25 +239,18 @@ def run(argv=None):
         intensity = points.scattering(q, conc=conc, structure_factor=structure_factor, sigma_r=sigma_r)
         intensity.save_intensity(f"{model_filename}/Iq_{model_filename}.dat")
         intensity.save_structure_factor(f"{model_filename}/Sq_{model_filename}.dat")
-        I_list.append(intensity.I)
-        S_list.append(intensity.S)
         if args.sesans:
-            # calculated theoretical SESANS
-            G = calc_G_sesans(q,delta,intensity.I)
-            delta_list.append(delta)
-            G_list.append(G)
+            sesans = intensity.sesans(delta)
 
         ### simulate SAXS (and SESANS)
-        I_sim, sigma = simulate_scattering(q,intensity.I,args.exposure)
-        save_Isim_func(q,I_sim,sigma,model_filename)
-        I_sim_list.append(I_sim)
-        sigma_list.append(sigma)
+        simulated = intensity.simulate(args.exposure)
+        simulated.save(f"{model_filename}/Isim_{model_filename}.dat")
+        model = ModelResult(model_name, model_filename, points, intensity, simulated)
         if args.sesans:
-            # simulate sesans data         
-            G_sim,sigma_G = simulate_sesans(delta,G,args.sesans_error)
-            # append to list (in case of multiple models)
-            G_sim_list.append(G_sim)
-            sigma_G_list.append(sigma_G)   
+            model.sesans, model.simulated_sesans = sesans, sesans.simulate(args.sesans_error)
+            model.sesans.save(f"{model_filename}/G_{model_filename}.ses")
+            model.simulated_sesans.save(f"{model_filename}/lnP_{model_filename}.ses")
+        models.append(model)
 
     logger.info(" ")
     logger.info("Generating plots")
@@ -265,31 +262,30 @@ def run(argv=None):
         filetype = 'png'
 
     # plot 2D projections, all on the same scale
-    extent = max(points.extent for points in points_list)
-    for points, m, color in zip(points_list, model_filename_list, colors):
-        print("    2D projection:       points_" + m + "." + filetype)
-        points.plot_projections(f"{m}/points_{m}.{filetype}", color=color, extent=extent)
+    extent = max(m.points.extent for m in models)
+    for m, color in zip(models, colors):
+        print("    2D projection:       points_" + m.filename + "." + filetype)
+        m.points.plot_projections(f"{m.filename}/points_{m.filename}.{filetype}", color=color, extent=extent)
 
     # 3D vizualization: generate pdb file with points
-    for points, m in zip(points_list, model_filename_list):
-        print("    3D models:           " + m + ".pdb")
-        points.write_pdb(f"{m}/{m}.pdb")
-    
+    for m in models:
+        print("    3D models:           " + m.filename + ".pdb")
+        m.points.write_pdb(f"{m.filename}/{m.filename}.pdb")
+
     # plot p(r) and I(q)
     print("    pr, Iq, and Isim:    plot." + filetype)
-    plot_results(q, r_list, pr_norm_list, I_list, I_sim_list, sigma_list, S_list, model_name_list, args.xscale_lin, filetype, colors)
+    plot_results(models, 'plot.' + filetype, xscale_lin=args.xscale_lin, colors=colors)
 
     # plot fit
     if args.data:
         data_filename = args.data.split('/')[-1]
         print("    fit(s) to exp data : fit." + filetype)
-        plot_fit(q, I_list, I_exp, sigma_exp, model_name_list, data_filename, args.xscale_lin, filetype, colors)
+        plot_fit(models, I_exp, sigma_exp, data_filename, 'fit.' + filetype, xscale_lin=args.xscale_lin, colors=colors)
 
-    # plot and save sesans 
+    # plot sesans
     if args.sesans:
         print("    SESANS G and Gsim  : sesans." + filetype)
-        plot_sesans(delta_list, G_list, G_sim_list, sigma_G_list, model_name_list, filetype, colors)
-        save_sesans(delta_list, G_list, G_sim_list, sigma_G_list, model_filename_list)
+        plot_sesans(models, 'sesans.' + filetype, colors=colors)
 
     time_total = time.time() - start_total
     logger.info(" ")
@@ -300,7 +296,7 @@ def run(argv=None):
     # close log file and copy into model directories
     #f_out.close()
     extension = '.' + filetype
-    for model_filename in model_filename_list:
+    for model_filename in (m.filename for m in models):
         shutil.copy('shape2sas.log', model_filename + '/' + model_filename + '.log' )
         shutil.copy('plot' + extension, model_filename + '/plot_' + model_filename + extension)
         if args.data:

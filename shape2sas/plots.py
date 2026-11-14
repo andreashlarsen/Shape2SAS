@@ -30,27 +30,27 @@ def plot_projections(x, y, z, sld, path=None, *, color='blue', extent):
     fig.savefig(path)
     plt.close(fig)
 
-def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name_list, xscale_lin, filetype, colors):
+def plot_results(models, path, *, xscale_lin, colors):
     """
-    plot results for all models:
-    - p(r) 
+    plot results for all models (cli.ModelResult):
+    - p(r)
     - calculated formfactor P(r) times structure factor S(q) on log-log or log-lin scale
     - simulated data on log-log or log-lin scale
     """
     __, ax = plt.subplots(1,3,figsize=(12,4))
 
-    zo = 1
-    for (r, pr, I, Isim, sigma, S, model_name,color) in zip (r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name_list, colors):
-        ax[0].plot(r,pr,zorder=zo, color=color, label='p(r), %s' % model_name)
+    for zo, (m, color) in enumerate(zip(models, colors), start=1):
+        histogram, intensity, simulated = m.points.histogram, m.intensity, m.simulated
+        ax[0].plot(histogram.r, histogram.pr, zorder=zo, color=color, label='p(r), %s' % m.name)
 
-        ax[2].errorbar(q,Isim,yerr=sigma,linestyle='none',marker='.', color=color,label=r'$I_\mathrm{sim}(q)$, %s' % model_name,zorder=zo)
+        ax[2].errorbar(simulated.q, simulated.I, yerr=simulated.sigma, linestyle='none', marker='.', color=color,
+                       label=r'$I_\mathrm{sim}(q)$, %s' % m.name, zorder=zo)
 
-        if S[0] != 1.0 or S[-1] != 1.0:
-            ax[1].plot(q, S, linestyle='--', color=color, zorder=0, label=r'$S(q)$, %s' % model_name)
-            ax[1].plot(q, I,color=color, zorder=zo, label=r'$I(q)=cP(q)S(q)$, %s' % model_name)
+        if intensity.S[0] != 1.0 or intensity.S[-1] != 1.0:
+            ax[1].plot(intensity.q, intensity.S, linestyle='--', color=color, zorder=0, label=r'$S(q)$, %s' % m.name)
+            ax[1].plot(intensity.q, intensity.I, color=color, zorder=zo, label=r'$I(q)=cP(q)S(q)$, %s' % m.name)
         else:
-            ax[1].plot(q, I, zorder=zo, color=color, label=r'$I(q)=cP(q)$, %s' % model_name)
-        zo += 1
+            ax[1].plot(intensity.q, intensity.I, zorder=zo, color=color, label=r'$I(q)=cP(q)$, %s' % m.name)
 
     ## figure settings, p(r)
     ax[0].set_xlabel(r'$r$ [$\mathrm{\AA}$]')
@@ -78,7 +78,7 @@ def plot_results(q, r_list, pr_list, I_list, Isim_list, sigma_list, S_list, name
 
     ## figure settings
     plt.tight_layout()
-    plt.savefig('plot.' + filetype)
+    plt.savefig(path)
     plt.close()
 
 def linear_fit(I, I_exp, sigma_exp):
@@ -92,29 +92,19 @@ def linear_fit(I, I_exp, sigma_exp):
 
     return scale, background
 
-def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, filetype, colors):
+def plot_fit(models, I_exp, sigma_exp, data_label, path, *, xscale_lin, colors):
     """
-    plot results for all models:
-    - p(r) 
-    - calculated formfactor P(r) times structure factor S(q) on log-log or log-lin scale
-    - simulated data on log-log or log-lin scale
+    plot the experimental data with the fit of each model (cli.ModelResult), I_exp = scale * I + background,
+    on log-log or log-lin scale; the models are calculated at the q values of the data
     """
-    N_models = len(I_list)
-    width = N_models*4
-    __, ax = plt.subplots(1,N_models,figsize=(width,4))
+    N_models = len(models)
+    __, ax = plt.subplots(1,N_models,figsize=(N_models*4,4), squeeze=False)
 
-    i = 0
-    for (I, model_name,color) in zip (I_list, name_list, colors):
-        if N_models == 1:
-            p = ax
-        else:
-            p = ax[i]
-        p.errorbar(q,I_exp,yerr=sigma_exp,linestyle='none',marker='.', color='grey',zorder=0, label = data_filename) #label=r'$I_\mathrm{exp}(q)$')
+    for p, m, color in zip(ax[0], models, colors):
+        q, I = m.intensity.q, m.intensity.I
+        p.errorbar(q,I_exp,yerr=sigma_exp,linestyle='none',marker='.', color='grey',zorder=0, label = data_label)
         scale, background = linear_fit(I, I_exp, sigma_exp)
-        I_model = scale * I + background
-        p.plot(q, I_model, zorder=1, color=color, label=r'%s' % model_name)
-        p.set_ylabel(r'$I(q)$')
-        i += 1
+        p.plot(q, scale * I + background, zorder=1, color=color, label=r'%s' % m.name)
 
         if not xscale_lin:
             p.set_xscale('log')
@@ -126,5 +116,5 @@ def plot_fit(q, I_list, I_exp, sigma_exp, name_list, data_filename, xscale_lin, 
 
     ## figure settings
     plt.tight_layout()
-    plt.savefig('fit.' + filetype)
+    plt.savefig(path)
     plt.close()

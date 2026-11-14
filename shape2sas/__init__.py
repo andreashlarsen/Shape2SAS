@@ -1,15 +1,17 @@
 from . import structure_factors, subunits
-from .particle import PointDistribution, TotalIntensity, create_particle
-from .simulated_scattering import simulate_scattering
+from .particle import PointDistribution, SimulatedIntensity, TotalIntensity, create_particle
+from .sesans import Sesans, SimulatedSesans
 from .theoretical_scattering import uniform_q
 
 __all__ = [
     "PointDistribution",
+    "Sesans",
+    "SimulatedIntensity",
+    "SimulatedSesans",
     "TotalIntensity",
     "create_particle",
     "structure_factors",
     "subunits",
-    "simulate_scattering",
     "uniform_q",
 ]
 

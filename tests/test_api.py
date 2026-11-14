@@ -168,13 +168,24 @@ def test_placement_keywords_are_checked():
 
 def test_simulated_scattering():
     """the simulated data scatter around the theoretical intensity, with less noise for longer exposures"""
-    I = sphere().scattering(Q).I
-    I_short, sigma_short = sts.simulate_scattering(Q, I, exposure=100., rng=2)
-    I_long, sigma_long = sts.simulate_scattering(Q, I, exposure=400., rng=2)
-    assert np.allclose(sigma_short / sigma_long, 2.0), "sigma must scale as 1/sqrt(exposure)"
-    pulls = (I_short - I) / sigma_short
+    intensity = sphere().scattering(Q)
+    short, long = intensity.simulate(exposure=100., rng=2), intensity.simulate(exposure=400., rng=2)
+    assert np.array_equal(short.q, Q)
+    assert np.allclose(short.sigma / long.sigma, 2.0), "sigma must scale as 1/sqrt(exposure)"
+    pulls = (short.I - intensity.I) / short.sigma
     assert abs(np.mean(pulls)) < 0.3 and 0.8 < np.std(pulls) < 1.2
-    assert np.array_equal(sts.simulate_scattering(Q, I, exposure=100., rng=2)[0], I_short), "the same seed must give the same data"
+    assert np.array_equal(intensity.simulate(exposure=100., rng=2).I, short.I), "the same seed must give the same data"
+
+
+def test_sesans():
+    """G(delta) starts at its maximum and decays, and the simulated data scatter around G - G(0)"""
+    points = sphere()
+    qmin, deltamax = HardSphere(volume_fraction=0.1, radius=50.).sesans_range(points.histogram.dmax)
+    sesans = points.scattering(np.linspace(qmin, 1e4 * qmin, 5000)).sesans(np.linspace(0, deltamax, 100))
+    assert sesans.G[0] == np.amax(sesans.G) and sesans.G[-1] < 0.05 * sesans.G[0]
+    simulated = sesans.simulate(0.02, rng=3)
+    assert np.array_equal(simulated.delta, sesans.delta)
+    assert np.all(np.abs(simulated.G - (sesans.G - sesans.G[0])) < 5 * simulated.sigma)
 
 
 def test_save_points_pr_and_intensity(tmp_path):
@@ -191,8 +202,11 @@ def test_save_points_pr_and_intensity(tmp_path):
     intensity = points.scattering(Q, structure_factor=HardSphere(volume_fraction=0.2, radius=60.))
     intensity.save_intensity(tmp_path / "I.dat")
     intensity.save_structure_factor(tmp_path / "S.dat")
+    simulated = intensity.simulate(rng=0)
+    simulated.save(tmp_path / "Isim.dat")
     assert np.allclose(np.loadtxt(tmp_path / "I.dat").T, [Q, intensity.I], rtol=1e-5)
     assert np.allclose(np.loadtxt(tmp_path / "S.dat").T, [Q, intensity.S], rtol=1e-5)
+    assert np.allclose(np.loadtxt(tmp_path / "Isim.dat").T, [Q, simulated.I, simulated.sigma], rtol=1e-5)
 
     points.write_pdb(tmp_path / "points.pdb")
     lines = (tmp_path / "points.pdb").read_text().splitlines()

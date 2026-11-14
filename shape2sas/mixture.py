@@ -4,7 +4,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from .theoretical_scattering import save_I_func, save_pr_func
-from .simulated_scattering import save_Isim_func, simulate_scattering
+from .particle import SimulatedIntensity
+from .simulated_scattering import simulate_scattering
 
 
 def main(argv=None):
@@ -117,7 +118,7 @@ def main(argv=None):
 
     #### Simulate I(q) 
     Isim_mix,sigma_mix = simulate_scattering(q,I_mix,args.exposure)
-    save_Isim_func(q,Isim_mix,sigma_mix,folder)
+    SimulatedIntensity(q,Isim_mix,sigma_mix).save('%s/Isim_%s.dat' % (folder,folder))
 
     if args.scale: 
         ax[2].errorbar(q,Isim_mix*scale_factor,yerr=sigma_mix*scale_factor,linestyle='none',marker='.', color='black',label=r'$I_\mathrm{sim}(q)$, %s, scaled by %1.0e' % ('mixture',scale_factor),zorder=1/zo)

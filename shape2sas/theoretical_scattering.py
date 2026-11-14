@@ -24,10 +24,11 @@ def uniform_q(qmin=0.001, qmax=0.5, qpoints=400):
     return np.linspace(qmin, qmax, qpoints)
 
 def write_columns(path, names, columns, title=None):
-    """save columns of numbers as a text file, with the column names (and a title) in the header"""
+    """save columns of numbers as a text file, with the column names (and a title, of one or more lines) in the header"""
     with open(path, 'w') as f:
         if title is not None:
-            f.write('# %s\n' % title)
+            for line in title.splitlines():
+                f.write('# %s\n' % line)
         f.write('# ' + ' '.join('%-12s' % name for name in names) + '\n')
         for row in zip(*columns):
             f.write('  ' + ' '.join('%-12.5e' % value for value in row) + '\n')

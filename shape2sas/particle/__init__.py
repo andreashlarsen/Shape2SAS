@@ -5,6 +5,7 @@ from .ModelPointDistribution import ModelPointDistribution
 from .PairDistanceDistribution import PairDistanceDistribution
 from .Particle import Particle, create_particle
 from .PointDistribution import PointDistribution
+from .SimulatedIntensity import SimulatedIntensity
 from .TotalIntensity import TotalIntensity
 
 __all__ = [
@@ -13,6 +14,7 @@ __all__ = [
     "PairDistanceDistribution",
     "Particle",
     "PointDistribution",
+    "SimulatedIntensity",
     "TotalIntensity",
     "create_particle",
 ]

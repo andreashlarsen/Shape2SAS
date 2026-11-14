@@ -1,7 +1,5 @@
 """Simulated experimental data: noise added to the theoretical intensity."""
 
-import os
-
 import numpy as np
 
 def simulate_scattering(q, I, exposure=500.0, *, rng=None):
@@ -57,15 +55,3 @@ def simulate_scattering(q, I, exposure=500.0, *, rng=None):
     Isim = np.random.default_rng(rng).normal(I, sigma)
 
     return Isim, sigma
-
-def save_Isim_func(q, I_sim, sigma, model_filename):
-    """Save theoretical intensity to file"""
-
-    os.makedirs(model_filename, exist_ok=True)  
-    with open('%s/Isim_%s.dat' % (model_filename,model_filename),'w') as f:
-        f.write('# Simulated SAXS data with noise\n')
-        f.write('# sigma generated using Sedlak et al, k=100000, c=0.55, https://doi.org/10.1107/S1600576717003077, and rebinned with 10 per bin)\n')
-        f.write('# %-12s %-12s %-12s\n' % ('q','I','sigma'))
-        for q_i,Isim_i,sigma_i in zip(q,I_sim,sigma):
-                f.write('  %-12.5e %-12.5e %-12.5e\n' % (q_i, Isim_i, sigma_i))
-
