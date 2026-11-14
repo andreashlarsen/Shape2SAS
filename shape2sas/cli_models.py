@@ -61,5 +61,13 @@ def make_subunit(name, dimensions) -> Subunit:
 
 
 def make_structure_factor(name, parameters) -> StructureFactor:
-    """create a structure factor from any of its names and a list of its parameters; raises InputError on invalid input"""
-    return _construct(_lookup(structure_factors, name, "structure factor"), parameters, "structure factor", "parameter")
+    """
+    create a structure factor from any of its names and a list of its parameters; raises InputError on invalid input
+
+    a structure factor without parameters (e.g. None) ignores any given: --S_par is matched to the models by position, so a model
+    without structure needs a placeholder, e.g. -S None HS -Sp 0 -Sp 0.1,60
+    """
+    cls = _lookup(structure_factors, name, "structure factor")
+    if not parameter_names(cls):
+        parameters = []
+    return _construct(cls, parameters, "structure factor", "parameter")

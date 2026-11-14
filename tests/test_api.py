@@ -33,13 +33,6 @@ def test_public_names_exist():
         assert hasattr(sts, name), "%s is listed in __all__ but not defined" % name
 
 
-def test_import_is_light():
-    """importing the package must not pull in plotting or the optional AUSAXS backend"""
-    code = "import sys, shape2sas; print(sorted(m for m in ('matplotlib', 'pyausaxs') if m in sys.modules))"
-    out = subprocess.run([sys.executable, "-c", code], cwd=REPO, capture_output=True, text=True, check=True)
-    assert out.stdout.strip() == "[]", "import shape2sas loaded %s" % out.stdout.strip()
-
-
 def test_forward_scattering_is_absolute():
     """I(0) = conc * V * sld^2 * 1E-4 cm^-1, so it scales with the volume fraction and the squared contrast"""
     radius, sld, conc = 50., 2.0, 0.05

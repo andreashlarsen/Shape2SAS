@@ -78,6 +78,15 @@ def test_named_and_listed_dimensions_give_the_same_subunit():
             assert obj.volume() == cls(**keywords).volume(), name
 
 
+def test_structure_factor_without_parameters_ignores_placeholders():
+    """on the command line, -Sp is matched to the models by position, so -S None HS -Sp 0 -Sp 0.1,60 must work"""
+    assert type(make_structure_factor("None", [0.])) is structure_factors.NoStructure
+    assert type(make_structure_factor("None", [])) is structure_factors.NoStructure
+    # a structure factor with parameters still needs the right number
+    with pytest.raises(ValueError):
+        make_structure_factor("HS", [0.1])
+
+
 def test_rotation_round_trip():
     """undo_rotate_and_translate() must invert rotate_and_translate()"""
     rng = np.random.default_rng(1)
