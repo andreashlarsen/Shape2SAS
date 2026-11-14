@@ -1,0 +1,172 @@
+#!/usr/bin/python3
+"""
+Tests for the Python API, i.e. the names exported by shape2sas/__init__.py.
+"""
+
+import os
+import subprocess
+import sys
+
+import numpy as np
+import pytest
+
+import shape2sas as sts
+
+from shape2sas.structure_factors import Aggregation, HardSphere
+from shape2sas.subunits import Cylinder, Sphere
+
+Q = sts.uniform_q(0.001, 0.5, 200)
+
+
+def sphere(radius=50., sld=1.0, Npoints=3000, seed=0):
+    # the default path needs no optional dependency, so the tests run without pyausaxs
+    particle = sts.create_particle(Sphere(radius=radius).placed(sld=sld))
+    return particle.generate_points(Npoints, rng=seed, use_ausaxs=False)
+
+
+def coordinates(points):
+    return np.array([points.x, points.y, points.z, points.sld])
+
+
+def test_public_names_exist():
+    for name in sts.__all__:
+        assert hasattr(sts, name), "%s is listed in __all__ but not defined" % name
+
+
+def test_forward_scattering_is_absolute():
+    """I(0) = conc * V * sld^2 * 1E-4 cm^-1, so it scales with the volume fraction and the squared contrast"""
+    radius, sld, conc = 50., 2.0, 0.05
+    I = sphere(radius, sld).scattering(Q, conc=conc).I
+    expected = conc * 4 / 3 * np.pi * radius**3 * sld**2 * 1E-4
+    # q[0] is small but not zero, and V is a Monte Carlo estimate
+    assert abs(I[0] - expected) <= 0.01 * expected, "I(0) = %.4e, expected %.4e" % (I[0], expected)
+
+
+def test_pair_distance_distribution():
+    radius = 50.
+    histogram = sphere(radius).histogram
+    r, pr = histogram.r, histogram.pr
+    assert np.amax(pr) == 1.0
+    assert len(r) == len(pr)
+    assert abs(histogram.Rg - np.sqrt(3 / 5) * radius) <= 0.02 * radius
+    assert 1.9 * radius <= histogram.dmax <= 2 * radius
+    assert histogram.form_factor(np.array([0.]))[0] == pytest.approx(1.)
+
+
+def test_structure_factor():
+    """the structure factor multiplies the form factor, and is lowered at small q by hard-sphere repulsion"""
+    points = sphere()
+    hard_spheres = HardSphere(volume_fraction=0.2, radius=50.)
+    intensity = points.scattering(Q, structure_factor=hard_spheres)
+    assert intensity.S[0] < 1.0
+    assert np.allclose(intensity.I, points.scattering(Q).I * intensity.S)
+    assert np.allclose(points.scattering(Q).S, 1.0)
+
+
+def test_aggregation_sets_the_sesans_range():
+    """an aggregate, not the particle, sets the length scale of a SESANS calculation"""
+    dmax = 100.
+    assert Aggregation(effective_radius=300., particles_per_aggregate=10., fraction_aggregated=0.5).sesans_range(dmax)[1] == 900.
+    assert HardSphere(volume_fraction=0.1, radius=50.).sesans_range(dmax)[1] == 3 * dmax
+
+
+def test_subunit_defaults():
+    """a subunit has unit contrast, sits at the origin and is not rotated unless told otherwise"""
+    particle = sts.create_particle(Sphere(radius=30.))
+    x, y, z, sld = coordinates(particle.generate_points(2000, rng=1, use_ausaxs=False))
+    assert np.all(sld == 1.0)
+    assert np.all(x**2 + y**2 + z**2 <= 30.**2)
+    placement = Sphere(radius=30.).placed()
+    assert (placement.sld, placement.com, placement.rotation, placement.rotation_point) == (1., (0., 0., 0.), (0., 0., 0.), (0., 0., 0.))
+
+
+def test_seed_makes_the_points_reproducible():
+    """the same seed, or a generator seeded alike, gives the same points; another seed other points"""
+    particle = sts.create_particle(Cylinder(radius=20., length=60.))
+    same = [coordinates(particle.generate_points(2000, rng=rng, use_ausaxs=False)) for rng in (7, np.random.default_rng(7))]
+    assert np.array_equal(same[0], same[1])
+    other = coordinates(particle.generate_points(2000, rng=8, use_ausaxs=False))
+    assert not np.array_equal(same[0], other)
+
+
+def test_subunits_given_to_create_particle():
+    """create_particle takes subunits and placed subunits, as add_subunit does"""
+    added = sts.create_particle()
+    added.add_subunit(Sphere(radius=50.).placed(com=[0, 0, -60.]))
+    added.add_subunit(Sphere(radius=50.).placed(com=(0, 0, 60.)))
+    added.add_subunit(Cylinder(radius=10., length=120.))
+    given = sts.create_particle(
+        Sphere(radius=50.).placed(com=(0, 0, -60.)),
+        Sphere(radius=50.).placed(com=(0, 0, 60.)),
+        Cylinder(radius=10., length=120.),
+    )
+    points = [coordinates(particle.generate_points(3000, rng=4, use_ausaxs=False)) for particle in (added, given)]
+    assert np.array_equal(points[0], points[1])
+
+
+def test_point_distribution_does_not_change():
+    """a point distribution keeps its points and histogram, and is not affected by subunits added to the particle later"""
+    particle = sts.create_particle(Sphere(radius=50.))
+    points = particle.generate_points(3000, rng=0, use_ausaxs=False)
+    before = coordinates(points)
+    assert points.histogram is points.histogram, "the histogram must not be calculated again"
+    with pytest.raises(ValueError):
+        points.x[0] = 0.
+
+    particle.add_subunit(Sphere(radius=50.).placed(com=(0, 0, 150.)))
+    assert np.array_equal(coordinates(points), before)
+    dumbbell = particle.generate_points(3000, rng=0, use_ausaxs=False)
+    assert dumbbell.histogram.dmax > 2 * points.histogram.dmax
+    I, I_dumbbell = points.scattering(Q).I, dumbbell.scattering(Q).I
+    assert not np.allclose(I_dumbbell / I_dumbbell[0], I / I[0], rtol=0.05)
+
+
+def test_simulated_scattering():
+    """the simulated data scatter around the theoretical intensity, with less noise for longer exposures"""
+    intensity = sphere().scattering(Q)
+    short, long = intensity.simulate(exposure=100., rng=2), intensity.simulate(exposure=400., rng=2)
+    assert np.array_equal(short.q, Q)
+    assert np.allclose(short.sigma / long.sigma, 2.0), "sigma must scale as 1/sqrt(exposure)"
+    pulls = (short.I - intensity.I) / short.sigma
+    assert abs(np.mean(pulls)) < 0.3 and 0.8 < np.std(pulls) < 1.2
+    assert np.array_equal(intensity.simulate(exposure=100., rng=2).I, short.I), "the same seed must give the same data"
+
+
+def test_sesans():
+    """G(delta) starts at its maximum and decays, and the simulated data scatter around G - G(0)"""
+    points = sphere()
+    qmin, deltamax = HardSphere(volume_fraction=0.1, radius=50.).sesans_range(points.histogram.dmax)
+    sesans = points.scattering(np.linspace(qmin, 1e4 * qmin, 5000)).sesans(np.linspace(0, deltamax, 100))
+    assert sesans.G[0] == np.amax(sesans.G) and sesans.G[-1] < 0.05 * sesans.G[0]
+    simulated = sesans.simulate(0.02, rng=3)
+    assert np.array_equal(simulated.delta, sesans.delta)
+    assert np.all(np.abs(simulated.G - (sesans.G - sesans.G[0])) < 5 * simulated.sigma)
+
+
+def test_save_points_pr_and_intensity(tmp_path):
+    """the points, p(r), I(q) and S_eff(q) are saved as text files that read back to the same values"""
+    points = sts.create_particle(
+        Sphere(radius=50.).placed(sld=1.0),
+        Sphere(radius=20.).placed(com=(0, 0, 60.), sld=-1.0)
+    ).generate_points(2000, rng=0, use_ausaxs=False)
+    points.save(tmp_path / "points.txt")
+    assert np.allclose(np.loadtxt(tmp_path / "points.txt").T, coordinates(points), atol=1e-6)
+
+    points.histogram.save(tmp_path / "pr.dat")
+    r, pr = np.loadtxt(tmp_path / "pr.dat", unpack=True)
+    assert np.allclose(r, points.histogram.r, rtol=1e-5) and np.allclose(pr, points.histogram.pr, rtol=1e-5)
+
+    intensity = points.scattering(Q, structure_factor=HardSphere(volume_fraction=0.2, radius=60.))
+    intensity.save_intensity(tmp_path / "I.dat")
+    intensity.save_structure_factor(tmp_path / "S.dat")
+    simulated = intensity.simulate(rng=0)
+    simulated.save(tmp_path / "Isim.dat")
+    assert np.allclose(np.loadtxt(tmp_path / "I.dat").T, [Q, intensity.I], rtol=1e-5)
+    assert np.allclose(np.loadtxt(tmp_path / "S.dat").T, [Q, intensity.S], rtol=1e-5)
+    assert np.allclose(np.loadtxt(tmp_path / "Isim.dat").T, [Q, simulated.I, simulated.sigma], rtol=1e-5)
+
+    points.write_pdb(tmp_path / "points.pdb")
+    lines = (tmp_path / "points.pdb").read_text().splitlines()
+    atoms = [line for line in lines if line.startswith("ATOM")]
+    assert len(atoms) == len(points.x)
+    assert [line.split()[2] for line in atoms] == ['C' if s > 0 else 'O' for s in points.sld]

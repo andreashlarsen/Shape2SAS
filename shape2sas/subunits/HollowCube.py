@@ -1,14 +1,13 @@
 import numpy as np 
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class HollowCube:
+class HollowCube(Subunit):
     aliases = ["hollowcube","hollowdice"]
 
-    def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,2)     
-        self.a,self.b = dimensions
+    def __init__(self, side, inner_side):
+        self.a,self.b = side,inner_side
 
-    def getVolume(self) :
+    def volume(self) :
         """Returns the volume of a hollow cube"""
         if self.a < self.b:
             self.a, self.b = self.b, self.a
@@ -17,9 +16,9 @@ class HollowCube:
         else: 
             return self.a**3 - self.b**3
     
-    def getPointDistribution(self, Npoints):
-        """Returns the point distribution of a hollow cube"""
-        Volume = self.getVolume()
+    def generate_points(self, Npoints, rng):
+        """Returns points drawn uniformly in a hollow cube"""
+        Volume = self.volume()
         
         if self.a == self.b:
             #The hollow cube is a shell if a=b
@@ -31,15 +30,15 @@ class HollowCube:
             x_add, y_add, z_add = [], [], []
             for sign in [-1, 1]:
                 x_add = np.concatenate((x_add, sign * one * d))
-                y_add = np.concatenate((y_add, np.random.uniform(-d, d, N)))
-                z_add = np.concatenate((z_add, np.random.uniform(-d, d, N)))
+                y_add = np.concatenate((y_add, rng.uniform(-d, d, N)))
+                z_add = np.concatenate((z_add, rng.uniform(-d, d, N)))
                 
-                x_add = np.concatenate((x_add, np.random.uniform(-d, d, N)))
+                x_add = np.concatenate((x_add, rng.uniform(-d, d, N)))
                 y_add = np.concatenate((y_add, sign * one * d))
-                z_add = np.concatenate((z_add, np.random.uniform(-d, d, N)))
+                z_add = np.concatenate((z_add, rng.uniform(-d, d, N)))
 
-                x_add = np.concatenate((x_add, np.random.uniform(-d, d, N)))
-                y_add = np.concatenate((y_add, np.random.uniform(-d, d, N)))
+                x_add = np.concatenate((x_add, rng.uniform(-d, d, N)))
+                y_add = np.concatenate((y_add, rng.uniform(-d, d, N)))
                 z_add = np.concatenate((z_add, sign * one * d))
             return x_add, y_add, z_add
         
@@ -47,9 +46,9 @@ class HollowCube:
         Vratio = Volume_max / Volume
         N = int(Vratio * Npoints)
 
-        x = np.random.uniform(-self.a / 2,self.a / 2, N)
-        y = np.random.uniform(-self.a / 2,self.a / 2, N)
-        z = np.random.uniform(-self.a / 2,self.a / 2, N)
+        x = rng.uniform(-self.a / 2,self.a / 2, N)
+        y = rng.uniform(-self.a / 2,self.a / 2, N)
+        z = rng.uniform(-self.a / 2,self.a / 2, N)
 
         d = np.maximum.reduce([abs(x), abs(y), abs(z)])
         idx = np.where(d >= self.b / 2)
@@ -57,18 +56,18 @@ class HollowCube:
 
         return x_add, y_add, z_add
     
-    def checkOverlap(self, x_eff, y_eff, z_eff):
-        """Check for points within a hollow cube"""
+    def outside(self, x_eff, y_eff, z_eff):
+        """Returns which points are outside the hollow cube"""
 
         if self.a < self.b:
             self.a, self.b = self.b, self.a
         
         if self.a == self.b:
-            idx = np.where((abs(x_eff)!=self.a/2) | (abs(y_eff)!=self.a/2) | (abs(z_eff)!=self.a/2))
+            idx = ((abs(x_eff)!=self.a/2) | (abs(y_eff)!=self.a/2) | (abs(z_eff)!=self.a/2))
             return idx
         
         else: 
-            idx = np.where((abs(x_eff) >= self.a/2) | (abs(y_eff) >= self.a/2) | 
+            idx = ((abs(x_eff) >= self.a/2) | (abs(y_eff) >= self.a/2) | 
             (abs(z_eff) >= self.a/2) | ((abs(x_eff) <= self.b/2) 
             & (abs(y_eff) <= self.b/2) & (abs(z_eff) <= self.b/2)))
 

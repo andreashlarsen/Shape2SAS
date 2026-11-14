@@ -18,13 +18,14 @@ def calc_G_sesans(q,delta,I):
  
     return G
 
-def simulate_sesans(delta,G,error):
+def simulate_sesans(delta,G,error,*,rng=None):
     """
     Simulate SESANS data using calculated scattering and estimate for sigma
 
     input
     delta, G: spin-echo lengths and theoretical G(delta)
     error: relative error
+    rng: random number generator (np.random.Generator), or a seed for one; None draws a fresh seed
 
     output
     sesans_sigma: simulated errors
@@ -38,6 +39,6 @@ def simulate_sesans(delta,G,error):
     d_delta = delta[-1] - delta[0]
     sesans_sigma = np.linspace(noise_baseline, noise_baseline * (1 + m * d_delta), len(delta))
     # pick random points using mean and sigma
-    lnPsim = np.random.normal((G - G[0]), sesans_sigma)
+    lnPsim = np.random.default_rng(rng).normal((G - G[0]), sesans_sigma)
     return lnPsim,sesans_sigma
 

@@ -1,16 +1,16 @@
 import numpy as np 
-from .structure_factors_helpfunctions import check_Spar, decoupling_approx
+from .StructureFactor import StructureFactor
+from .structure_factors_helpfunctions import decoupling_approx
 
-class Aggregation:
+class Aggregation(StructureFactor):
     """Fractal aggregate structure factor with dimensionality 2"""
     aliases = ["aggregation","aggr","aggregate","frac2d"]
-    par_names = ["R_eff","N_aggr","fraction_aggregated"]
 
-    def __init__(self, S_par):
-        check_Spar(self.aliases[0],S_par,self.par_names)
-        self.Reff,self.Naggr,self.fracs_aggr = S_par
+    def __init__(self, effective_radius, particles_per_aggregate, fraction_aggregated):
+        """the effective radius of one particle [A], the number of particles per aggregate, and the fraction of particles in aggregates"""
+        self.Reff,self.Naggr,self.fracs_aggr = effective_radius,particles_per_aggregate,fraction_aggregated
 
-    def calc_S(self, q):
+    def structure_factor(self, q):
         """
         calculates fractal aggregate structure factor with dimensionality 2
 
@@ -28,17 +28,13 @@ class Aggregation:
         S_aggr = 1 + (self.Naggr - 1)/(1 + qR**2 * self.Naggr / 3)
         return S_aggr
 
-    def structure_eff(self, q, point_distribution, Pq):
-        """Return effective structure factor for aggregation"""
-        S = self.calc_S(q)
-        S_eff = decoupling_approx(q,point_distribution,Pq,S)
-        S_eff = (1 - self.fracs_aggr) + self.fracs_aggr * S_eff
-        return S_eff
+    def effective_structure_factor(self, q, point_distribution, Pq):
+        """only the aggregated fraction of the particles has structure"""
+        S_eff = decoupling_approx(q,point_distribution,Pq,self.structure_factor(q))
+        return (1 - self.fracs_aggr) + self.fracs_aggr * S_eff
 
-    @staticmethod
-    def getSesansRange(S_par, dmax):
+    def sesans_range(self, dmax):
         """the aggregate, not the single particle, sets the length scale"""
-        Reff = S_par[0]
-        qmin = 0.001 * np.pi / (2 * Reff)
-        deltamax = 3 * Reff
+        qmin = 0.001 * np.pi / (2 * self.Reff)
+        deltamax = 3 * self.Reff
         return qmin, deltamax

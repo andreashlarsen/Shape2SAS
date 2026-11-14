@@ -1,4 +1,3 @@
-from .subunits_helpfunctions import check_dimension
 from .TruncatedOctahedron import TruncatedOctahedron
 
 class Octahedron(TruncatedOctahedron):
@@ -8,6 +7,5 @@ class Octahedron(TruncatedOctahedron):
     """
     aliases = ["octahedron","octa","bipyramid"]
 
-    def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,3)
-        super().__init__(list(dimensions) + [0])
+    def __init__(self, a, b, c):
+        super().__init__(a, b, c, truncation=0)

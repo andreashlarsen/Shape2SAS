@@ -1,17 +1,15 @@
 import numpy as np 
-from .structure_factors_helpfunctions import check_Spar, decoupling_approx
-from ..sesans.sesans_helpfunctions import default_sesans_range
+from .StructureFactor import StructureFactor
 
-class HardSphere:
+class HardSphere(StructureFactor):
     """Hard-sphere structure factor, Percus-Yevick approximation"""
     aliases = ["hardsphere","hs","hard-sphere"]
-    par_names = ["concentration","R_HS"]
 
-    def __init__(self, S_par):
-        check_Spar(self.aliases[0],S_par,self.par_names)
-        self.conc,self.R_HS = S_par
+    def __init__(self, volume_fraction, radius):
+        """the volume fraction of the hard spheres, and their radius [A]"""
+        self.conc,self.R_HS = volume_fraction,radius
 
-    def calc_S(self, q):
+    def structure_factor(self, q):
         """
         Calculate the hard-sphere structure factor using the Percus-Yevick approximation.
         Implements the stable version with Taylor expansion for small A = 2*R*q.
@@ -71,12 +69,3 @@ class HardSphere:
                 S_HS[i] = 1.0 / (1.0 + 24.0 * vf * FF / x2)
 
         return S_HS
-
-    def structure_eff(self, q, point_distribution, Pq):
-        """Return effective structure factor for hard spheres"""
-        S = self.calc_S(q)
-        return decoupling_approx(q,point_distribution,Pq,S)
-
-    @staticmethod
-    def getSesansRange(S_par, dmax):
-        return default_sesans_range(dmax)

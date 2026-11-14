@@ -1,16 +1,5 @@
-import os
-
 import numpy as np
-from ..helpfunctions import InputError, sinc, calc_com_dist
-
-def check_Spar(name,S_par,par_names):
-    """check if the number of input parameters for the structure factor is correct, else raise an InputError"""
-    n = len(par_names)
-    len_par = len(S_par)
-    if len_par != n:
-        par = ' parameter ' if n == 1 else ' parameters '
-        were = ' was ' if len_par == 1 else ' were '
-        raise InputError("structure factor " + name + " needs " + str(n) + par + "(provided after --S_par or -Sp): " + ", ".join(par_names) + ", but " + str(len_par) + were + "given: " + str(list(S_par)))
+from ..helpfunctions import sinc, calc_com_dist
 
 def calc_A00(q,point_distribution):
     """
@@ -49,14 +38,3 @@ def decoupling_approx(q,point_distribution,Pq,S):
     Beta = (A00**2 + const) / (Pq + const)
     S_eff = 1 + Beta * (S - 1)
     return S_eff
-
-def save_S_func(q, S, model_filename):
-    """Save structure factor to file"""
-
-    os.makedirs(model_filename, exist_ok=True)  
-    with open('%s/Sq_%s.dat' % (model_filename,model_filename),'w') as f:
-        f.write('# Structure factor SAS data\n')
-        f.write('# %-12s %-12s\n' % ('q','S'))
-        for qi,Si in zip(q,S):
-            f.write('  %-12.5e %-12.5e\n' % (qi, Si))
-

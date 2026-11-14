@@ -1,8 +1,8 @@
 import numpy as np
 from ..helpfunctions import InputError
-from .subunits_helpfunctions import check_dimension
+from .Subunit import Subunit
 
-class TruncatedOctahedron:
+class TruncatedOctahedron(Subunit):
     """
     A general octahedron with truncated vertices.
 
@@ -18,30 +18,29 @@ class TruncatedOctahedron:
     """
     aliases = ["truncated_octahedron","truncatedocta"]
 
-    def __init__(self, dimensions):
-        check_dimension(self.aliases[0],dimensions,4)
-        self.a,self.b,self.c,self.t = dimensions
+    def __init__(self, a, b, c, truncation):
+        self.a,self.b,self.c,self.t = a,b,c,truncation
         if not 0 <= self.t <= 0.5:
             raise InputError("the truncation of a truncated_octahedron must be between 0 and 0.5, but " + str(self.t) + " was given")
 
-    def getVolume(self):
+    def volume(self):
         """Returns the volume of a truncated octahedron"""
         # each truncation removes a pyramid similar to half the octahedron, scaled down by t; for t <= 1/2 the six pyramids do not overlap
         return 4 / 3 * self.a * self.b * self.c * (1 - 3 * self.t**3)
 
-    def getPointDistribution(self, Npoints):
-        """Returns the point distribution of a truncated octahedron"""
+    def generate_points(self, Npoints, rng):
+        """Returns points drawn uniformly in a truncated octahedron"""
         # the square facets bound the body, so they also bound the box
         xmax, ymax, zmax = (1 - self.t) * np.array([self.a, self.b, self.c])
 
-        Volume = self.getVolume()
+        Volume = self.volume()
         Volume_max = 2 * xmax * 2 * ymax * 2 * zmax
         Vratio = Volume_max / Volume
 
         N = int(Vratio * Npoints)
-        x = np.random.uniform(-xmax, xmax, N)
-        y = np.random.uniform(-ymax, ymax, N)
-        z = np.random.uniform(-zmax, zmax, N)
+        x = rng.uniform(-xmax, xmax, N)
+        y = rng.uniform(-ymax, ymax, N)
+        z = rng.uniform(-zmax, zmax, N)
 
         d = np.abs(x) / self.a + np.abs(y) / self.b + np.abs(z) / self.c
         idx = np.where(d < 1)
@@ -49,10 +48,10 @@ class TruncatedOctahedron:
 
         return x_add, y_add, z_add
 
-    def checkOverlap(self, x_eff, y_eff, z_eff):
-        """Check for points within a truncated octahedron"""
+    def outside(self, x_eff, y_eff, z_eff):
+        """Returns which points are outside the truncated octahedron"""
         d = np.abs(x_eff) / self.a + np.abs(y_eff) / self.b + np.abs(z_eff) / self.c
-        idx = np.where((d >= 1) | (np.abs(x_eff) >= (1 - self.t) * self.a) | (np.abs(y_eff) >= (1 - self.t) * self.b)
+        idx = ((d >= 1) | (np.abs(x_eff) >= (1 - self.t) * self.a) | (np.abs(y_eff) >= (1 - self.t) * self.b)
                        | (np.abs(z_eff) >= (1 - self.t) * self.c))
 
         return idx
